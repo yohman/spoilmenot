@@ -126,10 +126,31 @@ window.EPLData = (() => {
   function enrichMlbRoster(game, feed) {
     const sides = feed.liveData?.boxscore?.teams || {}, entries = Object.entries(sides);
     game.rosters = entries.map(([side, team]) => {
-      const battingOrder = (team.battingOrder || []).map(String), order = new Set(battingOrder), bench = new Set((team.bench || []).map(String)), bullpen = new Set((team.bullpen || []).map(String)), people = Object.values(team.players || {});
-      const roster = people.map(item => ({ athlete: { id: item.person?.id, displayName: item.person?.fullName, fullName: item.person?.fullName, jersey: item.jerseyNumber, position: { abbreviation: item.position?.abbreviation || item.position?.code || '' }, birthDate: item.person?.birthDate }, jersey: item.jerseyNumber, position: { abbreviation: item.position?.abbreviation || item.position?.code || '' }, starter: order.has(String(item.person?.id)), substitute: bench.has(String(item.person?.id)) || bullpen.has(String(item.person?.id)), battingOrder: battingOrder.indexOf(String(item.person?.id)), pitching: item.stats?.pitching || {} }));
+      const battingOrder = (team.battingOrder || []).map(String);
+      const orderIndex = new Map(battingOrder.map((id, index) => [id, index]));
+      const bench = new Set((team.bench || []).map(String)), bullpen = new Set((team.bullpen || []).map(String)), people = Object.values(team.players || {});
+      const roster = people.map(item => {
+        const id = String(item.person?.id || '');
+        const listedIndex = orderIndex.get(id);
+        // Some MLB feeds expose the order as 100, 200 … on the player instead
+        // of returning a complete battingOrder array. Normalize both variants.
+        const rawOrder = Number(item.battingOrder ?? item.stats?.batting?.battingOrder);
+        const inferredIndex = Number.isFinite(rawOrder) && rawOrder > 0 ? Math.floor(rawOrder / 100) : null;
+        // Keep this one-based. It is the visible batting order as well as the
+        // sorting key; treating the leadoff hitter's 0 as "missing" sent them
+        // to the end of the rendered order.
+        const battingIndex = Number.isInteger(listedIndex) ? listedIndex + 1 : inferredIndex;
+        return { athlete: { id: item.person?.id, displayName: item.person?.fullName, fullName: item.person?.fullName, jersey: item.jerseyNumber, position: { abbreviation: item.position?.abbreviation || item.position?.code || '' }, birthDate: item.person?.birthDate }, jersey: item.jerseyNumber, position: { abbreviation: item.position?.abbreviation || item.position?.code || '' }, starter: Number.isInteger(battingIndex), substitute: bench.has(id) || bullpen.has(id), battingOrder: battingIndex, pitching: item.stats?.pitching || {} };
+      });
       const source = side === 'home' ? { id: game.homeId, abbreviation: game.homeAbbr, logo: game.homeLogo } : { id: game.awayId, abbreviation: game.awayAbbr, logo: game.awayLogo };
-      const startingPitcher = roster.find(player => Number(player.pitching?.gamesStarted) > 0) || roster.find(player => player.position?.abbreviation === 'P' && !player.substitute) || null;
+      const probable = side === 'home' ? game.probableHomePitcher : game.probableAwayPitcher;
+      const probableId = String(probable?.id || probable?.person?.id || '');
+      const probableName = clean(probable?.fullName || probable?.name);
+      const startingPitcher = roster.find(player => probableId && String(player.athlete?.id) === probableId)
+        || roster.find(player => probableName && clean(player.athlete?.displayName) === probableName)
+        || roster.find(player => Number(player.pitching?.gamesStarted) === 1)
+        || roster.find(player => player.position?.abbreviation === 'P' && !player.substitute)
+        || null;
       return { team: source, roster, starters: roster.filter(player => player.starter).sort((a, b) => a.battingOrder - b.battingOrder), substitutes: roster.filter(player => player.substitute), startingPitcher };
     });
     game.lineupAvailable = entries.length === 2 && entries.every(([, team]) => (team.battingOrder || []).length === 9);

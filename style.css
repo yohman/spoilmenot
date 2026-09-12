@@ -474,6 +474,27 @@
 .soccer-game .incident-mark.red,.soccer-game .card-glyph.red{background:#d9564c!important;color:#fff!important}
 .soccer-game .player-event.yellow{color:#e3bc35!important}.soccer-game .player-event.red{color:#d9564c!important}
 
+/* The third timeline rail is a dedicated event mark. Center every mark in it
+   so goals, cards, substitutions, penalties, and injuries share one rhythm. */
+.soccer-game .incident .event-mark{
+  display:grid!important;
+  place-items:center!important;
+  justify-self:center!important;
+  align-self:start!important;
+  width:26px!important;
+  min-width:26px!important;
+  min-height:18px!important;
+  padding-top:0!important;
+  text-align:center!important;
+}
+.soccer-game .incident .event-mark>*{margin-inline:auto!important}
+.soccer-game .incident.goal .goal-label{display:none!important}
+.soccer-game .incident.goal .soccer-goal-score .soccer-ball{
+  width:15px!important;
+  height:15px!important;
+  color:#f1f1ed!important;
+}
+
 /* The final score gets a single balanced, badge-led presentation. */
 .tab-final-score{margin:18px 0 7px!important;padding:10px 0 5px!important}
 .tab-final-score>span{display:flex!important;align-items:center!important;gap:6px!important;color:#a9a9a4!important;font:600 8px/1 "DM Mono",monospace!important;letter-spacing:.13em!important}
@@ -590,8 +611,76 @@
   .list-game>strong.match-stamp .stamp-league{top:-6px!important;right:-6px!important;width:18px!important;height:18px!important;padding:0!important}
   .list-game>strong.match-stamp .stamp-league:has(img[src$="ucl-official.png"]),
   .list-game>strong.match-stamp .stamp-league:has(img[src$="epl-official.png"]){width:20px!important;height:20px!important}
-  .list-game>strong.match-stamp .stamp-league:has(img[src$="ucl-official.png"]){padding:1px!important}
+.list-game>strong.match-stamp .stamp-league:has(img[src$="ucl-official.png"]){padding:1px!important}
   .list-game>strong.match-stamp .stamp-league:has(img[src$="epl-official.png"]){padding:2px!important}
+}
+
+/* Card headers stay single-line: a long club name yields typography before it
+   yields a broken word. The small round label is league-specific metadata. */
+.list-game .list-teams .team-name{
+  display:block!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+  -webkit-line-clamp:unset!important;
+  font-size:clamp(12px,1.45vw,19px)!important;
+}
+.list-game .list-meta .match-datetime{
+  font:9px/1.22 "DM Mono",monospace!important;
+  letter-spacing:.01em!important;
+}
+.card-matchday{
+  display:block!important;
+  margin-top:4px!important;
+  color:#989893!important;
+  font:7px/1 "DM Mono",monospace!important;
+  letter-spacing:.08em!important;
+  white-space:nowrap!important;
+}
+/* The old observers can still see legacy cards during a transition; the final
+   renderer above is the only sanctioned home for a round label. */
+.matchweek,.date-matchweek{display:none!important}
+
+/* The navigation mark should be the lion itself, not a pale circular chip. */
+.league-band-logo[src$="epl-official.png"],
+.league-gallery-item .league-choice-badge[src$="epl-official.png"]{
+  width:23px!important;
+  height:23px!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  filter:brightness(0) invert(1)!important;
+}
+
+@media(max-width:650px){
+  .list-game .list-teams .team-name{font-size:clamp(10px,3.35vw,15px)!important}
+  .list-game .list-meta small.match-datetime{font-size:8px!important;line-height:1.18!important}
+  .card-matchday{font-size:6px!important}
+}
+
+/* The EPL lion has a transparent official source mark. In a score stamp it
+   needs no artificial circular chip; the single light silhouette stays legible
+   and no longer reads as an empty white disc. */
+.list-game>strong.match-stamp .stamp-league:has(img[src$="epl-official.png"]){
+  width:22px!important;
+  height:22px!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.list-game>strong.match-stamp .stamp-league:has(img[src$="epl-official.png"])::before{display:none!important}
+.list-game>strong.match-stamp .stamp-league img[src$="epl-official.png"]{
+  opacity:1!important;
+  filter:brightness(0) invert(1)!important;
+}
+.list-game .list-meta small.match-datetime{
+  font:9px/1.22 "DM Mono",monospace!important;
+  letter-spacing:.01em!important;
 }
 
 /* NFL scoring plays keep a fixed, compact information rail. The play copy is
@@ -732,3 +821,118 @@
 
 /* The table and the two recap sections provide all needed separation. */
 .baseball-game .baseball-scorecard{border-top:0!important;border-bottom:0!important;padding-top:0!important;padding-bottom:0!important}
+
+/* Card-header refinement: give club names two measured lines before reducing
+   their type, then reserve a quiet, proportional rail for the match time.
+   This intentionally wins over the older one-line responsive experiment. */
+.list-game .list-teams .team-name{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+  hyphens:none!important;
+  font-size:clamp(12px,1.42vw,18px)!important;
+  line-height:1.06!important;
+}
+.list-game .list-meta{
+  display:grid!important;
+  grid-auto-flow:row!important;
+  justify-items:end!important;
+  align-content:start!important;
+  gap:5px!important;
+  min-width:0!important;
+  white-space:normal!important;
+  text-align:right!important;
+}
+.list-game .list-meta .match-datetime{
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  color:#c5c5c0!important;
+  font:500 11px/1.22 Inter,Arial,sans-serif!important;
+  letter-spacing:.015em!important;
+  white-space:normal!important;
+}
+.list-game .list-meta .match-datetime span,
+.list-game .list-meta .match-datetime time{
+  display:block!important;
+  white-space:nowrap!important;
+}
+.list-game .list-meta .match-datetime time{
+  color:#e0e0dc!important;
+  font:600 11px/1.22 Inter,Arial,sans-serif!important;
+}
+.list-game .list-meta .card-matchday{
+  display:block!important;
+  margin-top:1px!important;
+  color:#888884!important;
+  font:600 8px/1.1 Inter,Arial,sans-serif!important;
+  letter-spacing:.075em!important;
+  white-space:nowrap!important;
+}
+.list-game .list-meta button{
+  box-sizing:border-box!important;
+  inline-size:100%!important;
+  max-inline-size:100%!important;
+  min-inline-size:0!important;
+  margin-top:2px!important;
+  padding:6px 4px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  font-size:8px!important;
+}
+.list-game:not(.live-game){border-color:rgba(243,243,241,.13)!important}
+.list-game.past:not(.live-game){border-color:rgba(243,243,241,.11)!important}
+.list-game.future:not(.live-game){border-color:rgba(243,243,241,.16)!important}
+.list-game:not(.live-game):hover,
+.list-game:not(.live-game):focus-within{border-color:rgba(243,243,241,.28)!important}
+
+@media(min-width:651px){
+  .list-game{
+    grid-template-columns:54px minmax(0,1fr) clamp(92px,12vw,116px)!important;
+    column-gap:14px!important;
+    align-items:start!important;
+  }
+  .list-game>.list-content{
+    display:block!important;
+    grid-column:2!important;
+    grid-row:1!important;
+    width:auto!important;
+    min-width:0!important;
+    padding-left:0!important;
+  }
+  .list-game .list-meta{
+    grid-column:3!important;
+    grid-row:1!important;
+    inline-size:100%!important;
+    max-inline-size:100%!important;
+  }
+}
+
+@media(max-width:650px){
+  .list-game .list-teams .team-name{
+    font-size:clamp(11px,3.15vw,15px)!important;
+    line-height:1.05!important;
+  }
+  .list-game .list-meta .match-datetime,
+  .list-game .list-meta .match-datetime time{font-size:10px!important}
+  .list-game .list-meta .card-matchday{font-size:7px!important}
+}
+
+/* A club badge and its name read as one unit. The record remains below, while
+   a one- or two-line name is vertically balanced with the crest beside it. */
+.list-game .list-teams>span{
+  align-items:center!important;
+}
+.list-game .list-teams>span>img{
+  grid-row:1!important;
+  align-self:center!important;
+}
+.list-game .list-teams .team-name{
+  align-self:center!important;
+}

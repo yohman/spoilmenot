@@ -292,6 +292,11 @@ rosterMarkup=function(game){
   Object.assign(countryMeta,{IE:['Ireland','ie'],JAM:['Jamaica','jm'],JM:['Jamaica','jm'],JAMAICA:['Jamaica','jm'],ROU:['Romania','ro'],RO:['Romania','ro'],ROMANIA:['Romania','ro'],BUL:['Bulgaria','bg'],BG:['Bulgaria','bg'],BULGARIA:['Bulgaria','bg'],SVN:['Slovenia','si'],SI:['Slovenia','si'],SLOVENIA:['Slovenia','si'],ALB:['Albania','al'],AL:['Albania','al'],ALBANIA:['Albania','al'],TUN:['Tunisia','tn'],TN:['Tunisia','tn'],TUNISIA:['Tunisia','tn'],MLI:['Mali','ml'],ML:['Mali','ml'],MALI:['Mali','ml'],RSA:['South Africa','za'],ZA:['South Africa','za'],'SOUTH AFRICA':['South Africa','za'],CHN:['China','cn'],CN:['China','cn'],CHINA:['China','cn'],PAR:['Paraguay','py'],PY:['Paraguay','py'],PARAGUAY:['Paraguay','py'],PER:['Peru','pe'],PE:['Peru','pe'],PERU:['Peru','pe'],GRE:['Greece','gr'],GR:['Greece','gr'],GREECE:['Greece','gr']});
   const ageFor=person=>{const direct=Number(person.age);if(Number.isFinite(direct)&&direct>0)return Math.floor(direct);const date=person.birthDate||person.dateOfBirth||person.dateOfBirthMillis;if(!date)return null;const born=new Date(date);if(Number.isNaN(+born))return null;const now=new Date();let age=now.getFullYear()-born.getFullYear();if(now<new Date(now.getFullYear(),born.getMonth(),born.getDate()))age--;return age>0&&age<60?age:null};
   const template=document.createElement('template');template.innerHTML=rosterMarkupWithBiography(game);
+  template.content.querySelectorAll('.lineups section>b').forEach((header,index)=>{
+    const team=game.rosters?.[index]?.team||{};
+    const fullName=team.displayName||team.name||team.abbreviation||'';
+    if(fullName&&header.lastChild)header.lastChild.nodeValue=fullName;
+  });
   template.content.querySelectorAll('.lineup-player').forEach(row=>{
     const name=row.querySelector('span[title]')?.getAttribute('title')||'';
     const raw=entries.find(entry=>normalize((entry.athlete||entry).displayName||(entry.athlete||entry).fullName)===normalize(name));

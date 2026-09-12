@@ -936,3 +936,90 @@
 .list-game .list-teams .team-name{
   align-self:center!important;
 }
+
+/* Give the day labels a quiet editorial cadence without competing with matches. */
+:root{--card-gap:13px!important}
+.list-date{
+  margin:25px 0 8px!important;
+  color:rgba(243,243,239,.58)!important;
+  font:500 clamp(11px,1.05vw,13px)/1.2 Inter,Arial,sans-serif!important;
+  letter-spacing:.035em!important;
+  text-transform:none!important;
+}
+
+/* A faint pale edge preserves the identity of dark transparent crests such as
+   Tottenham's against the charcoal cards, without adding a visible badge chip. */
+.list-game .list-teams>span>img{
+  filter:drop-shadow(0 0 1px rgba(243,243,239,.92)) drop-shadow(0 1px 1px rgba(0,0,0,.72))!important;
+}
+
+/* Future fixtures remain distinguishable by their lighter surface, not a loud frame. */
+.list-game.future:not(.live-game){border-color:rgba(243,243,241,.09)!important}
+
+@media(max-width:650px){
+  .list-game{margin:14px 0!important}
+  .list-date{margin:22px 0 8px!important;font-size:11px!important}
+}
+
+/* A restrained red dot makes the spoiler action unmistakable without turning
+   the control into an alarm. */
+.list-game .match-tabs [data-results]{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:6px!important;
+}
+.list-game.past .match-tabs [data-results]::before{
+  content:""!important;
+  display:block!important;
+  flex:0 0 5px!important;
+  width:5px!important;
+  height:5px!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:#c84e4e!important;
+  box-shadow:0 0 0 2px rgba(200,78,78,.13)!important;
+  transform:none!important;
+}
+
+/* Dark crests retain their official colors, with a quiet light keyline so the
+   cockerel, dark navy marks, and similar transparent badges never disappear. */
+.list-game .list-teams>span>img,
+.list-game .lineups section>b>img,
+.list-game .final-scoreline .final-club>img,
+.list-game .goal-scorers img,
+.list-game .incident-badge{
+  filter:brightness(1.32) drop-shadow(0 0 1.5px rgba(243,243,239,.96)) drop-shadow(0 1px 1px rgba(0,0,0,.76))!important;
+}
+
+/* The tiny Premier League lion is a mark, not a button: no square surround,
+   a little breathing room, and a scale that cannot intrude on the score stamp. */
+.league-band-logo[src$="epl-official.png"],
+.league-gallery-item .league-choice-badge[src$="epl-official.png"]{
+  width:19px!important;
+  height:19px!important;
+  padding:1px!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+}
+.list-game>strong.match-stamp .stamp-league:has(img[src$="epl-official.png"]){
+  top:-4px!important;
+  right:-4px!important;
+  width:16px!important;
+  height:16px!important;
+  padding:1px!important;
+  overflow:visible!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.list-game>strong.match-stamp .stamp-league img[src$="epl-official.png"]{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  transform:scale(.82)!important;
+  transform-origin:center!important;
+}

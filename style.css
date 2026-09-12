@@ -1023,3 +1023,17 @@
   transform:scale(.82)!important;
   transform-origin:center!important;
 }
+
+/* In the selection band, keep the EPL lion entirely bare: the earlier
+   contrast fallback added a shadowed square around its transparent canvas. */
+.team-band-summary .league-band-current .league-band-logo[src$="epl-official.png"]{
+  width:18px!important;
+  height:18px!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  outline:0!important;
+  filter:brightness(0) invert(1)!important;
+}

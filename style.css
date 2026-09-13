@@ -1051,6 +1051,26 @@
   transform:none!important;
 }
 
+/* Competition marks always share one anchor: the stamp's top-right edge. */
+.list-game>strong.match-stamp.past .stamp-league,
+.list-game>strong.match-stamp.future .stamp-league,
+.list-game>strong.match-stamp.live .stamp-league,
+.list-game>strong.match-stamp .stamp-league:has(img[src$="epl-official.png"]){
+  top:-7px!important;
+  right:-7px!important;
+  bottom:auto!important;
+  left:auto!important;
+}
+@media(max-width:650px){
+  .list-game>strong.match-stamp.past .stamp-league,
+  .list-game>strong.match-stamp.future .stamp-league,
+  .list-game>strong.match-stamp.live .stamp-league,
+  .list-game>strong.match-stamp .stamp-league:has(img[src$="epl-official.png"]){
+    top:-6px!important;
+    right:-6px!important;
+  }
+}
+
 /* The meter caption sits across the card's top edge. Give it the same card
    surface as its parent so the border never reads through the tiny label. */
 .list-game.past{--stamp-label-surface:#181818}
@@ -1070,3 +1090,26 @@
   height:15px!important;
   font:14px/1 "Apple Color Emoji","Segoe UI Emoji",sans-serif!important;
 }
+
+/* Video is a quiet member of the existing action row. Its source title never
+   appears on-card, so provider wording cannot reveal a score. */
+.match-tabs .highlight-link{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:5px!important;
+  min-height:30px!important;
+  padding:6px 9px!important;
+  border:0!important;
+  border-radius:2px!important;
+  background:rgba(243,243,241,.10)!important;
+  color:#d9d9d4!important;
+  font:600 8px/1 "DM Mono",monospace!important;
+  letter-spacing:.055em!important;
+  text-decoration:none!important;
+  white-space:nowrap!important;
+}
+.match-tabs .highlight-link:hover{background:rgba(243,243,241,.18)!important;color:#fff!important}
+.match-tabs .highlight-link:focus-visible{outline:1px solid #f3f3ef!important;outline-offset:2px!important}
+.match-tabs .highlight-link svg{width:14px!important;height:10px!important;flex:0 0 auto!important;fill:#d64b45!important}
+.match-tabs .highlight-link .youtube-play{fill:#fff!important}
+.match-tabs .highlight-link small{color:inherit!important;font:inherit!important;letter-spacing:0!important;opacity:.72!important}

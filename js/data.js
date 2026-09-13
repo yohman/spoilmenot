@@ -49,6 +49,19 @@ window.EPLData = (() => {
     const code = MLB_MAP_CODES[Number(id)] || { AZ: 'ari', CWS: 'chw' }[String(abbreviation || '').toUpperCase()] || String(abbreviation || '').toLowerCase();
     return code ? `https://a.espncdn.com/i/teamlogos/mlb/500/${code}.png` : '';
   };
+  // Generated on GitHub rather than queried from YouTube in the browser. The
+  // small local script also works when the site is opened from a file preview.
+  const scoreInHighlightTitle = title => /\b\d{1,3}\s*(?:[-–—:]\s*)\d{1,3}\b/.test(String(title || ''));
+  const applyHighlights = games => {
+    const highlights = window.SpoilHighlights?.highlights;
+    if (!highlights || typeof highlights !== 'object') return games;
+    games.forEach(game => {
+      const item = highlights[`${game.leagueId}:${game.id}`];
+      if (!game.completed || !item || !/^https:\/\/www\.youtube\.com\/watch\?v=/.test(item.url || '') || scoreInHighlightTitle(item.title)) return;
+      game.highlight = item;
+    });
+    return games;
+  };
 
   function normalize(event, league = LEAGUES[activeLeague]) {
     const competition = event.competitions?.[0], teams = competition?.competitors || [], home = teams.find(team => team.homeAway === 'home'), away = teams.find(team => team.homeAway === 'away');
@@ -127,9 +140,9 @@ window.EPLData = (() => {
       const results = await Promise.allSettled(Object.keys(LEAGUES).map(async leagueId => compactAllLeagueWindow(await loadOne(leagueId), LEAGUES[leagueId])));
       const combined = results.filter(result => result.status === 'fulfilled').flatMap(result => result.value).sort((a, b) => a.time - b.time);
       if (!combined.length) throw Error('No league feeds are available right now.');
-      return combined;
+      return applyHighlights(combined);
     }
-    const league = LEAGUES[id]; if (!league) throw Error('Unknown league.'); activeLeague = id; return loadOne(id);
+    const league = LEAGUES[id]; if (!league) throw Error('Unknown league.'); activeLeague = id; return applyHighlights(await loadOne(id));
   }
 
   function nflScore(game, summary) {

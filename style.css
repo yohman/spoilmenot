@@ -1037,3 +1037,36 @@
   outline:0!important;
   filter:brightness(0) invert(1)!important;
 }
+
+/* All league marks use the same compact footprint on a Spoil Meter stamp.
+   The Premier League lion stays borderless but no longer shrinks inside it. */
+.list-game>strong.match-stamp .stamp-league:has(img[src$="epl-official.png"]){
+  top:-7px!important;
+  right:-7px!important;
+  width:22px!important;
+  height:22px!important;
+  padding:0!important;
+}
+.list-game>strong.match-stamp .stamp-league img[src$="epl-official.png"]{
+  transform:none!important;
+}
+
+/* The meter caption sits across the card's top edge. Give it the same card
+   surface as its parent so the border never reads through the tiny label. */
+.list-game.past{--stamp-label-surface:#181818}
+.list-game.past:hover,.list-game.past:focus-within{--stamp-label-surface:#30302e}
+.list-game>strong.match-stamp.spoil-meter-badge::after{
+  z-index:6!important;
+  padding:2px 4px!important;
+  background:var(--stamp-label-surface,#181818)!important;
+  border-radius:2px!important;
+}
+
+/* Timeline goals use the identical ball character as player-event annotations. */
+.soccer-game .incident.goal .soccer-goal-score .soccer-ball{
+  display:grid!important;
+  place-items:center!important;
+  width:15px!important;
+  height:15px!important;
+  font:14px/1 "Apple Color Emoji","Segoe UI Emoji",sans-serif!important;
+}

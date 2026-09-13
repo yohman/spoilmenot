@@ -9,6 +9,7 @@ window.EPLData = (() => {
   };
   const MLB_BASE = 'https://statsapi.mlb.com/api/v1', MLB_LIVE = 'https://statsapi.mlb.com/api/v1.1';
   let activeLeague = 'epl';
+  const eplRoundLookups = new Map();
   const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
   const color = team => team?.color ? `#${team.color}` : '#77736a';
   const espnBase = league => `https://site.api.espn.com/apis/site/v2/sports/${league.sport}/${league.slug}`;
@@ -19,6 +20,27 @@ window.EPLData = (() => {
   const soccerDateRange = () => { const now = new Date(), start = new Date(now), end = new Date(now); start.setDate(now.getDate() - 50); end.setDate(now.getDate() + 80); return `${formatSoccerDate(start)}-${formatSoccerDate(end)}`; };
   const mlbWindow = () => { const now = new Date(), start = new Date(now), end = new Date(now); start.setDate(now.getDate() - 3); end.setDate(now.getDate() + 7); return { startDate: formatMlbDate(start), endDate: formatMlbDate(end) }; };
   const isLiveStatus = status => { const type = status?.type || status || {}, name = String(type.name || status?.name || ''); return type.state === 'in' || status?.state === 'in' || /^STATUS_(?:FIRST|SECOND|HALF|EXTRA|IN_PROGRESS)/.test(name); };
+  const fixtureDay = value => { const date = new Date(value); return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()); };
+  async function loadEplRoundLookup(seasonYear) {
+    const year = Number(seasonYear);
+    if (!Number.isInteger(year)) return new Map();
+    if (eplRoundLookups.has(year)) return eplRoundLookups.get(year);
+    const request = fetch(`${espnBase(LEAGUES.epl)}/scoreboard?limit=1000&dates=${year}0801-${year + 1}0601`)
+      .then(response => response.ok ? response.json() : null)
+      .then(payload => {
+        const fixtures = (payload?.events || []).slice().sort((left, right) => new Date(left.date) - new Date(right.date));
+        const opener = fixtures[0] ? fixtureDay(fixtures[0].date) : null;
+        const lookup = new Map();
+        if (opener != null) fixtures.forEach(fixture => {
+          const round = Math.floor((fixtureDay(fixture.date) - opener) / 604800000) + 1;
+          if (round >= 1 && round <= 38) lookup.set(String(fixture.id), round);
+        });
+        return lookup;
+      })
+      .catch(() => new Map());
+    eplRoundLookups.set(year, request);
+    return request;
+  }
   // MLB's own badges are dependable in standard document images. The map filters
   // these SVGs separately because deck.gl's bitmap icon loader needs dimensions.
   const mlbLogo = id => id ? `https://www.mlbstatic.com/team-logos/${id}.svg` : '';
@@ -61,7 +83,14 @@ window.EPLData = (() => {
     const league = LEAGUES[id];
     const [fixtures, standings] = await Promise.all([fetch(`${espnBase(league)}/scoreboard?limit=1000&dates=${soccerDateRange()}`), fetch(espnStandings(league)).catch(() => null)]);
     if (!fixtures.ok) throw Error(`${league.name} fixtures are unavailable (${fixtures.status}).`);
-    const games = ((await fixtures.json()).events || []).map(event => normalize(event, league)).filter(Boolean);
+    const fixturePayload = await fixtures.json(), fixtureEvents = fixturePayload.events || [];
+    const seasonYear = fixturePayload.leagues?.[0]?.season?.year || fixtureEvents[0]?.season?.year;
+    const roundLookup = id === 'epl' ? await loadEplRoundLookup(seasonYear) : new Map();
+    const games = fixtureEvents.map(event => {
+      const game = normalize(event, league);
+      if (game && roundLookup.has(String(event.id))) game.matchday = roundLookup.get(String(event.id));
+      return game;
+    }).filter(Boolean);
     if (!games.length) throw Error(`The ${league.name} feed returned no fixtures for this period.`);
     const ranks = {}; try { const table = standings?.ok ? await standings.json() : null; (table?.children || []).flatMap(group => group.standings?.entries || []).forEach(entry => { const stat = name => entry.stats?.find(item => item.name === name)?.value, rank = stat('rank') ?? stat('playoffSeed') ?? stat('divisionRank'); if (Number.isFinite(rank)) ranks[clean(entry.team?.displayName)] = rank; }); } catch (_) {}
     addSoccerContext(games, ranks); return games;
@@ -123,6 +152,51 @@ window.EPLData = (() => {
   }
 
   const flattenStats = team => Object.entries(team?.teamStats || {}).flatMap(([, values]) => Object.entries(values || {}).filter(([, value]) => typeof value === 'number' || typeof value === 'string').map(([name, value]) => ({ name, value, displayValue: String(value) })));
+  const mlbPersonCountries = new Map();
+  const mlbCountryMeta = {
+    USA: ['United States', 'us'], 'UNITED STATES': ['United States', 'us'], CANADA: ['Canada', 'ca'],
+    'DOMINICAN REPUBLIC': ['Dominican Republic', 'do'], VENEZUELA: ['Venezuela', 've'], CUBA: ['Cuba', 'cu'],
+    JAPAN: ['Japan', 'jp'], MEXICO: ['Mexico', 'mx'], 'PUERTO RICO': ['Puerto Rico', 'pr'], PANAMA: ['Panama', 'pa'],
+    COLOMBIA: ['Colombia', 'co'], NICARAGUA: ['Nicaragua', 'ni'], CURACAO: ['Curaçao', 'cw'], ARUBA: ['Aruba', 'aw'],
+    BAHAMAS: ['Bahamas', 'bs'], KOREA: ['South Korea', 'kr'], 'SOUTH KOREA': ['South Korea', 'kr'], TAIWAN: ['Taiwan', 'tw'],
+    AUSTRALIA: ['Australia', 'au'], NETHERLANDS: ['Netherlands', 'nl'], GERMANY: ['Germany', 'de'], ITALY: ['Italy', 'it'],
+    BRAZIL: ['Brazil', 'br'], FRANCE: ['France', 'fr'], SPAIN: ['Spain', 'es'], UNITED_KINGDOM: ['United Kingdom', 'gb'],
+    'UNITED KINGDOM': ['United Kingdom', 'gb'], IRELAND: ['Ireland', 'ie'], SOUTH_AFRICA: ['South Africa', 'za'],
+    'SOUTH AFRICA': ['South Africa', 'za'], NEW_ZEALAND: ['New Zealand', 'nz'], 'NEW ZEALAND': ['New Zealand', 'nz'],
+    ISRAEL: ['Israel', 'il'], PHILIPPINES: ['Philippines', 'ph'], HONDURAS: ['Honduras', 'hn'], HAITI: ['Haiti', 'ht'],
+    JAMAICA: ['Jamaica', 'jm'], VIRGIN_ISLANDS: ['U.S. Virgin Islands', 'vi'], 'U.S. VIRGIN ISLANDS': ['U.S. Virgin Islands', 'vi']
+  };
+  const normalizeCountry = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+  const mlbCountry = value => mlbCountryMeta[normalizeCountry(value)] || (value ? [String(value), ''] : null);
+  async function hydrateMlbRosterCountries(game) {
+    const players = (game.rosters || []).flatMap(roster => roster.roster || []);
+    const ids = [...new Set(players.map(entry => String((entry.athlete || entry)?.id || '')).filter(Boolean))];
+    const signature = ids.slice().sort().join(',');
+    if (game._mlbCountriesReady && game._mlbCountrySignature === signature) return;
+    if (game._mlbCountryPromise) return game._mlbCountryPromise;
+    const pending = ids.filter(id => !mlbPersonCountries.has(id));
+    game._mlbCountryPromise = (async () => {
+      if (pending.length) {
+        try {
+          const response = await fetch(`${MLB_BASE}/people?personIds=${pending.join(',')}`);
+          const payload = response.ok ? await response.json() : null;
+          (payload?.people || []).forEach(person => mlbPersonCountries.set(String(person.id), person.birthCountry || person.nationality || ''));
+        } catch (_) {}
+        pending.forEach(id => { if (!mlbPersonCountries.has(id)) mlbPersonCountries.set(id, ''); });
+      }
+      players.forEach(entry => {
+        const athlete = entry.athlete || entry, details = mlbCountry(mlbPersonCountries.get(String(athlete.id)));
+        if (!details) return;
+        const [name, code] = details;
+        athlete.country = { displayName: name };
+        entry.country = athlete.country;
+        if (code) athlete.flag = { href: `https://flagcdn.com/24x18/${code}.png`, alt: name };
+      });
+      game._mlbCountriesReady = true;
+      game._mlbCountrySignature = signature;
+    })().finally(() => { game._mlbCountryPromise = null; });
+    return game._mlbCountryPromise;
+  }
   function enrichMlbRoster(game, feed) {
     const sides = feed.liveData?.boxscore?.teams || {}, entries = Object.entries(sides);
     game.rosters = entries.map(([side, team]) => {
@@ -142,7 +216,9 @@ window.EPLData = (() => {
         const battingIndex = Number.isInteger(listedIndex) ? listedIndex + 1 : inferredIndex;
         return { athlete: { id: item.person?.id, displayName: item.person?.fullName, fullName: item.person?.fullName, jersey: item.jerseyNumber, position: { abbreviation: item.position?.abbreviation || item.position?.code || '' }, birthDate: item.person?.birthDate }, jersey: item.jerseyNumber, position: { abbreviation: item.position?.abbreviation || item.position?.code || '' }, starter: Number.isInteger(battingIndex), substitute: bench.has(id) || bullpen.has(id), battingOrder: battingIndex, pitching: item.stats?.pitching || {} };
       });
-      const source = side === 'home' ? { id: game.homeId, abbreviation: game.homeAbbr, logo: game.homeLogo } : { id: game.awayId, abbreviation: game.awayAbbr, logo: game.awayLogo };
+      const source = side === 'home'
+        ? { id: game.homeId, displayName: game.home, abbreviation: game.homeAbbr, logo: game.homeLogo }
+        : { id: game.awayId, displayName: game.away, abbreviation: game.awayAbbr, logo: game.awayLogo };
       const probable = side === 'home' ? game.probableHomePitcher : game.probableAwayPitcher;
       const probableId = String(probable?.id || probable?.person?.id || '');
       const probableName = clean(probable?.fullName || probable?.name);
@@ -155,8 +231,11 @@ window.EPLData = (() => {
     });
     game.lineupAvailable = entries.length === 2 && entries.every(([, team]) => (team.battingOrder || []).length === 9);
   }
-  async function enrichMlb(game, { refresh = false } = {}) {
-    if (game._enriched && !refresh) return game;
+  async function enrichMlb(game, { refresh = false, lineup = false } = {}) {
+    if (game._enriched && !refresh) {
+      if (lineup) await hydrateMlbRosterCountries(game);
+      return game;
+    }
     try {
       const response = await fetch(`${MLB_LIVE}/game/${game.id}/feed/live`); if (!response.ok) return game;
       const feed = await response.json(), status = feed.gameData?.status || {}, linescore = feed.liveData?.linescore || {}, sides = linescore.teams || {};
@@ -164,6 +243,10 @@ window.EPLData = (() => {
       if (game.completed || game.live) { game.homeScore = Number(sides.home?.runs ?? game.homeScore ?? 0); game.awayScore = Number(sides.away?.runs ?? game.awayScore ?? 0); }
       game.probableHomePitcher = feed.gameData?.probablePitchers?.home || game.probableHomePitcher; game.probableAwayPitcher = feed.gameData?.probablePitchers?.away || game.probableAwayPitcher;
       enrichMlbRoster(game, feed);
+      // A feed can expose a usable roster before it marks all nine batting
+      // spots as official.  When the user has explicitly opened a lineup,
+      // hydrate its nationality details whenever roster players exist.
+      if ((lineup || (game.lineupAvailable && (game.live || (!game.completed && game.time - Date.now() <= 3 * 60 * 60 * 1000)))) && game.rosters?.some(roster => roster.roster?.length)) await hydrateMlbRosterCountries(game);
       const allPlays = feed.liveData?.plays?.allPlays || [];
       game.events = allPlays.filter(play => play.about?.isScoringPlay).map(play => ({ type: 'run', minute: Number(play.about?.inning || 0), inning: play.about?.inning, half: play.about?.halfInning, text: clean(play.result?.description), teamId: String(play.team?.id || ''), scorer: clean(play.matchup?.batter?.fullName), homeScore: Number(play.result?.homeScore), awayScore: Number(play.result?.awayScore), rbi: Number(play.result?.rbi || 0), captivating: Number(play.about?.captivatingIndex || 0) }));
       game.summary = { boxscore: { teams: Object.entries(sides).map(([side]) => ({ team: { id: side === 'home' ? game.homeId : game.awayId }, statistics: flattenStats(feed.liveData?.boxscore?.teams?.[side]) })) } };

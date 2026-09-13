@@ -21,6 +21,7 @@ const utcDate = value => new Date(value).toISOString().slice(0, 10);
 const espnDate = value => utcDate(value).replaceAll('-', '');
 const normal = value => clean(value).toLowerCase().replace(/[^a-z0-9]/g, '');
 const safeTitle = title => !/\b\d{1,3}\s*(?:[-–—:]\s*)\d{1,3}\b/.test(String(title || ''));
+const unsuitableTitle = title => /\bmadden\b|\bsimulation\b|\bsim\b|\bgameplay\b|\bwatch live\b|\blive stream\b/i.test(String(title || ''));
 const durationSeconds = value => {
   if (Number.isFinite(Number(value))) return Number(value);
   const parts = String(value || '').split(':').map(Number);
@@ -30,6 +31,20 @@ const teamTokens = name => clean(name).toLowerCase().split(/[^a-z0-9]+/).filter(
 const teamAppears = (title, name, abbreviation) => {
   const titleText = normal(title), abbreviationText = normal(abbreviation);
   return (abbreviationText.length >= 2 && titleText.includes(abbreviationText)) || teamTokens(name).some(token => titleText.includes(token));
+};
+// Trusted sources are deliberately narrow. A source must identify itself as
+// the competition, its official broadcaster, or its official league channel.
+const officialSourcePatterns = {
+  mlb: [/^mlb(?:official)?$/],
+  nfl: [/^nfl(?:official)?$/],
+  epl: [/^premierleague$/, /^dazn/, /^unext/],
+  laliga: [/^laliga/, /^dazn/, /^unext/],
+  ucl: [/^uefa/, /^dazn/, /^unext/]
+};
+const sourceName = entry => clean(entry.channel || entry.uploader || entry.uploader_id || entry.channel_id || '');
+const sourceTier = (game, entry) => {
+  const source = normal(sourceName(entry));
+  return (officialSourcePatterns[game.leagueId] || []).some(pattern => pattern.test(source)) ? 'official' : 'fallback';
 };
 
 async function requestJson(url) {
@@ -48,6 +63,7 @@ async function soccerGames(league, start, end) {
     if (!event.status?.type?.completed || !home?.team || !away?.team) return [];
     return [{
       key: `${league.id}:${event.id}`,
+      leagueId: league.id,
       league: league.name,
       time: new Date(event.date),
       home: clean(home.team.displayName),
@@ -66,6 +82,7 @@ async function mlbGames(start, end) {
     if (game.status?.abstractGameState !== 'Final' || !home || !away) return [];
     return [{
       key: `mlb:${game.gamePk}`,
+      leagueId: 'mlb',
       league: 'MLB',
       time: new Date(game.gameDate),
       home: clean(home.name),
@@ -78,7 +95,7 @@ async function mlbGames(start, end) {
 
 function youtubeSearch(query) {
   return new Promise((resolveSearch, rejectSearch) => {
-    const child = spawn('yt-dlp', ['--no-warnings', '--no-playlist', '--flat-playlist', '--dump-json', `ytsearch8:${query}`], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn('yt-dlp', ['--no-warnings', '--no-playlist', '--flat-playlist', '--dump-json', `ytsearch15:${query}`], { stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '', stderr = '';
     child.stdout.on('data', chunk => { stdout += chunk; });
     child.stderr.on('data', chunk => { stderr += chunk; });
@@ -93,17 +110,23 @@ function youtubeSearch(query) {
 }
 
 function pickHighlight(game, entries) {
-  return entries
+  const candidates = entries
     .map(entry => ({ ...entry, seconds: durationSeconds(entry.duration ?? entry.duration_string) }))
     .filter(entry => {
       const title = clean(entry.title);
       return entry.id && entry.seconds >= 70 && entry.seconds <= 3_600
         && /highlight|condensed game|game recap|extended highlights/i.test(title)
         && safeTitle(title)
+        && !unsuitableTitle(title)
         && teamAppears(title, game.home, game.homeAbbr)
         && teamAppears(title, game.away, game.awayAbbr);
     })
-    .sort((left, right) => right.seconds - left.seconds || String(right.upload_date || '').localeCompare(String(left.upload_date || '')))[0];
+    .map(entry => ({ ...entry, source: sourceName(entry), sourceTier: sourceTier(game, entry) }));
+  const longestFirst = (left, right) => right.seconds - left.seconds || String(right.upload_date || '').localeCompare(String(left.upload_date || ''));
+  // Official source wins even if a fan upload is longer. Only when that trusted
+  // search is empty do we use the best score-safe, non-simulation fallback.
+  return candidates.filter(entry => entry.sourceTier === 'official').sort(longestFirst)[0]
+    || candidates.sort(longestFirst)[0];
 }
 
 async function readIndex() {
@@ -126,7 +149,9 @@ async function main() {
   const index = await readIndex();
   const results = await Promise.allSettled([...leagues.map(league => soccerGames(league, start, now)), mlbGames(start, now)]);
   const completed = results.filter(result => result.status === 'fulfilled').flatMap(result => result.value)
-    .filter(game => !index.highlights[game.key])
+    // Older records did not store source trust. Recheck them and keep trying to
+    // upgrade a fallback when an official upload arrives later in the day.
+    .filter(game => index.highlights[game.key]?.sourceTier !== 'official')
     .sort((left, right) => right.time - left.time)
     .slice(0, maxChecks);
 
@@ -135,10 +160,10 @@ async function main() {
     return;
   }
 
-  let added = 0;
+  let updated = 0;
   for (const game of completed) {
     const when = game.time.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-    const query = `${game.away} vs ${game.home} ${game.league} highlights ${when}`;
+    const query = `${game.away} vs ${game.home} ${game.league} official highlights ${when}`;
     try {
       const picked = pickHighlight(game, await youtubeSearch(query));
       if (!picked) {
@@ -149,10 +174,12 @@ async function main() {
         url: `https://www.youtube.com/watch?v=${picked.id}`,
         title: clean(picked.title),
         durationSeconds: picked.seconds,
+        source: picked.source,
+        sourceTier: picked.sourceTier,
         discoveredAt: now.toISOString()
       };
-      added += 1;
-      console.log(`Added ${game.key}: ${picked.seconds}s`);
+      updated += 1;
+      console.log(`${picked.sourceTier === 'official' ? 'Trusted' : 'Fallback'} ${game.key}: ${picked.seconds}s from ${picked.source || 'unknown source'}`);
     } catch (error) {
       console.warn(`Highlight search failed for ${game.key}: ${clean(error.message)}`);
     }
@@ -162,7 +189,7 @@ async function main() {
   Object.entries(index.highlights).forEach(([key, item]) => {
     if (Date.parse(item.discoveredAt || 0) < oldest) delete index.highlights[key];
   });
-  if (!added) return;
+  if (!updated) return;
   index.generatedAt = now.toISOString();
   await writeFile(output, `window.SpoilHighlights = ${JSON.stringify(index, null, 2)};\n`);
 }

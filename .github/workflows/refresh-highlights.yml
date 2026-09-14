@@ -21,8 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # The generated highlights commit may need to replay on top of a
-          # normal site update that lands while this job is running.
+          # Retrying after a normal site update requires a fresh generated
+          # file, not a rebase of two independently generated JSON indexes.
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -42,16 +42,21 @@ jobs:
           fi
           git config user.name "spoilmenot highlights bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/highlights.js
-          git commit -m "Refresh spoiler-safe highlights"
-          # A user push can land after this job starts. Rebase the generated
-          # one-file commit onto main and retry, without ever force-pushing.
           for attempt in 1 2 3; do
+            if git diff --quiet -- assets/highlights.js; then
+              exit 0
+            fi
+            git add assets/highlights.js
+            git commit -m "Refresh spoiler-safe highlights"
             if git push origin HEAD:main; then
               exit 0
             fi
+            # A normal site push landed while this job searched YouTube. Do
+            # not merge generated indexes: start from current main and make a
+            # fresh, conflict-free highlights commit instead.
             git fetch origin main
-            git rebase origin/main
+            git reset --hard origin/main
+            node scripts/update-highlights.mjs
           done
           echo "Could not push refreshed highlights after three safe retries."
           exit 1

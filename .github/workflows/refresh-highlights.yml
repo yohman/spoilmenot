@@ -26,7 +26,7 @@ jobs:
       - name: Find new highlights
         run: node scripts/update-highlights.mjs
         env:
-          MAX_HIGHLIGHT_CHECKS: '12'
+          MAX_HIGHLIGHT_CHECKS: '20'
       - name: Save new matches
         run: |
           if git diff --quiet -- assets/highlights.js; then

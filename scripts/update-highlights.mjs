@@ -148,12 +148,15 @@ async function main() {
   const now = new Date(), start = new Date(now.getTime() - 3 * day);
   const index = await readIndex();
   const results = await Promise.allSettled([...leagues.map(league => soccerGames(league, start, now)), mlbGames(start, now)]);
-  const completed = results.filter(result => result.status === 'fulfilled').flatMap(result => result.value)
-    // Older records did not store source trust. Recheck them and keep trying to
-    // upgrade a fallback when an official upload arrives later in the day.
-    .filter(game => index.highlights[game.key]?.sourceTier !== 'official')
-    .sort((left, right) => right.time - left.time)
-    .slice(0, maxChecks);
+  const candidates = results.filter(result => result.status === 'fulfilled').flatMap(result => result.value)
+    .sort((left, right) => right.time - left.time);
+  // New cards take priority. A smaller parallel allowance keeps rechecking
+  // fallbacks for a later official upload without starving the wider archive.
+  const newLimit = Math.max(1, Math.ceil(maxChecks * .75));
+  const missing = candidates.filter(game => !index.highlights[game.key]).slice(0, newLimit);
+  const upgrades = candidates.filter(game => index.highlights[game.key] && index.highlights[game.key].sourceTier !== 'official')
+    .slice(0, Math.max(0, maxChecks - missing.length));
+  const completed = [...missing, ...upgrades];
 
   if (!completed.length) {
     console.log('No unresolved completed games in the highlight window.');

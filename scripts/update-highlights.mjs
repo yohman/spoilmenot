@@ -135,7 +135,24 @@ function youtubeSearch(query, count = 25) {
   });
 }
 
-function pickHighlight(game, entries) {
+// Search results are deliberately lightweight and often omit upload_date.
+// Read the metadata only for an already trusted candidate so the calendar
+// guard remains reliable without fetching every video in a search result.
+function youtubeMetadata(id) {
+  return new Promise((resolveVideo, rejectVideo) => {
+    const child = spawn('yt-dlp', ['--no-warnings', '--no-playlist', '--dump-single-json', `https://www.youtube.com/watch?v=${id}`], { stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '', stderr = '';
+    child.stdout.on('data', chunk => { stdout += chunk; });
+    child.stderr.on('data', chunk => { stderr += chunk; });
+    child.on('error', rejectVideo);
+    child.on('close', code => {
+      if (code !== 0 || !stdout.trim()) return rejectVideo(Error(stderr.trim() || `yt-dlp exited ${code}`));
+      try { resolveVideo(JSON.parse(stdout)); } catch (_) { rejectVideo(Error('yt-dlp returned invalid video metadata')); }
+    });
+  });
+}
+
+async function pickHighlight(game, entries) {
   const candidates = entries
     .map(entry => ({ ...entry, seconds: durationSeconds(entry.duration ?? entry.duration_string) }))
     .filter(entry => {
@@ -144,15 +161,30 @@ function pickHighlight(game, entries) {
         && /highlight|condensed game|game recap|extended highlights/i.test(title)
         && safeTitle(title)
         && !unsuitableTitle(title)
-        && publishedNearFixture(game, entry)
         && teamAppears(title, game.home, game.homeAbbr)
         && teamAppears(title, game.away, game.awayAbbr);
     })
-    .map(entry => ({ ...entry, source: sourceName(entry), sourceTier: sourceTier(game, entry), publishedAt: publishedAt(entry).toISOString() }));
+    .map(entry => ({ ...entry, source: sourceName(entry), sourceTier: sourceTier(game, entry) }));
   const longestFirst = (left, right) => right.seconds - left.seconds || String(right.upload_date || '').localeCompare(String(left.upload_date || ''));
   // Do not trade trust for coverage. An absent button is preferable to a fan,
   // simulation, or unrelated reaction video that can spoil the game.
-  return candidates.filter(entry => entry.sourceTier === 'official').sort(longestFirst)[0] || null;
+  for (const candidate of candidates.filter(entry => entry.sourceTier === 'official').sort(longestFirst)) {
+    let verified = candidate;
+    try {
+      if (!publishedAt(verified)) verified = { ...candidate, ...await youtubeMetadata(candidate.id) };
+    } catch (_) {
+      continue;
+    }
+    if (!publishedNearFixture(game, verified)) continue;
+    return {
+      ...verified,
+      seconds: durationSeconds(verified.duration ?? verified.duration_string),
+      source: sourceName(verified) || candidate.source,
+      sourceTier: 'official',
+      publishedAt: publishedAt(verified).toISOString()
+    };
+  }
+  return null;
 }
 
 async function findTrustedHighlight(game, when) {
@@ -163,7 +195,7 @@ async function findTrustedHighlight(game, when) {
     generic
   ].filter((query, index, list) => list.indexOf(query) === index);
   for (const query of queries) {
-    const picked = pickHighlight(game, await youtubeSearch(query, 30));
+    const picked = await pickHighlight(game, await youtubeSearch(query, 30));
     if (picked) return picked;
   }
   return null;
@@ -214,7 +246,7 @@ async function main() {
       if (!picked) {
         // Links collected before publication dates were enforced must not stay
         // visible when we cannot confirm that they belong to this fixture.
-        if (index.highlights[game.key] && !index.highlights[game.key].publishedAt) {
+        if (index.highlights[game.key] && index.highlights[game.key].sourceTier !== 'official') {
           delete index.highlights[game.key];
           updated += 1;
         }

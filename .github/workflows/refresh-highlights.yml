@@ -3,9 +3,10 @@ name: Refresh spoiler-safe highlights
 on:
   workflow_dispatch:
   schedule:
-    # GitHub Actions' fastest supported schedule is every five minutes. Start
-    # two minutes after the hour to avoid the busiest scheduler boundary.
-    - cron: '2-59/5 * * * *'
+    # GitHub Actions' fastest supported schedule is every five minutes. Keep
+    # the expression deliberately simple so the scheduler can trigger it
+    # reliably from the default branch.
+    - cron: '*/5 * * * *'
 
 permissions:
   contents: write
@@ -32,7 +33,7 @@ jobs:
       - name: Find new highlights
         run: node scripts/update-highlights.mjs
         env:
-          # A broader pass keeps the three-day match window well populated,
+          # A broader pass keeps the seven-day match window well populated,
           # while the workflow's concurrency guard prevents overlapping runs.
           MAX_HIGHLIGHT_CHECKS: '32'
       - name: Save new matches

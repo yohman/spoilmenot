@@ -250,8 +250,12 @@ const formatHighlightDuration=seconds=>{
 };
 const highlightMarkup=game=>{
   const highlight=game.highlight,duration=formatHighlightDuration(highlight?.durationSeconds);
-  if(!game.completed||!highlight?.url||!duration)return '';
-  return `<a class="highlight-link" data-highlight href="${highlight.url}" target="_blank" rel="noopener noreferrer" aria-label="Watch spoiler-safe YouTube highlights, ${duration}"><svg viewBox="0 0 24 17" aria-hidden="true"><path d="M23.5 3.2A3 3 0 0 0 21.4 1C19.5.5 12 .5 12 .5S4.5.5 2.6 1A3 3 0 0 0 .5 3.2 31.4 31.4 0 0 0 0 8.5c0 1.8.2 3.6.5 5.3A3 3 0 0 0 2.6 16c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.2c.3-1.7.5-3.5.5-5.3s-.2-3.6-.5-5.3Z"/><path class="youtube-play" d="m9.7 12.1 6.2-3.6-6.2-3.6v7.2Z"/></svg><span>HIGHLIGHTS</span><small>${duration}</small></a>`;
+  if(!game.completed)return '';
+  const youtube=/^https:\/\/www\.youtube\.com\/watch\?v=/.test(highlight?.url||''),officialSearch={mlb:'MLB',nfl:'NFL',epl:'DAZN U-NEXT',laliga:'DAZN U-NEXT',ucl:'DAZN U-NEXT'}[game.leagueId]||game.league;
+  const icon=youtube?`<svg viewBox="0 0 24 17" aria-hidden="true"><path d="M23.5 3.2A3 3 0 0 0 21.4 1C19.5.5 12 .5 12 .5S4.5.5 2.6 1A3 3 0 0 0 .5 3.2 31.4 31.4 0 0 0 0 8.5c0 1.8.2 3.6.5 5.3A3 3 0 0 0 2.6 16c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.2c.3-1.7.5-3.5.5-5.3s-.2-3.6-.5-5.3Z"/><path class="youtube-play" d="m9.7 12.1 6.2-3.6-6.2-3.6v7.2Z"/></svg>`:`<i class="highlight-provider" aria-hidden="true">${highlight?.source||'▶'}</i>`;
+  if(highlight?.url&&duration)return `<a class="highlight-link" data-highlight href="${highlight.url}" target="_blank" rel="noopener noreferrer" aria-label="Watch official highlights, ${duration}">${icon}<span>HIGHLIGHTS</span><small>${duration}</small></a>`;
+  const query=encodeURIComponent(`${officialSearch} ${game.away} vs ${game.home} highlights`);
+  return `<a class="highlight-link highlight-search" data-highlight href="https://www.youtube.com/results?search_query=${query}" target="_blank" rel="noopener noreferrer" aria-label="Find official highlights for ${game.away} versus ${game.home} on YouTube"><svg viewBox="0 0 24 17" aria-hidden="true"><path d="M23.5 3.2A3 3 0 0 0 21.4 1C19.5.5 12 .5 12 .5S4.5.5 2.6 1A3 3 0 0 0 .5 3.2 31.4 31.4 0 0 0 0 8.5c0 1.8.2 3.6.5 5.3A3 3 0 0 0 2.6 16c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.2c.3-1.7.5-3.5.5-5.3s-.2-3.6-.5-5.3Z"/><path class="youtube-play" d="m9.7 12.1 6.2-3.6-6.2-3.6v7.2Z"/></svg><span>FIND HIGHLIGHTS</span></a>`;
 };
 const decorateCards=()=>listShell.querySelectorAll('[data-game]').forEach(card=>{
   const game=games.find(item=>item.id===card.dataset.game),content=card.querySelector('.list-content'),matchup=content?.querySelector('.list-teams'),meta=card.querySelector('.list-meta');
@@ -366,7 +370,16 @@ incidentTimeline=function(game){
     }).join('')||'<p>Detailed scoring plays are not yet available.</p>';
   }
   let home=0,away=0;
-  const events=(game.events||[]).filter(event=>['goal','score','red','yellow','penalty','sub','injury'].includes(event.type)).slice().sort((a,b)=>(a.minute??999)-(b.minute??999));
+  const footballClockSeconds=value=>{
+    const match=String(value||'').match(/^(\d+):(\d{2})$/);
+    return match?Number(match[1])*60+Number(match[2]):-1;
+  };
+  const events=(game.events||[]).filter(event=>['goal','score','red','yellow','penalty','sub','injury'].includes(event.type)).slice().sort((a,b)=>{
+    if(game.sport!=='football')return (a.minute??999)-(b.minute??999);
+    // NFL clocks count down within each quarter: Q1 15:00 comes before Q1 0:01.
+    const period=(Number(a.period)||99)-(Number(b.period)||99);
+    return period||footballClockSeconds(b.clock)-footballClockSeconds(a.clock);
+  });
   return events.map(event=>{
     const isScore=event.type==='goal'||event.type==='score';
     if(isScore){
@@ -374,7 +387,7 @@ incidentTimeline=function(game){
       else if(event.teamId===game.homeId)home++;else if(event.teamId===game.awayId)away++;
     }
     const logo=event.teamId===game.homeId?game.homeLogo:event.teamId===game.awayId?game.awayLogo:'';
-    const marker=isScore?(game.sport==='football'?({TOUCHDOWN:'TD','FIELD GOAL':'FG','EXTRA POINT':'XP',SAFETY:'SF'}[event.scoreLabel]||'SCORE'):game.sport==='soccer'?`<span class="soccer-goal-score">${soccerBallIcon}<small>${home}–${away}</small></span>`:`${home}–${away}`):event.type==='sub'?'↔':event.type==='yellow'?'<b class="card-glyph yellow"></b>':event.type==='red'?'<b class="card-glyph red"></b>':event.type==='injury'?'✚':'P';
+    const marker=isScore?(game.sport==='football'?`<span class="football-score-mark"><b>${event.scoreLabel||'SCORE'}</b><small>${home}–${away}</small></span>`:game.sport==='soccer'?`<span class="soccer-goal-score">${soccerBallIcon}<small>${home}–${away}</small></span>`:`${home}–${away}`):event.type==='sub'?'↔':event.type==='yellow'?'<b class="card-glyph yellow"></b>':event.type==='red'?'<b class="card-glyph red"></b>':event.type==='injury'?'✚':'P';
     const badge=logo?`<span class="event-badge ${event.type}"><img src="${logo}" aria-hidden="true"></span>`:`<span class="event-badge fallback ${event.type}"></span>`;
     const eventText=event.scorer&&event.text.includes(event.scorer)?event.text.split(event.scorer).join(`<strong class="incident-player">${event.scorer}</strong>`):event.text;
     // The marker and score already say "goal". Provider prose sometimes starts
@@ -382,7 +395,9 @@ incidentTimeline=function(game){
     const rawText=game.sport==='soccer'&&isScore
       ?String(eventText||'').replace(/^(?:\s*goal!\s*)+/i,'')
       :eventText;
-    const label=game.sport==='football'&&event.scoreLabel&&!String(rawText||'').toUpperCase().includes(event.scoreLabel)?`<b class="score-label">${event.scoreLabel}</b> `:'';
+    // Football's compact score rail already names the scoring play, so it
+    // should never repeat TOUCHDOWN / FIELD GOAL above the description.
+    const label='';
     const clock=game.sport==='football'?(event.period?`Q${event.period}${event.clock?` · ${event.clock}`:''}`:event.clock||'—'):(Number.isFinite(event.minute)?`${event.minute}'`:'—');
     return `<div class="incident ${event.type}"><time>${clock}</time>${badge}<span class="event-mark">${marker}</span><span>${label}${rawText||'Scoring play'}</span></div>`;
   }).join('')||'<p>Detailed incidents are not yet available.</p>';
@@ -473,10 +488,35 @@ const baseballScorecard=game=>{
   return `<section class="baseball-scorecard" aria-label="Baseball scorecard">${lineScore}${decisions||homers?`<div class="baseball-recap-meta">${decisions?`<div class="baseball-decisions" aria-label="Pitching decisions">${decisions}</div>`:''}${homers?`<div class="baseball-homers"><b>HOME RUNS</b><ul>${homers}</ul></div>`:''}</div>`:''}</section>`;
 };
 const footballScorecard=game=>{
-  const competitors=game.raw?.competitions?.[0]?.competitors||[],side=id=>competitors.find(item=>String(item.team?.id||item.id||'')===String(id)),home=side(game.homeId),away=side(game.awayId),homeLines=home?.linescores||[],awayLines=away?.linescores||[],length=Math.max(homeLines.length,awayLines.length);
+  // The enriched ESPN summary, not the lightweight scoreboard event, contains
+  // the reliable per-quarter linescores for many completed NFL games.
+  const competition=game.summary?.header?.competitions?.[0]||game.raw?.competitions?.[0],competitors=competition?.competitors||[],side=id=>competitors.find(item=>String(item.team?.id||item.id||'')===String(id)),home=side(game.homeId),away=side(game.awayId);
+  let homeLines=home?.linescores||[],awayLines=away?.linescores||[],length=Math.max(homeLines.length,awayLines.length);
+  if(!length){
+    // Some summaries omit the line score but still provide cumulative scores
+    // for each scoring play. Reconstruct each quarter from those official
+    // score changes so the scorecard does not vanish.
+    const clockSeconds=value=>{const match=String(value||'').match(/^(\d+):(\d{2})$/);return match?Number(match[1])*60+Number(match[2]):-1};
+    const scoring=(game.events||[]).filter(event=>event.type==='score'&&Number(event.period)>0&&Number.isFinite(Number(event.homeScore))&&Number.isFinite(Number(event.awayScore))).slice().sort((a,b)=>(Number(a.period)-Number(b.period))||clockSeconds(b.clock)-clockSeconds(a.clock));
+    if(!scoring.length)return '';
+    const periodCount=Math.max(4,...scoring.map(event=>Number(event.period))),latestByPeriod=new Map();
+    scoring.forEach(event=>latestByPeriod.set(Number(event.period),{home:Number(event.homeScore),away:Number(event.awayScore)}));
+    let previous={home:0,away:0};
+    homeLines=[];awayLines=[];
+    for(let period=1;period<=periodCount;period++){
+      const current=latestByPeriod.get(period)||previous;
+      homeLines.push({displayValue:current.home-previous.home});
+      awayLines.push({displayValue:current.away-previous.away});
+      previous=current;
+    }
+    length=periodCount;
+  }
   if(!length)return '';
-  const points=line=>line?.displayValue??line?.value??line?.score??'—',row=(abbr,logo,lines,total)=>`<div class="football-line-row"><b>${logo?`<img src="${logo}" alt="">`:''}${abbr}</b>${Array.from({length},(_,index)=>`<i>${points(lines[index])}</i>`).join('')}<strong>${total??'—'}</strong></div>`;
-  return `<section class="football-scorecard" aria-label="Football scorecard"><div class="football-line-head"><b>PTS</b>${Array.from({length},(_,index)=>`<i>Q${index+1}</i>`).join('')}<strong>T</strong></div>${row(game.awayAbbr||game.away,game.awayLogo,awayLines,game.awayScore)}${row(game.homeAbbr||game.home,game.homeLogo,homeLines,game.homeScore)}</section>`;
+  const points=line=>line?.displayValue??line?.value??line?.score??'—';
+  const periodLabel=index=>index<4?`Q${index+1}`:index===4?'OT':`${index-3}OT`;
+  const teamCell=(name,abbr,logo)=>`<th scope="row" aria-label="${name}">${logo?`<img src="${logo}" alt="${name}" title="${name}">`:`<span>${abbr}</span>`}</th>`;
+  const row=(name,abbr,logo,lines,total)=>`<tr>${teamCell(name,abbr,logo)}${Array.from({length},(_,index)=>`<td>${points(lines[index])}</td>`).join('')}<td class="football-total">${total??'—'}</td></tr>`;
+  return `<section class="football-scorecard" aria-label="Football scorecard"><table class="football-linescore"><thead><tr><th scope="col"><span class="sr-only">Team</span></th>${Array.from({length},(_,index)=>`<th scope="col">${periodLabel(index)}</th>`).join('')}<th scope="col">T</th></tr></thead><tbody>${row(game.away,game.awayAbbr||game.away,game.awayLogo,awayLines,game.awayScore)}${row(game.home,game.homeAbbr||game.home,game.homeLogo,homeLines,game.homeScore)}</tbody></table></section>`;
 };
 const applyStatBadgeContrast=root=>root.querySelectorAll('.stat-lead:not([data-contrast])').forEach(badge=>{const hex=badge.style.getPropertyValue('--team').replace('#','');if(!/^[0-9a-f]{6}$/i.test(hex))return;const [r,g,b]=[0,2,4].map(index=>parseInt(hex.slice(index,index+2),16));const luminance=(.2126*r+.7152*g+.0722*b)/255;badge.style.setProperty('--team-ink',luminance>.6?'#11110f':'#f3efe5');badge.dataset.contrast='true'});
 new MutationObserver(()=>{applyStatBadgeContrast(listShell);applyStatBadgeContrast(info)}).observe(document.body,{childList:true,subtree:true});

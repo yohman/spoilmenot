@@ -57,7 +57,8 @@ window.EPLData = (() => {
     if (!highlights || typeof highlights !== 'object') return games;
     games.forEach(game => {
       const item = highlights[`${game.leagueId}:${game.id}`];
-      if (!game.completed || !item || !/^https:\/\/www\.youtube\.com\/watch\?v=/.test(item.url || '') || scoreInHighlightTitle(item.title)) return;
+      const trustedVideo = /^https:\/\/www\.youtube\.com\/watch\?v=/.test(item?.url || '') || /^https:\/\/www\.mlb\.com\/video\//.test(item?.url || '');
+      if (!game.completed || !item || !trustedVideo || scoreInHighlightTitle(item.title)) return;
       game.highlight = item;
     });
     return games;

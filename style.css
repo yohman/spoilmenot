@@ -437,6 +437,7 @@
 .league-choice-grid .league-choice-mark{display:grid!important;place-items:center!important;width:27px!important;height:27px!important;border:1px solid #d8d8d4!important;border-radius:50%!important;color:#f3f3f1!important;font:700 7px/1 "DM Mono",monospace!important;font-style:normal!important;letter-spacing:0!important}
 .spoil-meter-dialog .league-choice-grid button:has(.league-choice-mark){grid-template-columns:29px minmax(0,1fr)!important;grid-template-rows:auto auto!important;align-items:center!important;column-gap:8px!important}.spoil-meter-dialog .league-choice-grid button:has(.league-choice-mark) .league-choice-mark{grid-column:1!important;grid-row:1 / span 2!important}.spoil-meter-dialog .league-choice-grid button:has(.league-choice-mark) b,.spoil-meter-dialog .league-choice-grid button:has(.league-choice-mark) span{grid-column:2!important}
 .league-choice-grid img.league-choice-mark.league-choice-image{display:block!important;object-fit:contain!important;padding:1px!important;border:0!important;border-radius:0!important;background:transparent!important;filter:drop-shadow(0 0 1px rgba(243,243,239,.88))!important}
+
 .card-league{display:inline-flex!important;align-items:center!important;align-self:flex-end!important;justify-content:flex-end!important;margin:0 0 3px auto!important;padding:1px 0 1px 6px!important;border-left:1px solid rgba(243,243,241,.35)!important;color:#d6d6d1!important;font:600 7px/1 "DM Mono",monospace!important;letter-spacing:.12em!important;white-space:nowrap!important}
 
 /* A baseball result begins with the familiar line score, then decisions and homers. */
@@ -1153,3 +1154,128 @@
 .match-tabs .highlight-link svg{width:14px!important;height:10px!important;flex:0 0 auto!important;fill:#d64b45!important}
 .match-tabs .highlight-link .youtube-play{fill:#fff!important}
 .match-tabs .highlight-link small{color:inherit!important;font:inherit!important;letter-spacing:0!important;opacity:.72!important}
+.match-tabs .highlight-link .highlight-provider{display:inline-block!important;min-width:14px!important;color:#f1f1ed!important;font:700 7px/1 "DM Mono",monospace!important;font-style:normal!important;letter-spacing:0!important;text-align:center!important}
+.match-tabs .highlight-link.highlight-search{opacity:.78!important}.match-tabs .highlight-link.highlight-search:hover{opacity:1!important}
+
+/* Final shared league-mark treatment: match the colourful, softly lit art in
+   the opening picker rather than the older grayscale fallback treatments. */
+.league-band-logo,
+.league-gallery-item .league-choice-badge,
+.team-band-summary .league-band-current .league-band-logo,
+.list-game>strong.match-stamp .stamp-league img,
+.list-game>strong.match-stamp .stamp-league img[src$="epl-official.png"]{
+  filter:none!important;
+  opacity:1!important;
+}
+.league-band-logo[src$="epl-official.png"],
+.league-gallery-item .league-choice-badge[src$="epl-official.png"],
+.team-band-summary .league-band-current .league-band-logo[src$="epl-official.png"]{
+  filter:drop-shadow(0 0 4px rgba(126,56,153,.72))!important;
+}
+.list-game>strong.match-stamp .stamp-league:has(img[src$="epl-official.png"]){
+  padding:1px!important;
+  background:#0d0d0e!important;
+  border:0!important;
+  border-radius:50%!important;
+  box-shadow:0 0 5px rgba(158,76,191,.55)!important;
+}
+
+/* NFL spoilers use a real score table and a dedicated scoring rail.  This
+   keeps quarter totals and play descriptions aligned instead of letting a
+   long play name compress the score into a narrow third column. */
+.football-game .football-scorecard{
+  display:block!important;
+  clear:both!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  margin:17px 0 5px!important;
+  padding:11px 0!important;
+  overflow:hidden!important;
+}
+.football-game .football-linescore{
+  display:table!important;
+  width:100%!important;
+  min-width:0!important;
+  table-layout:fixed!important;
+  border-collapse:collapse!important;
+  font:600 10px/1 "DM Mono",monospace!important;
+}
+.football-game .football-linescore th,
+.football-game .football-linescore td{
+  padding:6px 2px!important;
+  text-align:center!important;
+  color:#c9c9c4!important;
+  border:0!important;
+}
+.football-game .football-linescore thead th{
+  padding-top:0!important;
+  padding-bottom:7px!important;
+  color:#8f8f8a!important;
+  font-size:8px!important;
+  font-weight:500!important;
+  letter-spacing:.04em!important;
+}
+.football-game .football-linescore th:first-child,
+.football-game .football-linescore tbody th{
+  width:34px!important;
+}
+.football-game .football-linescore tbody tr{
+  border-top:1px solid rgba(243,243,241,.09)!important;
+}
+.football-game .football-linescore tbody th{
+  padding-inline:0!important;
+}
+.football-game .football-linescore tbody th img{
+  display:block!important;
+  width:21px!important;
+  height:21px!important;
+  margin:auto!important;
+  object-fit:contain!important;
+}
+.football-game .football-linescore .football-total{
+  color:#f1f1ed!important;
+  font-weight:700!important;
+}
+.football-game .incident{
+  grid-template-columns:minmax(42px,55px) 21px minmax(58px,74px) minmax(0,1fr)!important;
+  column-gap:7px!important;
+  align-items:start!important;
+}
+.football-game .incident .event-mark{
+  display:grid!important;
+  place-items:center!important;
+  align-self:start!important;
+  min-width:0!important;
+  padding-top:0!important;
+  text-align:center!important;
+}
+.football-game .football-score-mark{
+  display:grid!important;
+  justify-items:center!important;
+  gap:3px!important;
+  min-width:0!important;
+  color:#f1f1ed!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+.football-game .football-score-mark b{
+  color:#f1f1ed!important;
+  font:700 7px/1 "DM Mono",monospace!important;
+  letter-spacing:.07em!important;
+}
+.football-game .football-score-mark small{
+  color:#c5c5c0!important;
+  font:600 10px/1 "DM Mono",monospace!important;
+  letter-spacing:0!important;
+}
+@media(max-width:480px){
+  .football-game .football-linescore th:first-child,
+  .football-game .football-linescore tbody th{width:31px!important}
+  .football-game .football-linescore tbody th img{width:19px!important;height:19px!important}
+  .football-game .football-linescore th,
+  .football-game .football-linescore td{padding:6px 1px!important}
+  .football-game .incident{grid-template-columns:40px 19px minmax(54px,62px) minmax(0,1fr)!important;column-gap:5px!important}
+  .football-game .football-score-mark b{font-size:6px!important}
+  .football-game .football-score-mark small{font-size:9px!important}
+}

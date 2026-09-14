@@ -983,6 +983,28 @@
   transform:none!important;
 }
 
+/* Future form is predictive information, so it stays spoiler-safe until the
+   reader chooses to reveal it. The warning dot shares Spoil Me's language. */
+.list-game.future:not(.form-spoilers) .list-teams .team-table-context{display:none!important}
+.list-game.future.form-spoilers .list-teams .team-table-context{display:flex!important}
+.list-game .list-meta .form-spoiler-toggle{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:6px!important;
+  white-space:nowrap!important;
+}
+.list-game .list-meta .form-spoiler-toggle::before{
+  content:""!important;
+  display:block!important;
+  flex:0 0 5px!important;
+  width:5px!important;
+  height:5px!important;
+  border-radius:50%!important;
+  background:#c84e4e!important;
+  box-shadow:0 0 0 2px rgba(200,78,78,.13)!important;
+}
+.list-game.future.form-spoilers .form-spoiler-toggle{background:#deded9!important;color:#151515!important}
+
 /* Dark crests retain their official colors, with a quiet light keyline so the
    cockerel, dark navy marks, and similar transparent badges never disappear. */
 .list-game .list-teams>span>img,

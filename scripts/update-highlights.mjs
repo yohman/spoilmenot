@@ -27,6 +27,25 @@ const durationSeconds = value => {
   const parts = String(value || '').split(':').map(Number);
   return parts.length === 2 && parts.every(Number.isFinite) ? parts[0] * 60 + parts[1] : 0;
 };
+const publishedAt = entry => {
+  const compactDate = String(entry.upload_date || entry.release_date || '').match(/^\d{8}$/)?.[0];
+  if (compactDate) {
+    const year = Number(compactDate.slice(0, 4)), month = Number(compactDate.slice(4, 6)) - 1, date = Number(compactDate.slice(6, 8));
+    const timestamp = Date.UTC(year, month, date);
+    return Number.isFinite(timestamp) ? new Date(timestamp) : null;
+  }
+  const timestamp = Number(entry.release_timestamp ?? entry.timestamp);
+  return Number.isFinite(timestamp) && timestamp > 0 ? new Date(timestamp * 1_000) : null;
+};
+// A search can surface an old meeting between the same teams. The calendar
+// day varies by timezone, and official uploads can arrive late, so allow a
+// small window around the fixture but require a verified publication date.
+const publishedNearFixture = (game, entry) => {
+  const date = publishedAt(entry);
+  if (!date || Number.isNaN(date.getTime())) return false;
+  return date.getTime() >= game.time.getTime() - 36 * 60 * 60 * 1_000
+    && date.getTime() <= game.time.getTime() + 7 * day;
+};
 const teamTokens = name => clean(name).toLowerCase().split(/[^a-z0-9]+/).filter(token => token.length > 2 && !['the', 'club', 'city'].includes(token));
 const teamAppears = (title, name, abbreviation) => {
   const titleText = normal(title), abbreviationText = normal(abbreviation);
@@ -118,10 +137,11 @@ function pickHighlight(game, entries) {
         && /highlight|condensed game|game recap|extended highlights/i.test(title)
         && safeTitle(title)
         && !unsuitableTitle(title)
+        && publishedNearFixture(game, entry)
         && teamAppears(title, game.home, game.homeAbbr)
         && teamAppears(title, game.away, game.awayAbbr);
     })
-    .map(entry => ({ ...entry, source: sourceName(entry), sourceTier: sourceTier(game, entry) }));
+    .map(entry => ({ ...entry, source: sourceName(entry), sourceTier: sourceTier(game, entry), publishedAt: publishedAt(entry).toISOString() }));
   const longestFirst = (left, right) => right.seconds - left.seconds || String(right.upload_date || '').localeCompare(String(left.upload_date || ''));
   // Official source wins even if a fan upload is longer. Only when that trusted
   // search is empty do we use the best score-safe, non-simulation fallback.
@@ -154,7 +174,10 @@ async function main() {
   // fallbacks for a later official upload without starving the wider archive.
   const newLimit = Math.max(1, Math.ceil(maxChecks * .75));
   const missing = candidates.filter(game => !index.highlights[game.key]).slice(0, newLimit);
-  const upgrades = candidates.filter(game => index.highlights[game.key] && index.highlights[game.key].sourceTier !== 'official')
+  const upgrades = candidates.filter(game => {
+    const existing = index.highlights[game.key];
+    return existing && (existing.sourceTier !== 'official' || !existing.publishedAt);
+  })
     .slice(0, Math.max(0, maxChecks - missing.length));
   const completed = [...missing, ...upgrades];
 
@@ -170,6 +193,12 @@ async function main() {
     try {
       const picked = pickHighlight(game, await youtubeSearch(query));
       if (!picked) {
+        // Links collected before publication dates were enforced must not stay
+        // visible when we cannot confirm that they belong to this fixture.
+        if (index.highlights[game.key] && !index.highlights[game.key].publishedAt) {
+          delete index.highlights[game.key];
+          updated += 1;
+        }
         console.log(`No score-safe highlight yet: ${game.key}`);
         continue;
       }
@@ -179,6 +208,7 @@ async function main() {
         durationSeconds: picked.seconds,
         source: picked.source,
         sourceTier: picked.sourceTier,
+        publishedAt: picked.publishedAt,
         discoveredAt: now.toISOString()
       };
       updated += 1;

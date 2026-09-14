@@ -15,7 +15,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,7 +30,9 @@ jobs:
       - name: Find new highlights
         run: node scripts/update-highlights.mjs
         env:
-          MAX_HIGHLIGHT_CHECKS: '20'
+          # A broader pass keeps the three-day match window well populated,
+          # while the workflow's concurrency guard prevents overlapping runs.
+          MAX_HIGHLIGHT_CHECKS: '32'
       - name: Save new matches
         run: |
           if git diff --quiet -- assets/highlights.js; then

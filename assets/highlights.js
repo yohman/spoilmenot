@@ -106,14 +106,6 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "discoveredAt": "2026-09-14T00:27:38.724Z"
     },
-    "nfl:401872927": {
-      "url": "https://www.youtube.com/watch?v=hOGBXXowxZ8",
-      "title": "Green Bay Packers vs. Minnesota Vikings Game Highlights | NFL Week 1 2022 Season",
-      "durationSeconds": 642,
-      "source": "NFL",
-      "sourceTier": "official",
-      "discoveredAt": "2026-09-14T00:27:38.724Z"
-    },
     "nfl:401872929": {
       "url": "https://www.youtube.com/watch?v=UYunnfDMXGc",
       "title": "Washington Commanders vs Philadelphia Eagles Game Highlights | 2026 NFL Week 1",

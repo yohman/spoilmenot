@@ -54,11 +54,18 @@ const teamAppears = (title, name, abbreviation) => {
 // Trusted sources are deliberately narrow. A source must identify itself as
 // the competition, its official broadcaster, or its official league channel.
 const officialSourcePatterns = {
-  mlb: [/^mlb(?:official)?$/],
-  nfl: [/^nfl(?:official)?$/],
+  mlb: [/^mlb(?:official)?$/, /^majorleaguebaseball$/],
+  nfl: [/^nfl(?:official)?$/, /^nflnetwork$/],
   epl: [/^premierleague$/, /^dazn/, /^unext/],
   laliga: [/^laliga/, /^dazn/, /^unext/],
   ucl: [/^uefa/, /^dazn/, /^unext/]
+};
+const trustedSearchSources = {
+  mlb: ['MLB'],
+  nfl: ['NFL'],
+  epl: ['Premier League', 'DAZN', 'U-NEXT'],
+  laliga: ['LaLiga', 'DAZN', 'U-NEXT'],
+  ucl: ['UEFA', 'DAZN', 'U-NEXT']
 };
 const sourceName = entry => clean(entry.channel || entry.uploader || entry.uploader_id || entry.channel_id || '');
 const sourceTier = (game, entry) => {
@@ -112,9 +119,9 @@ async function mlbGames(start, end) {
   });
 }
 
-function youtubeSearch(query) {
+function youtubeSearch(query, count = 25) {
   return new Promise((resolveSearch, rejectSearch) => {
-    const child = spawn('yt-dlp', ['--no-warnings', '--no-playlist', '--flat-playlist', '--dump-json', `ytsearch15:${query}`], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn('yt-dlp', ['--no-warnings', '--no-playlist', '--flat-playlist', '--dump-json', `ytsearch${count}:${query}`], { stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '', stderr = '';
     child.stdout.on('data', chunk => { stdout += chunk; });
     child.stderr.on('data', chunk => { stderr += chunk; });
@@ -143,10 +150,23 @@ function pickHighlight(game, entries) {
     })
     .map(entry => ({ ...entry, source: sourceName(entry), sourceTier: sourceTier(game, entry), publishedAt: publishedAt(entry).toISOString() }));
   const longestFirst = (left, right) => right.seconds - left.seconds || String(right.upload_date || '').localeCompare(String(left.upload_date || ''));
-  // Official source wins even if a fan upload is longer. Only when that trusted
-  // search is empty do we use the best score-safe, non-simulation fallback.
-  return candidates.filter(entry => entry.sourceTier === 'official').sort(longestFirst)[0]
-    || candidates.sort(longestFirst)[0];
+  // Do not trade trust for coverage. An absent button is preferable to a fan,
+  // simulation, or unrelated reaction video that can spoil the game.
+  return candidates.filter(entry => entry.sourceTier === 'official').sort(longestFirst)[0] || null;
+}
+
+async function findTrustedHighlight(game, when) {
+  const sources = trustedSearchSources[game.leagueId] || [];
+  const generic = `${game.away} vs ${game.home} ${game.league} official highlights ${when}`;
+  const queries = [
+    ...sources.map(source => `${source} ${game.away} vs ${game.home} highlights ${when}`),
+    generic
+  ].filter((query, index, list) => list.indexOf(query) === index);
+  for (const query of queries) {
+    const picked = pickHighlight(game, await youtubeSearch(query, 30));
+    if (picked) return picked;
+  }
+  return null;
 }
 
 async function readIndex() {
@@ -189,9 +209,8 @@ async function main() {
   let updated = 0;
   for (const game of completed) {
     const when = game.time.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-    const query = `${game.away} vs ${game.home} ${game.league} official highlights ${when}`;
     try {
-      const picked = pickHighlight(game, await youtubeSearch(query));
+      const picked = await findTrustedHighlight(game, when);
       if (!picked) {
         // Links collected before publication dates were enforced must not stay
         // visible when we cannot confirm that they belong to this fixture.
@@ -199,7 +218,7 @@ async function main() {
           delete index.highlights[game.key];
           updated += 1;
         }
-        console.log(`No score-safe highlight yet: ${game.key}`);
+        console.log(`No trusted highlight yet: ${game.key}`);
         continue;
       }
       index.highlights[game.key] = {

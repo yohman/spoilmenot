@@ -18,14 +18,6 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "discoveredAt": "2026-09-13T23:18:51.240Z"
     },
-    "mlb:822928": {
-      "url": "https://www.youtube.com/watch?v=F9hi6J-dQhc",
-      "title": "ASTROS vs BAY RAYS Full Game Highlights 09/13/26 | 2026 MLB Season",
-      "durationSeconds": 823,
-      "source": "রুহানিপথ",
-      "sourceTier": "fallback",
-      "discoveredAt": "2026-09-14T01:10:56.680Z"
-    },
     "mlb:823815": {
       "url": "https://www.youtube.com/watch?v=qS7WV1VbHps",
       "title": "DODGERS vs. MARLINS: Official Full Game Highlights (September 12) | 2026 MLB Season",
@@ -65,14 +57,6 @@ window.SpoilHighlights = {
       "source": "NFL",
       "sourceTier": "official",
       "discoveredAt": "2026-09-14T00:27:38.724Z"
-    },
-    "mlb:822682": {
-      "url": "https://www.youtube.com/watch?v=naD8Z-I1cgs",
-      "title": "Los Angeles Dodgers vs Washington Nationals - FULL GAME HIGHLIGHTS 🔥 April 4, 2026 MLB Season",
-      "durationSeconds": 600,
-      "source": "House of Highlights",
-      "sourceTier": "fallback",
-      "discoveredAt": "2026-09-14T01:10:56.680Z"
     },
     "nfl:401872923": {
       "url": "https://www.youtube.com/watch?v=KC4OW2m3hjs",
@@ -122,60 +106,12 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "discoveredAt": "2026-09-14T01:10:56.680Z"
     },
-    "nfl:401872660": {
-      "url": "https://www.youtube.com/watch?v=wWONXwfOevM",
-      "title": "FlightReacts To Buffalo Bills vs. Houston Texans Game Highlights | NFL 2026 Season Week 1 2026!",
-      "durationSeconds": 1240,
-      "source": "NotYourAverageFlight",
-      "sourceTier": "fallback",
-      "discoveredAt": "2026-09-14T01:10:56.680Z"
-    },
     "mlb:824225": {
       "url": "https://www.youtube.com/watch?v=5ree9lieZLk",
       "title": "ROCKIES vs. TIGERS: Official Full Game Highlights (September 12) | 2026 MLB Season",
       "durationSeconds": 782,
       "source": "MLB",
       "sourceTier": "official",
-      "discoveredAt": "2026-09-14T01:10:56.680Z"
-    },
-    "epl:401879278": {
-      "url": "https://www.youtube.com/watch?v=QuHzJIkxxsY",
-      "title": "Manchester United vs. Manchester City | Highlights Premier League | Jornada 4 | Telemundo Deportes",
-      "durationSeconds": 910,
-      "source": "Telemundo Deportes",
-      "sourceTier": "fallback",
-      "discoveredAt": "2026-09-14T01:10:56.680Z"
-    },
-    "laliga:401882883": {
-      "url": "https://www.youtube.com/watch?v=bSeIHtsdJyo",
-      "title": "2 GOALS FOR LAMINE YAMAL ⚽⚽ Levante vs. Barcelona | LALIGA Highlights | ESPN FC",
-      "durationSeconds": 1084,
-      "source": "ESPN FC",
-      "sourceTier": "fallback",
-      "discoveredAt": "2026-09-14T01:10:56.680Z"
-    },
-    "epl:401879282": {
-      "url": "https://www.youtube.com/watch?v=CwvCS1xsI8I",
-      "title": "Coventry City Football Club v. Brighton | PREMIER LEAGUE HIGHLIGHTS | 09/13/2026 | USA SPORTS",
-      "durationSeconds": 1070,
-      "source": "USA Sports",
-      "sourceTier": "fallback",
-      "discoveredAt": "2026-09-14T01:10:56.680Z"
-    },
-    "laliga:401882885": {
-      "url": "https://www.youtube.com/watch?v=tHc_2fg8MbY",
-      "title": "Celta Vigo vs. Malaga - Game Highlights / Sport Klub Nogomet",
-      "durationSeconds": 477,
-      "source": "Sportklub Hrvatska",
-      "sourceTier": "fallback",
-      "discoveredAt": "2026-09-14T01:10:56.680Z"
-    },
-    "mlb:824955": {
-      "url": "https://www.youtube.com/watch?v=AyBjb0fJvao",
-      "title": "Mariners vs. Athletics Full Game Highlights (9/12/26)",
-      "durationSeconds": 692,
-      "source": "Seattle Mariners",
-      "sourceTier": "fallback",
       "discoveredAt": "2026-09-14T01:10:56.680Z"
     }
   }

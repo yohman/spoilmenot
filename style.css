@@ -985,14 +985,30 @@
 
 /* Future form is predictive information, so it stays spoiler-safe until the
    reader chooses to reveal it. The warning dot shares Spoil Me's language. */
-.list-game.future:not(.form-spoilers) .list-teams .team-table-context{display:none!important}
-.list-game.future.form-spoilers .list-teams .team-table-context{display:flex!important}
+.list-game.future:not(.form-spoilers):not(:has([data-form-spoilers]:checked)) .list-teams .team-table-context{display:none!important}
+.list-game.future.form-spoilers .list-teams .team-table-context,
+.list-game.future:has([data-form-spoilers]:checked) .list-teams .team-table-context{display:flex!important}
 .list-game .list-meta .form-spoiler-toggle{
   display:inline-flex!important;
+  position:relative!important;
   align-items:center!important;
   gap:6px!important;
+  padding:8px 10px!important;
+  background:rgba(255,255,255,.1)!important;
+  color:var(--ink)!important;
+  cursor:pointer!important;
   white-space:nowrap!important;
 }
+.list-game .list-meta .form-spoiler-toggle input{
+  position:absolute!important;
+  inline-size:1px!important;
+  block-size:1px!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+.list-game .list-meta .form-spoiler-hide{display:none!important}
+.list-game .list-meta .form-spoiler-toggle:has(input:checked) .form-spoiler-show{display:none!important}
+.list-game .list-meta .form-spoiler-toggle:has(input:checked) .form-spoiler-hide{display:inline!important}
 .list-game .list-meta .form-spoiler-toggle::before{
   content:""!important;
   display:block!important;
@@ -1003,7 +1019,8 @@
   background:#c84e4e!important;
   box-shadow:0 0 0 2px rgba(200,78,78,.13)!important;
 }
-.list-game.future.form-spoilers .form-spoiler-toggle{background:#deded9!important;color:#151515!important}
+.list-game.future.form-spoilers .form-spoiler-toggle,
+.list-game.future .form-spoiler-toggle:has(input:checked){background:#deded9!important;color:#151515!important}
 
 /* Dark crests retain their official colors, with a quiet light keyline so the
    cockerel, dark navy marks, and similar transparent badges never disappear. */

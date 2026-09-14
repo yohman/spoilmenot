@@ -1,31 +1,7 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-09-14T01:10:56.680Z",
+  "generatedAt": "2026-09-14T05:20:27.583Z",
   "highlights": {
-    "laliga:401882879": {
-      "url": "https://www.youtube.com/watch?v=7Rb78W9GlM4",
-      "title": "Real Sociedad vs. Atletico Madrid | LALIGA Highlights | ESPN FC",
-      "durationSeconds": 930,
-      "source": "ESPN FC",
-      "sourceTier": "fallback",
-      "discoveredAt": "2026-09-14T01:10:56.680Z"
-    },
-    "mlb:824628": {
-      "url": "https://www.youtube.com/watch?v=nKT0GnJbTjA",
-      "title": "Pirates vs. Cubs Game Highlights (4/11/26) | MLB Highlights",
-      "durationSeconds": 829,
-      "source": "MLB",
-      "sourceTier": "official",
-      "discoveredAt": "2026-09-13T23:18:51.240Z"
-    },
-    "mlb:823008": {
-      "url": "https://www.youtube.com/watch?v=y019c6A7Uew",
-      "title": "WHITE SOX vs. CARDINALS: Official Full Game Highlights (September 12) | 2026 MLB Season",
-      "durationSeconds": 798,
-      "source": "MLB",
-      "sourceTier": "official",
-      "discoveredAt": "2026-09-13T23:18:51.240Z"
-    },
     "mlb:823658": {
       "url": "https://www.youtube.com/watch?v=0-U2-CELuxo",
       "title": "GUARDIANS vs. TWINS: Official Full Game Highlights (September 12) | 2026 MLB Season",
@@ -95,46 +71,6 @@ window.SpoilHighlights = {
       "title": "Los Angeles Dodgers vs Washington Nationals - FULL GAME HIGHLIGHTS 🔥 April 4, 2026 MLB Season",
       "durationSeconds": 600,
       "source": "House of Highlights",
-      "sourceTier": "fallback",
-      "discoveredAt": "2026-09-14T01:10:56.680Z"
-    },
-    "nfl:401872928": {
-      "url": "https://www.youtube.com/watch?v=bi4dvOh4tPA",
-      "title": "Miami Dolphins vs Las Vegas Raiders Game Highlights | 2026 NFL Week 1",
-      "durationSeconds": 885,
-      "source": "NFL",
-      "sourceTier": "official",
-      "discoveredAt": "2026-09-14T00:27:38.724Z"
-    },
-    "nfl:401872929": {
-      "url": "https://www.youtube.com/watch?v=UYunnfDMXGc",
-      "title": "Washington Commanders vs Philadelphia Eagles Game Highlights | 2026 NFL Week 1",
-      "durationSeconds": 1082,
-      "source": "NFL",
-      "sourceTier": "official",
-      "discoveredAt": "2026-09-14T00:27:38.724Z"
-    },
-    "nfl:401872926": {
-      "url": "https://www.youtube.com/watch?v=UKqM7fT42uk",
-      "title": "Arizona Cardinals vs. Los Angeles Chargers Game Highlights | NFL 2026 Season Week 1",
-      "durationSeconds": 863,
-      "source": "NFL",
-      "sourceTier": "official",
-      "discoveredAt": "2026-09-14T00:27:38.724Z"
-    },
-    "mlb:824952": {
-      "url": "https://www.youtube.com/watch?v=AyBjb0fJvao",
-      "title": "Mariners vs. Athletics Full Game Highlights (9/12/26)",
-      "durationSeconds": 692,
-      "source": "Seattle Mariners",
-      "sourceTier": "fallback",
-      "discoveredAt": "2026-09-14T01:10:56.680Z"
-    },
-    "mlb:824708": {
-      "url": "https://www.youtube.com/watch?v=QHUdeL3JN9c",
-      "title": "RED SOX HIGHLIGHTS: Red Sox vs. Royals - Payton Tolle Pitches an Immaculate Inning",
-      "durationSeconds": 866,
-      "source": "NESN",
       "sourceTier": "fallback",
       "discoveredAt": "2026-09-14T01:10:56.680Z"
     },

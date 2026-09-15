@@ -1279,3 +1279,27 @@
   .football-game .football-score-mark b{font-size:6px!important}
   .football-game .football-score-mark small{font-size:9px!important}
 }
+
+/* Premier League: the supplied lion is a transparent, very dark purple mark.
+   Let the mark itself carry the contrast. A pair of drop-shadows follows its
+   alpha contour, rather than turning it into a glowing circular badge. */
+.league-band-logo[src$="epl-official.png"],
+.league-gallery-item .league-choice-badge[src$="epl-official.png"],
+.team-band-summary .league-band-current .league-band-logo[src$="epl-official.png"],
+.list-game>strong.match-stamp .stamp-league img[src$="epl-official.png"]{
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  filter:brightness(1) saturate(1)
+    drop-shadow(0 0 2px rgba(255,255,255,1))
+    drop-shadow(0 0 1px rgba(255,255,255,1))!important;
+}
+.list-game>strong.match-stamp .stamp-league:has(img[src$="epl-official.png"]){
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  padding:0!important;
+  overflow:visible!important;
+}

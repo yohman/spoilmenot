@@ -7,7 +7,7 @@
   <title>Spoil Me Not — Gameplot</title>
   <link rel="preconnect" href="https://site.api.espn.com">
   <link rel="icon" type="image/svg+xml" href="assets/spoil-me-not-icon.svg">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260916-lineup-highlight-space-1">
 </head>
 <body>
   <main id="app">
@@ -16,7 +16,7 @@
       <nav id="league-switcher" class="league-switcher" aria-label="Choose league"></nav>
       <nav id="team-ribbon" class="team-ribbon" aria-label="Filter teams"></nav>
       <div class="team-filter"><button id="team-toggle" class="team-toggle">TEAMS</button><div id="team-picker" class="team-picker" hidden><input id="team-search" type="search" placeholder="Filter teams" aria-label="Filter teams"><div id="team-results" class="team-results"></div></div></div>
-      <div class="masthead-actions"><button id="now-button" class="now-button" aria-label="Go to now"><span aria-hidden="true">↗</span><b>GO TO NOW</b></button></div>
+      <div class="masthead-actions"><button id="spoil-meter-help" class="spoil-meter-help" type="button" aria-label="How the Spoil Meter works" aria-controls="spoil-meter-guide" aria-expanded="false"><span aria-hidden="true">?</span><b>ABOUT</b></button><button id="now-button" class="now-button" aria-label="Go to now"><span aria-hidden="true">↗</span><b>GO TO NOW</b></button></div>
     </header>
     <section id="team-selector" class="team-selector" aria-label="Choose teams" hidden>
       <div class="team-selector-head"><b>TEAMS</b><div><button type="button" data-select-all>ALL</button><button type="button" data-close-selector>DONE</button></div></div>
@@ -72,14 +72,36 @@
       </div>
     </div>
   </section>
+  <section id="spoil-meter-guide" class="spoil-meter-guide" role="dialog" aria-modal="true" aria-labelledby="spoil-meter-guide-title" hidden>
+    <div class="spoil-meter-guide-card">
+      <button type="button" class="spoil-meter-guide-close" data-close-spoil-meter-guide aria-label="Close Spoil Meter guide">×</button>
+      <p class="spoil-meter-guide-kicker">SPOILER-SAFE GUIDE</p>
+      <h2 id="spoil-meter-guide-title">Spoil Meter</h2>
+      <p class="spoil-meter-guide-intro">A 0–100 recommendation for completed matches. The score stays hidden until you choose to reveal it.</p>
+      <div class="spoil-meter-weights" aria-label="How the Spoil Meter is calculated">
+        <div><b>30%</b><span>ACTION</span><p>Shots, saves, pressure, chance creation, and goals.</p></div>
+        <div><b>30%</b><span>DRAMA</span><p>Equalizers, lead changes, late moments, cards, and comebacks.</p></div>
+        <div><b>25%</b><span>COMPETITIVENESS</span><p>How long the match remained close and contested.</p></div>
+        <div><b>15%</b><span>CONTEXT</span><p>Table stakes and whether the result surprised expectations.</p></div>
+      </div>
+      <p class="spoil-meter-guide-note">Quiet 0–0 matches stay low; a tense, high-pressure 0–0 can still earn its place. Baseball and NFL use the same idea with sport-specific events such as innings, lead changes, scoring drives, and overtime.</p>
+      <div class="spoil-meter-categories" aria-label="Spoil Meter categories">
+        <div data-band="4"><b>80–100</b><span>MUST WATCH</span></div>
+        <div data-band="3"><b>65–79</b><span>WORTH IT</span></div>
+        <div data-band="2"><b>45–64</b><span>YOUR CALL</span></div>
+        <div data-band="1"><b>25–44</b><span>SAVE YOUR 90</span></div>
+        <div data-band="0"><b>0–24</b><span>DON’T BOTHER</span></div>
+      </div>
+    </div>
+  </section>
   <section id="match-info" class="match-info" hidden aria-live="polite"></section>
   <script src="https://unpkg.com/deck.gl@9.1.12/dist.min.js"></script>
   <script src="assets/highlights.js"></script>
   <script src="js/watchScore.js"></script>
   <script src="js/anticipation.js"></script>
-  <script src="js/data.js?v=20260915-carabao-cup-1"></script>
+  <script src="js/data.js?v=20260915-carabao-window-consistency-2"></script>
   <script src="js/gameplot.js"></script>
-  <script src="js/app.js?v=20260915-carabao-cup-1"></script>
-  <script src="js/brand.js"></script>
+  <script src="js/app.js?v=20260915-carabao-window-consistency-1"></script>
+  <script src="js/brand.js?v=20260915-readme-and-meter-guide-1"></script>
 </body>
 </html>

@@ -18,7 +18,21 @@ window.EPLData = (() => {
   const soccerBase = slug => `https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}`;
   const formatSoccerDate = date => date.toISOString().slice(0, 10).replaceAll('-', '');
   const formatMlbDate = date => date.toISOString().slice(0, 10);
-  const soccerDateRange = () => { const now = new Date(), start = new Date(now), end = new Date(now); start.setDate(now.getDate() - 50); end.setDate(now.getDate() + 80); return `${formatSoccerDate(start)}-${formatSoccerDate(end)}`; };
+  // Keep the single-league and All Leagues feeds on the same calendar policy.
+  // Most competitions have enough activity that three days of completed games
+  // is useful and compact. A knockout cup can have an entire round outside
+  // that window, so retain two weeks there without loading a whole season.
+  const fixtureWindow = league => ({
+    pastDays: league?.id === 'carabao' ? 14 : 3,
+    futureDays: 7
+  });
+  const soccerDateRange = league => {
+    const { pastDays, futureDays } = fixtureWindow(league);
+    const now = new Date(), start = new Date(now), end = new Date(now);
+    start.setDate(now.getDate() - pastDays);
+    end.setDate(now.getDate() + futureDays);
+    return `${formatSoccerDate(start)}-${formatSoccerDate(end)}`;
+  };
   const mlbWindow = () => { const now = new Date(), start = new Date(now), end = new Date(now); start.setDate(now.getDate() - 3); end.setDate(now.getDate() + 7); return { startDate: formatMlbDate(start), endDate: formatMlbDate(end) }; };
   const isLiveStatus = status => { const type = status?.type || status || {}, name = String(type.name || status?.name || ''); return type.state === 'in' || status?.state === 'in' || /^STATUS_(?:FIRST|SECOND|HALF|EXTRA|IN_PROGRESS)/.test(name); };
   const fixtureDay = value => { const date = new Date(value); return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()); };
@@ -96,7 +110,7 @@ window.EPLData = (() => {
 
   async function loadSoccer(id) {
     const league = LEAGUES[id];
-    const [fixtures, standings] = await Promise.all([fetch(`${espnBase(league)}/scoreboard?limit=1000&dates=${soccerDateRange()}`), fetch(espnStandings(league)).catch(() => null)]);
+    const [fixtures, standings] = await Promise.all([fetch(`${espnBase(league)}/scoreboard?limit=1000&dates=${soccerDateRange(league)}`), fetch(espnStandings(league)).catch(() => null)]);
     if (!fixtures.ok) throw Error(`${league.name} fixtures are unavailable (${fixtures.status}).`);
     const fixturePayload = await fixtures.json(), fixtureEvents = fixturePayload.events || [];
     const seasonYear = fixturePayload.leagues?.[0]?.season?.year || fixtureEvents[0]?.season?.year;
@@ -130,10 +144,10 @@ window.EPLData = (() => {
   }
   const loadOne = id => LEAGUES[id].sport === 'baseball' ? loadMlb() : loadSoccer(id);
   const compactAllLeagueWindow = (games, league) => {
-    const now = Date.now(), pastLimit = league.sport === 'baseball' ? 30 : 24, futureLimit = league.sport === 'baseball' ? 72 : 44;
-    const past = games.filter(game => game.completed && game.time >= now - 3 * 864e5).sort((a, b) => b.time - a.time).slice(0, pastLimit).reverse();
+    const now = Date.now(), window = fixtureWindow(league), pastLimit = league.sport === 'baseball' ? 30 : 24, futureLimit = league.sport === 'baseball' ? 72 : 44;
+    const past = games.filter(game => game.completed && game.time >= now - window.pastDays * 864e5).sort((a, b) => b.time - a.time).slice(0, pastLimit).reverse();
     const live = games.filter(game => game.live && !game.completed);
-    const future = games.filter(game => !game.completed && !game.live && game.time >= now && game.time <= now + 7 * 864e5).sort((a, b) => a.time - b.time).slice(0, futureLimit);
+    const future = games.filter(game => !game.completed && !game.live && game.time >= now && game.time <= now + window.futureDays * 864e5).sort((a, b) => a.time - b.time).slice(0, futureLimit);
     return [...past, ...live, ...future];
   };
   async function load(id = activeLeague) {
@@ -337,7 +351,7 @@ window.EPLData = (() => {
       const league = LEAGUES[id]; if (!league) return;
       try {
         if (league.sport === 'baseball') { const fresh = new Map((await loadMlb()).map(game => [String(game.id), game])); games.filter(game => game.leagueId === id).forEach(game => { const update = fresh.get(String(game.id)); if (update) Object.assign(game, { live: update.live, completed: update.completed, status: update.status, homeScore: update.homeScore, awayScore: update.awayScore, probableHomePitcher: update.probableHomePitcher, probableAwayPitcher: update.probableAwayPitcher }); }); return; }
-        const response = await fetch(`${espnBase(league)}/scoreboard?limit=1000&dates=${soccerDateRange()}`); if (!response.ok) return;
+        const response = await fetch(`${espnBase(league)}/scoreboard?limit=1000&dates=${soccerDateRange(league)}`); if (!response.ok) return;
         const fresh = new Map(((await response.json()).events || []).map(event => normalize(event, league)).filter(Boolean).map(game => [String(game.id), game])); games.filter(game => game.leagueId === id).forEach(game => { const update = fresh.get(String(game.id)); if (update) Object.assign(game, { live: update.live, completed: update.completed, status: update.status, homeScore: update.homeScore, awayScore: update.awayScore }); });
       } catch (_) {}
     })); return games;

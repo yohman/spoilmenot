@@ -82,6 +82,26 @@
   });
   if (sessionStorage.getItem(modalVersionKey) === 'true') dismiss();
 
+  const guide = document.getElementById('spoil-meter-guide');
+  const guideTrigger = document.getElementById('spoil-meter-help');
+  const closeGuide = () => {
+    guide?.setAttribute('hidden', '');
+    guideTrigger?.setAttribute('aria-expanded', 'false');
+    guideTrigger?.focus();
+  };
+  const openGuide = () => {
+    guide?.removeAttribute('hidden');
+    guideTrigger?.setAttribute('aria-expanded', 'true');
+    guide?.querySelector('[data-close-spoil-meter-guide]')?.focus();
+  };
+  guideTrigger?.addEventListener('click', openGuide);
+  guide?.addEventListener('click', event => {
+    if (event.target === guide || event.target.closest('[data-close-spoil-meter-guide]')) closeGuide();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !guide?.hidden) closeGuide();
+  });
+
   refresh();
   new MutationObserver(refresh).observe(document.body, {childList: true, subtree: true});
 })();

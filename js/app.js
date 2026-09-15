@@ -539,7 +539,10 @@ renderList=function(){
   const visible=games.filter(gameIsSelected).sort((a,b)=>a.time-b.time),now=Date.now(),past=visible.filter(game=>!game.live&&game.time<now),live=visible.filter(game=>game.live),future=visible.filter(game=>!game.live&&game.time>=now);
   const dateRows=items=>{let last='';return items.map(game=>{const day=game.time.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}),heading=day===last?'':`<h2 class="list-date">${day}</h2>`;last=day;return heading+listRow(game)}).join('')};
   const pastMarker='<div class="list-now live-divider-past" id="list-now"><span>PAST MATCHES <b>↑</b></span></div>',futureMarker='<div class="list-now live-divider-future"><span><b>↓</b> UPCOMING MATCHES</span></div>';
-  listShell.innerHTML=live.length?`${dateRows(past)}${pastMarker}${dateRows(live)}${futureMarker}${dateRows(future)}`:`${dateRows(past)}${pastMarker}${dateRows(future)}`;
+  const hasHiddenFuture=!future.length&&games.some(game=>!game.live&&game.time>=now);
+  const futureEmpty=hasHiddenFuture?'<p class="fixture-filter-note">No upcoming fixtures match your selected teams. <button type="button" data-adjust-teams>EDIT TEAMS</button></p>':'';
+  listShell.innerHTML=live.length?`${dateRows(past)}${pastMarker}${dateRows(live)}${futureMarker}${futureEmpty}${dateRows(future)}`:`${dateRows(past)}${pastMarker}${futureMarker}${futureEmpty}${dateRows(future)}`;
+  listShell.querySelector('[data-adjust-teams]')?.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();openTeamSelector()});
   listShell.querySelectorAll('[data-game]').forEach(card=>card.onclick=event=>{const game=games.find(item=>item.id===card.dataset.game);if(event.target.closest('[data-results]')){game.__showResults=true;renderList();return}if(game.completed&&!game.__mwRevealed){plot.activate(game);requestAnimationFrame(renderList)}});
 };
 const cardDateMarkup=time=>{

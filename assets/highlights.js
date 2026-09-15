@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-09-14T06:11:08.938Z",
+  "generatedAt": "2026-09-15T14:51:04.297Z",
   "highlights": {
     "mlb:823658": {
       "url": "https://www.youtube.com/watch?v=0-U2-CELuxo",
@@ -105,6 +105,15 @@ window.SpoilHighlights = {
       "source": "MLB",
       "sourceTier": "official",
       "discoveredAt": "2026-09-14T01:10:56.680Z"
+    },
+    "mlb:823174": {
+      "url": "https://www.youtube.com/watch?v=54SSWAOiffs",
+      "title": "GIANTS vs. CARDINALS: Official Full Game Highlights (September 14) | 2026 MLB Season",
+      "durationSeconds": 643,
+      "source": "MLB",
+      "sourceTier": "official",
+      "publishedAt": "2026-09-15T00:00:00.000Z",
+      "discoveredAt": "2026-09-15T14:51:04.297Z"
     }
   }
 };

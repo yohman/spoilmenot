@@ -1,5 +1,5 @@
 const rememberedLeague=localStorage.getItem('spoil-me-not-last-league');
-const initialLeague=['all','epl','laliga','ucl','mlb','nfl'].includes(rememberedLeague)?rememberedLeague:'epl';
+const initialLeague=['all','epl','laliga','ucl','carabao','mlb','nfl'].includes(rememberedLeague)?rememberedLeague:'epl';
 (()=>{let plot,games=[],activeLeague=initialLeague,activeTeams=new Set(JSON.parse(localStorage.getItem('must-watch-teams')||'[]')),allLeagueTeamKeys=new Set(),logos={};const futureFormSpoilers=new Set(),info=document.getElementById('match-info'),search=document.getElementById('team-search'),results=document.getElementById('team-results'),picker=document.getElementById('team-picker'),toggle=document.getElementById('team-toggle'),ribbon=document.getElementById('team-ribbon'),ribbonLabel=document.getElementById('team-hover-label'),teamPreview=document.getElementById('team-preview'),listShell=document.getElementById('list-shell'),plotShell=document.querySelector('.plot-shell'),viewToggle=document.querySelector('.view-toggle'),leagueSwitcher=document.getElementById('league-switcher');toggle.onclick=()=>{picker.hidden=!picker.hidden;if(!picker.hidden)search.focus()};
 let listPositionLock=null;const listCardAnchors=new Map(),cardAnchor=card=>{const id=card?.dataset?.game,top=card?.getBoundingClientRect?.().top;if(!id||!Number.isFinite(top))return null;return{id,top,left:listShell.scrollLeft,until:Date.now()+3000}};
 const renderAtCardAnchor=anchor=>{if(anchor)listPositionLock=anchor;renderList();if(!anchor)return;const holdPosition=()=>{const card=[...listShell.querySelectorAll('[data-game]')].find(node=>node.dataset.game===anchor.id);if(!card)return;const drift=card.getBoundingClientRect().top-anchor.top;if(Math.abs(drift)>.5)listShell.scrollTop=Math.max(0,listShell.scrollTop+drift)};holdPosition();requestAnimationFrame(holdPosition);setTimeout(holdPosition,80)};
@@ -18,7 +18,7 @@ const teamTable={};
 // Club names repeat across competitions (for example Barcelona in La Liga and
 // the Champions League), so standings must never be keyed by name alone.
 const teamTableKey=(leagueId,team)=>`${leagueId||'epl'}:${String(team||'').trim()}`;
-const tableLeagueLabel=game=>({laliga:'LA LIGA',ucl:'CHAMPIONS LEAGUE',mlb:'MLB',nfl:'NFL'}[game.leagueId]||'EPL');
+const tableLeagueLabel=game=>({laliga:'LA LIGA',ucl:'CHAMPIONS LEAGUE',carabao:'CARABAO CUP',mlb:'MLB',nfl:'NFL'}[game.leagueId]||'EPL');
 async function loadTeamTable(id=activeLeague){
   Object.keys(teamTable).forEach(key=>delete teamTable[key]);
   const leagues=id==='all'?Object.values(EPLData.leagues):[EPLData.leagues[id]].filter(Boolean);
@@ -181,8 +181,8 @@ const persistTeamSelection=()=>{
 const applyTeamSelection=(teams,{goNow=false}={})=>{persistTeamSelection();plot?.setTeamFilter(activeTeams);renderRibbon(teams);renderList();if(goNow)requestAnimationFrame(goToNow)};
 const allLeagueOption={id:'all',name:'All Leagues',shortName:'ALL'};
 const leagueOptions=()=>[allLeagueOption,...Object.values(EPLData.leagues)];
-const leagueLabel=league=>({all:'ALL',epl:'EPL',laliga:'La Liga',ucl:'UCL',mlb:'MLB',nfl:'NFL'}[league.id]||league.shortName||league.name);
-const leagueName=league=>({all:'All Leagues',epl:'Premier League',laliga:'La Liga',ucl:'Champions League',mlb:'Major League Baseball',nfl:'National Football League'}[league.id]||league.name||leagueLabel(league));
+const leagueLabel=league=>({all:'ALL',epl:'EPL',laliga:'La Liga',ucl:'UCL',carabao:'Carabao',mlb:'MLB',nfl:'NFL'}[league.id]||league.shortName||league.name);
+const leagueName=league=>({all:'All Leagues',epl:'Premier League',laliga:'La Liga',ucl:'Champions League',carabao:'Carabao Cup',mlb:'Major League Baseball',nfl:'National Football League'}[league.id]||league.name||leagueLabel(league));
 const renderLeagueSelector=()=>{leagueGallery.innerHTML=leagueOptions().map(league=>`<button type="button" class="league-gallery-item ${league.id===activeLeague?'active':''}" data-select-league="${league.id}" aria-pressed="${league.id===activeLeague}">${league.logo?`<img class="league-choice-badge" src="${league.logo}" alt="">`:''}<span>${leagueName(league)}</span><small>${league.id===activeLeague?'SELECTED':'CHOOSE LEAGUE'}</small></button>`).join('')};
 const openLeagueSelector=()=>{teamSelector.hidden=true;renderLeagueSelector();leagueSelector.hidden=false};
 const closeLeagueSelector=()=>{leagueSelector.hidden=true};
@@ -251,7 +251,7 @@ const formatHighlightDuration=seconds=>{
 const highlightMarkup=game=>{
   const highlight=game.highlight,duration=formatHighlightDuration(highlight?.durationSeconds);
   if(!game.completed)return '';
-  const youtube=/^https:\/\/www\.youtube\.com\/watch\?v=/.test(highlight?.url||''),officialSearch={mlb:'MLB',nfl:'NFL',epl:'DAZN U-NEXT',laliga:'DAZN U-NEXT',ucl:'DAZN U-NEXT'}[game.leagueId]||game.league;
+  const youtube=/^https:\/\/www\.youtube\.com\/watch\?v=/.test(highlight?.url||''),officialSearch={mlb:'MLB',nfl:'NFL',epl:'DAZN U-NEXT',laliga:'DAZN U-NEXT',ucl:'DAZN U-NEXT',carabao:'DAZN U-NEXT'}[game.leagueId]||game.league;
   const icon=youtube?`<svg viewBox="0 0 24 17" aria-hidden="true"><path d="M23.5 3.2A3 3 0 0 0 21.4 1C19.5.5 12 .5 12 .5S4.5.5 2.6 1A3 3 0 0 0 .5 3.2 31.4 31.4 0 0 0 0 8.5c0 1.8.2 3.6.5 5.3A3 3 0 0 0 2.6 16c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.2c.3-1.7.5-3.5.5-5.3s-.2-3.6-.5-5.3Z"/><path class="youtube-play" d="m9.7 12.1 6.2-3.6-6.2-3.6v7.2Z"/></svg>`:`<i class="highlight-provider" aria-hidden="true">${highlight?.source||'▶'}</i>`;
   if(highlight?.url&&duration)return `<a class="highlight-link" data-highlight href="${highlight.url}" target="_blank" rel="noopener noreferrer" aria-label="Watch official highlights, ${duration}">${icon}<span>HIGHLIGHTS</span><small>${duration}</small></a>`;
   const query=encodeURIComponent(`${officialSearch} ${game.away} vs ${game.home} highlights`);

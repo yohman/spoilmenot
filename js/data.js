@@ -4,6 +4,7 @@ window.EPLData = (() => {
     epl: { id: 'epl', sport: 'soccer', slug: 'eng.1', name: 'Premier League', shortName: 'PREMIER LEAGUE', logo: 'assets/leagues/epl-official.png' },
     laliga: { id: 'laliga', sport: 'soccer', slug: 'esp.1', name: 'La Liga', shortName: 'LA LIGA', logo: 'assets/leagues/laliga-official.png' },
     ucl: { id: 'ucl', sport: 'soccer', slug: 'uefa.champions', name: 'UEFA Champions League', shortName: 'CHAMPIONS LEAGUE', logo: 'assets/leagues/ucl-official.png' },
+    carabao: { id: 'carabao', sport: 'soccer', slug: 'eng.league_cup', name: 'Carabao Cup', shortName: 'CARABAO CUP', logo: 'assets/leagues/carabao-cup-official.png' },
     mlb: { id: 'mlb', sport: 'baseball', slug: 'mlb', name: 'Major League Baseball', shortName: 'MLB', logo: 'assets/leagues/mlb-official.png', pastCap: 54, futureCap: 110 },
     nfl: { id: 'nfl', sport: 'football', slug: 'nfl', name: 'National Football League', shortName: 'NFL', logo: 'assets/leagues/nfl-official.png' }
   };

@@ -14,6 +14,7 @@ const leagues = [
   { id: 'epl', sport: 'soccer', slug: 'eng.1', name: 'Premier League' },
   { id: 'laliga', sport: 'soccer', slug: 'esp.1', name: 'La Liga' },
   { id: 'ucl', sport: 'soccer', slug: 'uefa.champions', name: 'UEFA Champions League' },
+  { id: 'carabao', sport: 'soccer', slug: 'eng.league_cup', name: 'Carabao Cup' },
   { id: 'nfl', sport: 'football', slug: 'nfl', name: 'NFL' }
 ];
 
@@ -61,21 +62,24 @@ const officialSourcePatterns = {
   nfl: [/^nfl(?:official)?$/, /^nflnetwork$/],
   epl: [/^premierleague$/, /^dazn/, /^unext/],
   laliga: [/^laliga/, /^dazn/, /^unext/],
-  ucl: [/^uefa/, /^dazn/, /^unext/]
+  ucl: [/^uefa/, /^dazn/, /^unext/],
+  carabao: [/^carabao/, /^efl/, /^dazn/, /^unext/]
 };
 const verifiedSourcePatterns = {
   mlb: [/^espn/, /^foxsports/, /^tbssports?$/, /^sportsnet/, /^sny$/],
   nfl: [/^espn/, /^nbcsports?$/, /^cbssports?$/, /^foxsports?$/],
   epl: [/^nbcsports?$/, /^skysports?$/, /^tntsports?$/, /^espnfc$/, /^espn$/, /^beinsports?$/],
   laliga: [/^espn/, /^beinsports?$/, /^skysports?$/, /^tntsports?$/, /^cbssportsgolazo$/],
-  ucl: [/^cbssportsgolazo$/, /^tntsports?$/, /^beinsports?$/, /^skysports?$/, /^espn$/]
+  ucl: [/^cbssportsgolazo$/, /^tntsports?$/, /^beinsports?$/, /^skysports?$/, /^espn$/],
+  carabao: [/^skysports?$/, /^tntsports?$/, /^espn$/, /^espnfc$/]
 };
 const trustedSearchSources = {
   mlb: ['MLB'],
   nfl: ['NFL'],
   epl: ['Premier League', 'DAZN', 'U-NEXT'],
   laliga: ['LaLiga', 'DAZN', 'U-NEXT'],
-  ucl: ['UEFA', 'DAZN', 'U-NEXT']
+  ucl: ['UEFA', 'DAZN', 'U-NEXT'],
+  carabao: ['Carabao Cup', 'EFL', 'DAZN', 'U-NEXT']
 };
 const sourceName = entry => clean(entry.channel || entry.uploader || entry.uploader_id || entry.channel_id || '');
 const isOfficialTeamChannel = (game, source) => {

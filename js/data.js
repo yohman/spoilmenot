@@ -26,12 +26,22 @@ window.EPLData = (() => {
     pastDays: league?.id === 'carabao' ? 14 : 3,
     futureDays: 7
   });
-  const soccerDateRange = league => {
+  const soccerFixtureDates = league => {
     const { pastDays, futureDays } = fixtureWindow(league);
-    const now = new Date(), start = new Date(now), end = new Date(now);
-    start.setDate(now.getDate() - pastDays);
-    end.setDate(now.getDate() + futureDays);
-    return `${formatSoccerDate(start)}-${formatSoccerDate(end)}`;
+    const now = new Date();
+    return Array.from({ length: pastDays + futureDays + 1 }, (_, index) => {
+      const day = new Date(now);
+      day.setDate(now.getDate() - pastDays + index);
+      return formatSoccerDate(day);
+    });
+  };
+  const soccerRefreshDates = () => {
+    const now = new Date();
+    return [-1, 0, 1].map(offset => {
+      const day = new Date(now);
+      day.setDate(now.getDate() + offset);
+      return formatSoccerDate(day);
+    });
   };
   const mlbWindow = () => { const now = new Date(), start = new Date(now), end = new Date(now); start.setDate(now.getDate() - 3); end.setDate(now.getDate() + 7); return { startDate: formatMlbDate(start), endDate: formatMlbDate(end) }; };
   const isLiveStatus = status => { const type = status?.type || status || {}, name = String(type.name || status?.name || ''); return type.state === 'in' || status?.state === 'in' || /^STATUS_(?:FIRST|SECOND|HALF|EXTRA|IN_PROGRESS)/.test(name); };
@@ -108,12 +118,29 @@ window.EPLData = (() => {
     game.contextScore = Math.round(Math.min(100, competitiveness + lateSeason));
   });
 
+  // ESPN accepts a single YYYYMMDD fixture date, but has begun rejecting its
+  // previously documented date-range form with HTTP 400. Fetch the bounded
+  // calendar window one day at a time, merge duplicate events, and tolerate an
+  // isolated failed day so that All Leagues never collapses to just MLB.
+  async function fetchSoccerFixtures(league, dates = soccerFixtureDates(league)) {
+    const requests = await Promise.allSettled(dates.map(date =>
+      fetch(`${espnBase(league)}/scoreboard?limit=1000&dates=${date}`)
+    ));
+    const payloads = [], statuses = [];
+    for (const request of requests) {
+      if (request.status !== 'fulfilled') continue;
+      if (!request.value.ok) { statuses.push(request.value.status); continue; }
+      try { payloads.push(await request.value.json()); } catch (_) {}
+    }
+    if (!payloads.length) throw Error(`${league.name} fixtures are unavailable (${statuses[0] || 'network'}).`);
+    const events = [...new Map(payloads.flatMap(payload => payload.events || []).map(event => [String(event.id), event])).values()];
+    return { events, payloads };
+  }
+
   async function loadSoccer(id) {
     const league = LEAGUES[id];
-    const [fixtures, standings] = await Promise.all([fetch(`${espnBase(league)}/scoreboard?limit=1000&dates=${soccerDateRange(league)}`), fetch(espnStandings(league)).catch(() => null)]);
-    if (!fixtures.ok) throw Error(`${league.name} fixtures are unavailable (${fixtures.status}).`);
-    const fixturePayload = await fixtures.json(), fixtureEvents = fixturePayload.events || [];
-    const seasonYear = fixturePayload.leagues?.[0]?.season?.year || fixtureEvents[0]?.season?.year;
+    const [{ events: fixtureEvents, payloads }, standings] = await Promise.all([fetchSoccerFixtures(league), fetch(espnStandings(league)).catch(() => null)]);
+    const seasonYear = payloads.find(payload => payload.leagues?.[0]?.season?.year)?.leagues?.[0]?.season?.year || fixtureEvents[0]?.season?.year;
     const roundLookup = id === 'epl' ? await loadEplRoundLookup(seasonYear) : new Map();
     const games = fixtureEvents.map(event => {
       const game = normalize(event, league);
@@ -351,8 +378,8 @@ window.EPLData = (() => {
       const league = LEAGUES[id]; if (!league) return;
       try {
         if (league.sport === 'baseball') { const fresh = new Map((await loadMlb()).map(game => [String(game.id), game])); games.filter(game => game.leagueId === id).forEach(game => { const update = fresh.get(String(game.id)); if (update) Object.assign(game, { live: update.live, completed: update.completed, status: update.status, homeScore: update.homeScore, awayScore: update.awayScore, probableHomePitcher: update.probableHomePitcher, probableAwayPitcher: update.probableAwayPitcher }); }); return; }
-        const response = await fetch(`${espnBase(league)}/scoreboard?limit=1000&dates=${soccerDateRange(league)}`); if (!response.ok) return;
-        const fresh = new Map(((await response.json()).events || []).map(event => normalize(event, league)).filter(Boolean).map(game => [String(game.id), game])); games.filter(game => game.leagueId === id).forEach(game => { const update = fresh.get(String(game.id)); if (update) Object.assign(game, { live: update.live, completed: update.completed, status: update.status, homeScore: update.homeScore, awayScore: update.awayScore }); });
+        const { events } = await fetchSoccerFixtures(league, soccerRefreshDates());
+        const fresh = new Map(events.map(event => normalize(event, league)).filter(Boolean).map(game => [String(game.id), game])); games.filter(game => game.leagueId === id).forEach(game => { const update = fresh.get(String(game.id)); if (update) Object.assign(game, { live: update.live, completed: update.completed, status: update.status, homeScore: update.homeScore, awayScore: update.awayScore }); });
       } catch (_) {}
     })); return games;
   }

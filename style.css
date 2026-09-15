@@ -1303,3 +1303,95 @@
   padding:0!important;
   overflow:visible!important;
 }
+
+/* Fixture navigator — a quiet, spoiler-safe miniature of the list. The marks
+   show schedule rhythm and temporal state only; no score or result is exposed. */
+.game-scrubber{
+  position:fixed;
+  z-index:10004;
+  top:148px;
+  right:18px;
+  bottom:76px;
+  display:grid;
+  grid-template-rows:auto minmax(150px,1fr) auto;
+  justify-items:center;
+  gap:8px;
+  width:54px;
+  padding:6px 5px 8px;
+  border:1px solid rgba(243,243,241,.1);
+  border-radius:18px;
+  background:rgba(20,20,19,.88);
+  box-shadow:0 10px 28px rgba(0,0,0,.2);
+  backdrop-filter:blur(8px);
+}
+.game-scrubber[hidden]{display:none!important}
+.scrubber-now{
+  display:grid;
+  grid-template-columns:auto auto;
+  align-items:center;
+  justify-content:center;
+  gap:1px 3px;
+  width:38px;
+  min-height:38px;
+  padding:4px 2px 3px;
+  border:1px solid rgba(243,243,241,.3);
+  border-radius:50%;
+  background:#1d1d1b;
+  color:#f3f3f1;
+  cursor:pointer;
+  transition:border-color .18s ease,background .18s ease,transform .18s ease;
+}
+.scrubber-now span{font:13px/1 Inter,Arial,sans-serif}
+.scrubber-now b{font:700 7px/1 "DM Mono",monospace;letter-spacing:.07em}
+.scrubber-now small{grid-column:1/-1;color:#a8a8a2;font:5px/1 "DM Mono",monospace;letter-spacing:.08em}
+.scrubber-now:hover,.scrubber-now:focus-visible{border-color:#f3f3f1;background:#323230;outline:0;transform:translateY(-1px)}
+.scrubber-rail{
+  position:relative;
+  width:28px;
+  min-height:154px;
+  height:min(56vh,500px);
+  cursor:ns-resize;
+  touch-action:none;
+  outline:0;
+}
+.scrubber-rail:focus-visible{outline:1px solid #efefeb;outline-offset:4px;border-radius:12px}
+.scrubber-axis{position:absolute;top:3px;bottom:3px;left:50%;width:1px;background:rgba(243,243,241,.2);transform:translateX(-50%)}
+.scrubber-marks,.scrubber-days{position:absolute;inset:0;pointer-events:none}
+.scrubber-mark{
+  position:absolute;
+  top:var(--at);
+  left:calc(50% + var(--lane) * 4px);
+  width:6px;
+  height:2px;
+  border-radius:2px;
+  background:#a9a9a4;
+  opacity:.38;
+  transform:translate(-50%,-50%);
+}
+.scrubber-mark.is-future{height:3px;background:transparent;border:1px solid rgba(225,225,220,.68);opacity:.76}
+.scrubber-mark.is-live{width:8px;height:8px;background:#f3f3ef;border:0;border-radius:50%;opacity:1;box-shadow:0 0 0 3px rgba(243,243,239,.11);animation:scrubber-live-pulse 1.25s ease-in-out infinite}
+.scrubber-day{position:absolute;top:var(--at);left:calc(50% + 7px);width:8px;height:1px;background:rgba(243,243,241,.45);transform:translateY(-50%)}
+.scrubber-now-mark{position:absolute;top:var(--at);left:50%;width:23px;height:1px;background:#f3f3ef;transform:translate(-50%,-50%);pointer-events:none}
+.scrubber-now-mark span{position:absolute;right:calc(100% + 4px);top:50%;transform:translateY(-50%);color:#f3f3ef;font:600 6px/1 "DM Mono",monospace;letter-spacing:.08em}
+.scrubber-cursor{position:absolute;top:var(--at,0%);left:50%;width:12px;height:12px;border:1px solid #f3f3ef;border-radius:50%;background:#181817;box-shadow:0 0 0 3px rgba(17,17,15,.9);transform:translate(-50%,-50%);pointer-events:none;transition:top .16s ease}
+.scrubber-label{max-width:50px;overflow:hidden;color:#aaa9a4;font:6px/1.15 "DM Mono",monospace;letter-spacing:.04em;text-align:center;text-overflow:ellipsis;white-space:nowrap}
+@keyframes scrubber-live-pulse{50%{transform:translate(-50%,-50%) scale(1.18);box-shadow:0 0 0 5px rgba(243,243,239,.05)}}
+@media(max-width:900px){
+  .game-scrubber{top:139px;right:7px;bottom:72px;width:40px;padding-inline:3px;border-radius:14px}
+  .scrubber-rail{width:22px}
+  .scrubber-day{left:calc(50% + 5px);width:6px}
+  .scrubber-now-mark{width:17px}.scrubber-now-mark span{display:none}
+  .scrubber-label{display:none}
+  .list-shell{padding-right:56px!important}
+}
+@media(max-width:650px){
+  .game-scrubber{top:132px;right:4px;bottom:68px;width:31px;gap:6px;padding:4px 1px 6px;border-radius:12px}
+  .scrubber-now{width:27px;min-height:27px;padding:2px;border-color:rgba(243,243,241,.24)}
+  .scrubber-now span{font-size:10px}.scrubber-now b{font-size:5px}.scrubber-now small{display:none}
+  .scrubber-rail{width:18px;min-height:136px;height:min(53vh,390px)}
+  .scrubber-mark{left:calc(50% + var(--lane) * 2px);width:4px}
+  .scrubber-mark.is-live{width:6px;height:6px}
+  .scrubber-day{display:none}
+  .scrubber-cursor{width:10px;height:10px}
+  .list-shell{padding-right:44px!important}
+}

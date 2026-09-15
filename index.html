@@ -44,6 +44,19 @@
       <div id="error" class="error" hidden></div>
     </section>
     <section id="list-shell" class="list-shell" hidden aria-label="Chronological fixture list"></section>
+    <aside id="game-scrubber" class="game-scrubber" aria-label="Fixture navigator" hidden>
+      <button id="scrubber-now" class="scrubber-now" type="button" aria-label="Return to now">
+        <span aria-hidden="true">↗</span><b>NOW</b><small>RETURN</small>
+      </button>
+      <div id="scrubber-rail" class="scrubber-rail" role="slider" tabindex="0" aria-label="Scrub through fixtures" aria-valuemin="1" aria-valuenow="1" aria-valuemax="1">
+        <i class="scrubber-axis" aria-hidden="true"></i>
+        <div id="scrubber-days" class="scrubber-days" aria-hidden="true"></div>
+        <div id="scrubber-marks" class="scrubber-marks" aria-hidden="true"></div>
+        <i id="scrubber-now-mark" class="scrubber-now-mark" aria-hidden="true"><span>NOW</span></i>
+        <i id="scrubber-cursor" class="scrubber-cursor" aria-hidden="true"></i>
+      </div>
+      <output id="scrubber-label" class="scrubber-label" aria-live="polite">NOW</output>
+    </aside>
   </main>
   <section id="spoil-meter-modal" class="spoil-meter-modal" aria-label="Choose a league" role="dialog" aria-modal="true">
     <div class="spoil-meter-dialog league-choice-dialog">
@@ -65,7 +78,7 @@
   <script src="js/anticipation.js"></script>
   <script src="js/data.js"></script>
   <script src="js/gameplot.js"></script>
-  <script src="js/app.js?v=20260914-nfl-summary"></script>
+  <script src="js/app.js?v=20260915-fixture-scrubber-3"></script>
   <script src="js/brand.js"></script>
 </body>
 </html>

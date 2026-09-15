@@ -531,6 +531,7 @@ const refreshTimeUI=async()=>{
   decorateCards();
   listShell.querySelectorAll('[data-game]').forEach(card=>{const game=games.find(item=>item.id===card.dataset.game),relative=card.querySelector('.list-meta>b');if(game&&relative)relative.textContent=game.live?'IN PROGRESS':timeAway(game)});
   plot?.render();
+  renderGameScrubber();
 };
 window.setInterval(refreshTimeUI,60*1000);
 renderList=function(){
@@ -617,6 +618,104 @@ renderList=function(){
   };
   requestAnimationFrame(()=>{holdPosition();requestAnimationFrame(holdPosition)});
 };
+// The list has a lot of fixture detail by design. This compact navigator is
+// deliberately spoiler-safe: it reduces every match to a temporal tick and
+// only distinguishes finished, live, and future status.
+const gameScrubber=document.getElementById('game-scrubber'),scrubberRail=document.getElementById('scrubber-rail'),scrubberMarks=document.getElementById('scrubber-marks'),scrubberDays=document.getElementById('scrubber-days'),scrubberCursor=document.getElementById('scrubber-cursor'),scrubberNowMark=document.getElementById('scrubber-now-mark'),scrubberLabel=document.getElementById('scrubber-label'),scrubberNowButton=document.getElementById('scrubber-now');
+let scrubberItems=[],scrubberIndex=0,scrubberDragging=false,scrubberFrame=0;
+const clamp=(value,min,max)=>Math.min(max,Math.max(min,value));
+const scrubberCards=()=>[...listShell.querySelectorAll('[data-game]')].map(card=>({card,game:games.find(game=>String(game.id)===String(card.dataset.game))})).filter(item=>item.game);
+const scrubberDate=game=>game.time.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+const scrubberText=game=>`${scrubberDate(game)} · ${game.homeAbbr||game.home} — ${game.awayAbbr||game.away}`;
+const scrubberAt=(time,first,last)=>last<=first?50:clamp((time-first)/(last-first),0,1)*100;
+function setScrubberCurrent(index){
+  if(!scrubberItems.length)return;
+  scrubberIndex=clamp(index,0,scrubberItems.length-1);
+  const item=scrubberItems[scrubberIndex],at=scrubberAt(item.game.time.getTime(),scrubberItems[0].game.time.getTime(),scrubberItems.at(-1).game.time.getTime());
+  scrubberCursor.style.setProperty('--at',`${at}%`);
+  scrubberLabel.textContent=scrubberDate(item.game);
+  scrubberRail.setAttribute('aria-valuenow',String(scrubberIndex+1));
+  scrubberRail.setAttribute('aria-valuetext',scrubberText(item.game));
+}
+function updateScrubberFromScroll(){
+  if(!scrubberItems.length||gameScrubber.hidden)return;
+  const frame=listShell.getBoundingClientRect(),target=frame.top+Math.min(frame.height*.42,260);
+  let nearest=0,distance=Infinity;
+  scrubberItems.forEach((item,index)=>{
+    const distanceToTarget=Math.abs(item.card.getBoundingClientRect().top-target);
+    if(distanceToTarget<distance){distance=distanceToTarget;nearest=index}
+  });
+  setScrubberCurrent(nearest);
+}
+const scheduleScrubberUpdate=()=>{
+  if(scrubberFrame)return;
+  scrubberFrame=requestAnimationFrame(()=>{scrubberFrame=0;updateScrubberFromScroll()});
+};
+const scrollListNodeToCenter=(node,behavior='auto')=>{
+  if(!node)return;
+  const shellBounds=listShell.getBoundingClientRect(),nodeBounds=node.getBoundingClientRect();
+  const nodeTop=listShell.scrollTop+nodeBounds.top-shellBounds.top;
+  const target=nodeTop-(listShell.clientHeight-nodeBounds.height)/2;
+  const top=Math.max(0,target);
+  if(behavior==='auto')listShell.scrollTop=top;
+  else listShell.scrollTo({top,behavior});
+};
+function scrollToScrubberRatio(ratio,behavior='auto'){
+  if(!scrubberItems.length)return;
+  const first=scrubberItems[0].game.time.getTime(),last=scrubberItems.at(-1).game.time.getTime(),target=first+(last-first)*clamp(ratio,0,1);
+  let nearest=0,distance=Infinity;
+  scrubberItems.forEach((item,index)=>{const delta=Math.abs(item.game.time.getTime()-target);if(delta<distance){distance=delta;nearest=index}});
+  scrollListNodeToCenter(scrubberItems[nearest].card,behavior);
+  setScrubberCurrent(nearest);
+}
+function renderGameScrubber(){
+  const show=document.body.classList.contains('view-list')&&!listShell.hidden;
+  gameScrubber.hidden=!show;
+  if(!show)return;
+  scrubberItems=scrubberCards();
+  if(!scrubberItems.length){gameScrubber.hidden=true;return}
+  const first=scrubberItems[0].game.time.getTime(),last=scrubberItems.at(-1).game.time.getTime(),lanes=new Map(),days=new Map();
+  scrubberMarks.innerHTML=scrubberItems.map(item=>{
+    const game=item.game,key=Math.round(game.time.getTime()/3600000),lane=lanes.get(key)||0;
+    lanes.set(key,lane+1);
+    const state=game.live?'is-live':game.completed?'is-past':'is-future',at=scrubberAt(game.time.getTime(),first,last);
+    const day=game.time.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+    if(!days.has(day))days.set(day,{at,label:day});
+    return `<i class="scrubber-mark ${state}" style="--at:${at}%;--lane:${(lane%5)-2}" title="${scrubberText(game)}"></i>`;
+  }).join('');
+  scrubberDays.innerHTML=[...days.values()].map(day=>`<i class="scrubber-day" style="--at:${day.at}%" title="${day.label}"></i>`).join('');
+  const nowAt=scrubberAt(Date.now(),first,last);
+  scrubberNowMark.style.setProperty('--at',`${nowAt}%`);
+  scrubberRail.setAttribute('aria-valuemin','1');
+  scrubberRail.setAttribute('aria-valuemax',String(scrubberItems.length));
+  scheduleScrubberUpdate();
+}
+const renderedListForScrubber=renderList;
+renderList=function(){renderedListForScrubber();requestAnimationFrame(renderGameScrubber)};
+scrubberRail.addEventListener('pointerdown',event=>{
+  scrubberDragging=true;scrubberRail.setPointerCapture?.(event.pointerId);event.preventDefault();
+  const rect=scrubberRail.getBoundingClientRect();scrollToScrubberRatio((event.clientY-rect.top)/rect.height,'auto');
+});
+scrubberRail.addEventListener('pointermove',event=>{
+  if(!scrubberDragging)return;
+  const rect=scrubberRail.getBoundingClientRect();scrollToScrubberRatio((event.clientY-rect.top)/rect.height,'auto');
+});
+['pointerup','pointercancel','lostpointercapture'].forEach(type=>scrubberRail.addEventListener(type,()=>{scrubberDragging=false}));
+scrubberRail.addEventListener('keydown',event=>{
+  const offsets={ArrowUp:-1,ArrowLeft:-1,ArrowDown:1,ArrowRight:1,PageUp:-5,PageDown:5};
+  let next=scrubberIndex;
+  if(event.key==='Home')next=0;else if(event.key==='End')next=scrubberItems.length-1;else if(Object.hasOwn(offsets,event.key))next=clamp(scrubberIndex+offsets[event.key],0,scrubberItems.length-1);else return;
+  event.preventDefault();
+  const ratio=scrubberItems.length>1?next/(scrubberItems.length-1):0;
+  scrollToScrubberRatio(ratio);
+});
+scrubberNowButton.addEventListener('click',()=>{
+  scrollListNodeToCenter(document.getElementById('list-now'),'auto');
+  scheduleScrubberUpdate();
+});
+listShell.addEventListener('scroll',scheduleScrubberUpdate,{passive:true});
+viewToggle.addEventListener('click',()=>requestAnimationFrame(renderGameScrubber));
+new MutationObserver(()=>requestAnimationFrame(renderGameScrubber)).observe(document.body,{attributes:true,attributeFilter:['class']});
 window.addEventListener('resize',()=>requestAnimationFrame(()=>fitTeamNames(listShell)),{passive:true});
 function prefetchCompleted(matches){const all=matches.filter(game=>game.completed&&!game._enriched).sort((a,b)=>b.time-a.time),queue=all.some(game=>game.sport==='baseball')?all.slice(0,18):all;let next=0;const worker=()=>{const game=queue[next++];if(!game)return;(game._enrichRequest||(game._enrichRequest=EPLData.enrich(game).finally(()=>{game._enrichRequest=null}))).then(()=>{if(game.completed&&!['baseball','football'].includes(game.sport))game.scoreResult=WatchScore.score(game)}).catch(()=>{}).finally(worker)};Array.from({length:3},worker)}
 function prepareGames(loaded){

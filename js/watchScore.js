@@ -124,6 +124,41 @@ window.WatchScore = (() => {
     return { score: clamp(drama), leadChanges, equalizers, comebackWinner };
   }
 
+  // A side that climbs back from two down has created a distinct match story.
+  // When that recovery is cruelly undone by a final-ten-minute winner, the
+  // weighted drama score is often already capped at 100; retain this extra
+  // narrative signal outside that cap. An actual underdog comeback win earns a
+  // smaller final lift beyond contextScore and comebackWinner.
+  function comebackDenialBonus(game, timeline) {
+    const deepestDeficit = { home: 0, away: 0 };
+    let recovery = null;
+    timeline.forEach(goal => {
+      const difference = goal.after.home - goal.after.away;
+      deepestDeficit.home = Math.max(deepestDeficit.home, -difference);
+      deepestDeficit.away = Math.max(deepestDeficit.away, difference);
+      const madeLevel = goal.before.home !== goal.before.away && goal.after.home === goal.after.away;
+      if (!madeLevel) return;
+      const side = goal.before.home < goal.before.away ? 'home' : 'away';
+      if (deepestDeficit[side] >= 2) recovery = { side, minute: goal.minute };
+    });
+    if (!recovery) return { score: 0, recovery: null, denied: false, completed: false, underdog: false };
+    const finalGoal = timeline.at(-1);
+    const finalWinner = finalGoal && finalGoal.before.home === finalGoal.before.away && finalGoal.after.home !== finalGoal.after.away
+      ? finalGoal.after.home > finalGoal.after.away ? 'home' : 'away'
+      : null;
+    const recoveryRank = Number(game[`${recovery.side}Rank`]);
+    const opponent = recovery.side === 'home' ? 'away' : 'home';
+    const opponentRank = Number(game[`${opponent}Rank`]);
+    const underdog = Number.isFinite(recoveryRank) && Number.isFinite(opponentRank) && recoveryRank - opponentRank >= 12;
+    const completed = finalWinner === recovery.side;
+    if (completed) return { score: underdog ? 4 : 0, recovery, denied: false, completed: true, underdog };
+    const denied = !!finalWinner && finalWinner !== recovery.side && finalGoal.minute >= 86;
+    if (!denied) return { score: 0, recovery, denied: false, completed: false, underdog };
+    // Five points recognizes erasing two goals; four reflects the late second
+    // twist; the final three reserve the full lift for a genuine table gulf.
+    return { score: 9 + (underdog ? 3 : 0), recovery, denied: true, completed: false, underdog };
+  }
+
   function competitivenessScore(game, timeline, stats) {
     const end = 95;
     let prior = 0, tied = 0, withinOne = 0, settled = 0;
@@ -177,19 +212,19 @@ window.WatchScore = (() => {
     if (!Number.isFinite(home) || !Number.isFinite(away)) return null;
     const stats = statistics(game), timeline = scoreTimeline(game);
     const drama = dramaScore(game, timeline), competitiveness = competitivenessScore(game, timeline, stats);
-    const context = contextScore(game), action = actionScore(game, stats);
+    const context = contextScore(game), action = actionScore(game, stats), comebackDenial = comebackDenialBonus(game, timeline);
     const baseScore = combine([
       { value: action, weight: WEIGHTS.action }, { value: drama.score, weight: WEIGHTS.drama },
       { value: competitiveness, weight: WEIGHTS.competitiveness }, { value: context, weight: WEIGHTS.surpriseContext }
     ]);
     // A team overturning a two-goal deficit to win is a distinctive match arc.
-    const watchScore = round(baseScore + (drama.comebackWinner ? 14 : 0));
+    const watchScore = round(baseScore + (drama.comebackWinner ? 14 : 0) + comebackDenial.score);
     return {
       watchScore, action: round(action), drama: round(drama.score), competitiveness: round(competitiveness),
       // Kept as a compatibility alias for older UI code.
       exceptional: round(competitiveness), surpriseContext: context === null ? null : round(context),
       available: ['action', 'drama', 'competitiveness', ...(context === null ? [] : ['surpriseContext'])],
-      diagnostics: { goals: timeline.length, leadChanges: drama.leadChanges, equalizers: drama.equalizers, comebackWinner: drama.comebackWinner, stats }
+      diagnostics: { goals: timeline.length, leadChanges: drama.leadChanges, equalizers: drama.equalizers, comebackWinner: drama.comebackWinner, comebackDenial, stats }
     };
   }
 
@@ -197,6 +232,8 @@ window.WatchScore = (() => {
     const timeline = scoreTimeline(game), reasons = [];
     if (result?.diagnostics?.leadChanges) reasons.push('Lead changed hands');
     if (result?.diagnostics?.equalizers) reasons.push('An equalizer changed the match');
+    if (result?.diagnostics?.comebackDenial?.completed && result.diagnostics.comebackDenial.underdog) reasons.push('Two-goal underdog comeback');
+    if (result?.diagnostics?.comebackDenial?.denied) reasons.push(result.diagnostics.comebackDenial.underdog ? 'Underdog comeback denied late' : 'Two-goal comeback denied late');
     if (timeline.some(goal => goal.stoppage)) reasons.push('Goal in stoppage time');
     else if (timeline.some(goal => goal.minute >= 86)) reasons.push('Late decisive moment');
     if ((game.events || []).some(event => event.type === 'red')) reasons.push('Red-card turning point');
@@ -218,6 +255,8 @@ window.WatchScore = (() => {
       game('4–0, routine blowout', 4, 0, [goal(9, 'h', 1, 0), goal(21, 'h', 2, 0), goal(35, 'h', 3, 0), goal(68, 'h', 4, 0)]),
       game('2–2, late equalizer', 2, 2, [goal(14, 'h', 1, 0), goal(37, 'a', 1, 1), goal(64, 'h', 2, 1), goal(89, 'a', 2, 2)]),
       game('3–2, comeback and late winner', 3, 2, [goal(9, 'a', 0, 1), goal(22, 'a', 0, 2), goal(49, 'h', 1, 2), goal(72, 'h', 2, 2), goal(91, 'h', 3, 2, { stoppage: true })]),
+      { ...game('Underdog 2–0 recovery denied at 90', 2, 3, [goal(25, 'a', 0, 1), goal(33, 'a', 0, 2), goal(71, 'h', 1, 2), goal(83, 'h', 2, 2), goal(90, 'a', 2, 3)], pressure({ shots: 11, shotsOnTarget: 3, saves: 2 }, { shots: 20, shotsOnTarget: 4, saves: 1 })), homeRank: 20, awayRank: 1 },
+      { ...game('Underdog completes a 2–0 recovery at 90', 3, 2, [goal(25, 'a', 0, 1), goal(33, 'a', 0, 2), goal(71, 'h', 1, 2), goal(83, 'h', 2, 2), goal(90, 'h', 3, 2)], pressure({ shots: 11, shotsOnTarget: 3, saves: 2 }, { shots: 20, shotsOnTarget: 4, saves: 1 })), homeRank: 20, awayRank: 1 },
       game('Favourite wins narrowly', 1, 0, [goal(32, 'h', 1, 0)], undefined, 42),
       { ...game('Major underdog upset', 1, 0, [
         { type: 'red', minute: 74, teamId: 'a', text: 'Red card' },

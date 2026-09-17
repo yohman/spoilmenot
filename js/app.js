@@ -543,10 +543,13 @@ function soccerFormationMarkup(game){
   });
   const eventMode=Boolean(game.__lineupSpoilers);
   const playerMarkup=(entry,side,vertical,rowIndex,rowLength,teamColor)=>{
-    const person=entry?.athlete||entry||{},name=person.displayName||person.fullName||'Unknown player',shortName=person.shortName||name.split(' ').slice(-1)[0]||name,number=entry?.jersey||person.jersey||person.jerseyNumber||'—',portrait=soccerHeadshot(entry),initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join('').toUpperCase()||'?';
-    const x=8+((rowIndex+1)/(rowLength+1))*84;
+    const person=entry?.athlete||entry||{},name=person.displayName||person.fullName||'Unknown player',shortName=person.shortName||name.split(' ').slice(-1)[0]||name,number=entry?.jersey||person.jersey||person.jerseyNumber||'—',portrait=soccerHeadshot(entry),initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join('').toUpperCase()||'?',markerLabel=number!=='—'?number:initials;
+    // Every row uses the same visual column rhythm. A two-player pivot sits
+    // on the two inner columns of a back four, rather than drifting apart.
+    const formationColumns={1:[50],2:[36.667,63.333],3:[23.333,50,76.667],4:[10,36.667,63.333,90],5:[10,30,50,70,90]};
+    const x=formationColumns[rowLength]?.[rowIndex]??(10+(rowIndex/Math.max(1,rowLength-1))*80);
     return `<div class="soccer-pitch-player lineup-player starter ${side}" style="--x:${x.toFixed(2)}%;--y:${vertical}%;--team-colour:${lineupEscape(teamColor)};--team-ink:${soccerTeamInk(teamColor)}">`+
-      `<div class="soccer-player-photo${portrait?'':' no-photo'}">${portrait?`<img class="soccer-player-headshot" src="${lineupEscape(portrait)}" alt="" decoding="async" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='grid'">`:''}<i aria-hidden="true">${lineupEscape(initials)}</i>${soccerFlagStamp(entry)}</div>`+
+      `<div class="soccer-player-photo${portrait?'':' no-photo'}">${portrait?`<img class="soccer-player-headshot" src="${lineupEscape(portrait)}" alt="" decoding="async" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='grid'">`:''}<i aria-hidden="true">${lineupEscape(markerLabel)}</i>${soccerFlagStamp(entry)}</div>`+
       `<span title="${lineupEscape(name)}"><b>${lineupEscape(number)}</b>${lineupEscape(shortName)}</span></div>`;
   };
   const sideMarkup=(group,side)=>{
@@ -554,12 +557,14 @@ function soccerFormationMarkup(game){
     const goalkeeper=group.rows.gk[0];
     const rows=group.formationRows||[];
     const rowPosition=(index,total)=>{
-      const start=eventMode?(total>3?16:20):(total>3?17:22),end=eventMode?43:43;
+      const start=eventMode?(total>3?14:19):(total>3?16:21),end=eventMode?40:41;
       const homePosition=total<2?(start+end)/2:start+((end-start)*index/(total-1));
-      return side==='home'?homePosition:100-homePosition;
+      if(side==='home')return homePosition;
+      const awayDefence=80,awayAttack=60;
+      return total<2?(awayDefence+awayAttack)/2:awayDefence+((awayAttack-awayDefence)*index/(total-1));
     };
     const players=[
-      ...(goalkeeper?[playerMarkup(goalkeeper,side,side==='home'?(eventMode?5:7):(eventMode?95:93),0,1,teamColor)]:[]),
+      ...(goalkeeper?[playerMarkup(goalkeeper,side,side==='home'?(eventMode?4:6):(eventMode?88:88),0,1,teamColor)]:[]),
       ...rows.flatMap((row,rowIndex)=>row.map((entry,index)=>playerMarkup(entry,side,rowPosition(rowIndex,rows.length),index,row.length,teamColor)))
     ].join('');
     return `<header class="soccer-pitch-team ${side}">${group.logo?`<img src="${lineupEscape(group.logo)}" alt="">`:''}<span>${lineupEscape(group.name)}</span><small>${lineupEscape(group.formation)}</small></header>${players}`;

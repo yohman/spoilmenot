@@ -1489,3 +1489,54 @@
 .spoiler-workspace{width:100%;min-width:0;margin:16px 0 2px}.spoiler-workspace>.soccer-result-card,.spoiler-workspace>.baseball-scorecard,.spoiler-workspace>.football-scorecard{margin-top:0!important}.spoiler-tabs{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:2px!important;width:100%!important;margin:12px 0 0!important;padding:3px!important;border:1px solid rgba(243,243,241,.11)!important;border-radius:8px!important;background:#1b1b1a!important}.spoiler-tabs button{min-width:0!important;min-height:29px!important;margin:0!important;padding:6px 3px!important;border:0!important;border-radius:5px!important;background:transparent!important;color:#96958f!important;font:700 7.5px/1 "DM Mono",monospace!important;letter-spacing:.075em!important;text-align:center!important;white-space:nowrap!important;cursor:pointer!important}.spoiler-tabs button:hover{background:rgba(243,243,241,.08)!important;color:#e8e8e3!important}.spoiler-tabs button.active,.spoiler-tabs button[aria-selected="true"]{background:#e9e9e4!important;color:#171716!important}.spoiler-tabs button:focus-visible{outline:1px solid #f3f3ef!important;outline-offset:2px!important}.spoiler-panel{min-width:0!important}.spoiler-panel>.box-score.soccer-box-score{margin-top:12px!important}.spoiler-panel>.incident-list{margin-top:12px!important}.spoiler-panel>.match-summary{margin-top:12px!important}.spoiler-empty{margin:14px 0 2px!important;color:#94938e!important;font:500 10px/1.45 "DM Mono",monospace!important;letter-spacing:.03em!important}
 .league-table{width:100%!important;margin:12px 0 2px!important;padding:13px!important;border:1px solid rgba(243,243,241,.11)!important;border-radius:11px!important;background:#20201e!important}.league-table>header{display:flex!important;justify-content:space-between!important;gap:10px!important;align-items:baseline!important;margin:0 0 10px!important;padding:0 0 9px!important;border-bottom:1px solid rgba(243,243,241,.09)!important}.league-table>header b{color:#e7e7e2!important;font:700 9px/1 "DM Mono",monospace!important;letter-spacing:.1em!important}.league-table>header small{color:#85847f!important;font:600 7px/1.2 "DM Mono",monospace!important;letter-spacing:.07em!important;text-align:right!important}.league-table-scroll{width:100%!important;overflow-x:auto!important;overscroll-behavior-x:contain!important;padding-bottom:2px!important}.league-table table{width:100%!important;min-width:500px!important;border-collapse:collapse!important;font:600 9px/1.2 Inter,Arial,sans-serif!important}.league-table th,.league-table td{height:29px!important;padding:0 5px!important;border-bottom:1px solid rgba(243,243,241,.065)!important;color:#aaa9a4!important;text-align:center!important;white-space:nowrap!important}.league-table thead th{height:21px!important;color:#85847f!important;font:700 7px/1 "DM Mono",monospace!important;letter-spacing:.06em!important}.league-table th:nth-child(2){min-width:100px!important;text-align:left!important}.league-table tbody th{display:flex!important;align-items:center!important;gap:5px!important;color:#d5d4cf!important;font:600 9px/1 Inter,Arial,sans-serif!important}.league-table tbody th img{width:17px!important;height:17px!important;object-fit:contain!important}.league-table tbody td:last-child b{color:#e9e9e4!important;font:700 10px/1 Inter,Arial,sans-serif!important}.league-table tr.is-home,.league-table tr.is-away{background:color-mix(in srgb,var(--table-team,#77736a) 18%,transparent)!important;box-shadow:inset 2px 0 var(--table-team,#d9d9d4)!important}.league-table tr.is-home th,.league-table tr.is-away th,.league-table tr.is-home td:last-child b,.league-table tr.is-away td:last-child b{color:#f2f2ed!important}.match-form{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important;width:100%!important;margin:12px 0 2px!important}.team-form{min-width:0!important;padding:12px!important;border:1px solid rgba(243,243,241,.11)!important;border-radius:11px!important;background:#20201e!important}.team-form>header{display:flex!important;align-items:center!important;gap:7px!important;margin:0 0 10px!important;padding:0 0 9px!important;border-bottom:1px solid rgba(243,243,241,.09)!important}.team-form>header>img{width:19px!important;height:19px!important;object-fit:contain!important}.team-form>header div{display:grid!important;min-width:0!important;gap:3px!important}.team-form>header b{overflow:hidden!important;color:#e7e7e2!important;font:650 11px/1.1 Inter,Arial,sans-serif!important;text-overflow:ellipsis!important;white-space:nowrap!important}.team-form>header small{color:#85847f!important;font:700 7px/1 "DM Mono",monospace!important;letter-spacing:.07em!important}.team-form ol{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:3px!important;margin:0!important;padding:0!important;list-style:none!important}.team-form li{display:grid!important;justify-items:center!important;gap:3px!important;min-width:0!important;padding:5px 2px!important;border:1px solid rgba(243,243,241,.08)!important;border-radius:5px!important;background:#1a1a18!important}.team-form li>b{display:grid!important;place-items:center!important;width:17px!important;height:17px!important;border-radius:50%!important;color:#161615!important;font:800 8px/1 Inter,Arial,sans-serif!important}.team-form .form-w>b{background:#82c99a!important}.team-form .form-d>b{background:#c0bfae!important}.team-form .form-l>b{background:#d27a72!important}.team-form li span{display:grid!important;justify-items:center!important;min-width:0!important;gap:2px!important}.team-form li img{width:14px!important;height:14px!important;object-fit:contain!important}.team-form li strong{overflow:hidden!important;max-width:100%!important;color:#dcdcd7!important;font:700 7px/1 "DM Mono",monospace!important;text-overflow:ellipsis!important;white-space:nowrap!important}.team-form li small{color:#92918c!important;font:600 7px/1 "DM Mono",monospace!important;white-space:nowrap!important}.team-form>p{margin:0!important;color:#96958f!important;font:500 9px/1.35 Inter,Arial,sans-serif!important}
 @media(max-width:500px){.spoiler-workspace{margin-top:13px!important}.spoiler-tabs{margin-top:10px!important}.spoiler-tabs button{min-height:28px!important;padding-inline:2px!important;font-size:6.8px!important;letter-spacing:.035em!important}.league-table{padding:11px!important}.match-form{grid-template-columns:1fr!important}.team-form{padding:11px!important}}
+
+/* The Spoil Me workspace is deliberately a full card row. Keeping it inside
+   the compact middle header column made every tab appear squeezed on the left
+   of a wide card. */
+@media(min-width:651px){
+  .list-game:has(> .list-content > .spoiler-workspace){
+    grid-template-columns:54px minmax(0,1fr) clamp(92px,12vw,116px)!important;
+    grid-template-areas:
+      "stamp teams meta"
+      ". tabs ."
+      "workspace workspace workspace"!important;
+    column-gap:14px!important;
+    row-gap:0!important;
+    align-items:start!important;
+  }
+  .list-game:has(> .list-content > .spoiler-workspace)>strong{grid-area:stamp!important}
+  .list-game:has(> .list-content > .spoiler-workspace)>.list-content{display:contents!important;width:auto!important;padding:0!important}
+  .list-game:has(> .list-content > .spoiler-workspace)>.list-content>.list-teams{
+    grid-area:teams!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:3px 0 0!important;
+  }
+  .list-game:has(> .list-content > .spoiler-workspace)>.list-content>.match-tabs{
+    grid-area:tabs!important;
+    width:max-content!important;
+    max-width:100%!important;
+    margin:12px 0 7px!important;
+  }
+  .list-game:has(> .list-content > .spoiler-workspace)>.list-content>.spoiler-workspace{
+    grid-area:workspace!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+  }
+  .list-game:has(> .list-content > .spoiler-workspace)>.list-meta{
+    grid-area:meta!important;
+    width:100%!important;
+    min-width:0!important;
+    align-self:start!important;
+  }
+}
+@media(max-width:650px){
+  .list-game:has(> .list-content > .spoiler-workspace)>.list-content{display:contents!important}
+  .list-game:has(> .list-content > .spoiler-workspace)>.list-content>.spoiler-workspace{
+    grid-column:1/-1!important;
+    grid-row:auto!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+}

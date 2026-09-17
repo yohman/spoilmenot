@@ -367,23 +367,36 @@ const playerKey=value=>String(value||'').toLocaleLowerCase().replace(/[^\p{L}\p{
 const samePlayer=(a,b)=>{const left=playerKey(a),right=playerKey(b);return !!left&&!!right&&(left===right||left.endsWith(right)||right.endsWith(left))};
 const replacementNames=text=>{const match=String(text||'').match(/([^.,]+?)\s+replaces\s+([^.,]+)/i);if(!match)return [];return [match[1].split('.').pop().trim(),match[2].trim()]};
 const playerEventMarkup=(game,name)=>{
-  const items=(game.events||[]).flatMap(event=>{
+  const grouped=new Map();
+  const add=(type,minute)=>{
+    const key=type;
+    const group=grouped.get(key)||{type,minutes:[]};
+    if(minute&&!group.minutes.includes(minute))group.minutes.push(minute);
+    grouped.set(key,group);
+  };
+  (game.events||[]).forEach(event=>{
     const minute=Number.isFinite(event.minute)?`${event.minute}'`:'';
     if(event.type==='sub'){
       const [inPlayer,outPlayer]=replacementNames(event.text);
-      if(samePlayer(name,inPlayer))return [`<i class="player-event sub-in" title="Subbed on ${minute}">↑ ${minute}</i>`];
-      if(samePlayer(name,outPlayer))return [`<i class="player-event sub-out" title="Subbed off ${minute}">↓ ${minute}</i>`];
+      if(samePlayer(name,inPlayer)){add('sub-in',minute);return}
+      if(samePlayer(name,outPlayer)){add('sub-out',minute);return}
     }
     // A goal belongs only to the scorer.  ESPN’s participant list can also
     // include the assister, so it is deliberately not used for goal markers.
     const named=event.type==='goal'
       ? samePlayer(name,event.scorer)
       : [event.scorer,...(event.players||[])].some(player=>samePlayer(name,player))||String(event.text||'').toLocaleLowerCase().includes(String(name||'').toLocaleLowerCase());
-    if(!named)return [];
-    const label={goal:'⚽',yellow:'<b class="card-glyph yellow"></b>',red:'<b class="card-glyph red"></b>',injury:'✚'}[event.type];
-    return label?[`<i class="player-event ${event.type}" title="${event.type} ${minute}">${label} ${minute}</i>`]:[];
+    if(named&&['goal','yellow','red','injury'].includes(event.type))add(event.type,minute);
   });
-  return items.length?`<span class="player-events">${items.join('')}</span>`:'';
+  const labels={goal:'⚽',yellow:'<b class="card-glyph yellow"></b>',red:'<b class="card-glyph red"></b>',injury:'✚','sub-in':'↑','sub-out':'↓'};
+  const titles={goal:'Goals',yellow:'Yellow cards',red:'Red cards',injury:'Injuries','sub-in':'Subbed on','sub-out':'Subbed off'};
+  const items=[...grouped.values()].map(({type,minutes})=>{
+    const count=minutes.length;
+    const summary=count>1?` ×${count}`:(minutes[0]?` ${minutes[0]}`:'');
+    const detail=minutes.length?`${titles[type]}: ${minutes.join(' · ')}`:titles[type];
+    return `<i class="player-event ${type}" title="${detail}">${labels[type]}${summary}</i>`;
+  });
+  return items.length?`<span class="player-events" aria-label="Match events">${items.join('')}</span>`:'';
 };
 incidentTimeline=function(game){
   if(game.sport==='baseball'){
@@ -550,21 +563,27 @@ function soccerFormationMarkup(game){
     const x=formationColumns[rowLength]?.[rowIndex]??(10+(rowIndex/Math.max(1,rowLength-1))*80);
     return `<div class="soccer-pitch-player lineup-player starter ${side}" style="--x:${x.toFixed(2)}%;--y:${vertical}%;--team-colour:${lineupEscape(teamColor)};--team-ink:${soccerTeamInk(teamColor)}">`+
       `<div class="soccer-player-photo${portrait?'':' no-photo'}">${portrait?`<img class="soccer-player-headshot" src="${lineupEscape(portrait)}" alt="" decoding="async" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='grid'">`:''}<i aria-hidden="true">${lineupEscape(markerLabel)}</i>${soccerFlagStamp(entry)}</div>`+
-      `<span title="${lineupEscape(name)}"><b>${lineupEscape(number)}</b>${lineupEscape(shortName)}</span></div>`;
+      `<span title="${lineupEscape(name)}">${lineupEscape(shortName)}</span></div>`;
   };
   const sideMarkup=(group,side)=>{
     const teamColor=soccerTeamColor(group,game,side);
     const goalkeeper=group.rows.gk[0];
     const rows=group.formationRows||[];
     const rowPosition=(index,total)=>{
-      const start=eventMode?(total>3?14:19):(total>3?16:21),end=eventMode?40:41;
+      const start=eventMode?(total>3?14:13):(total>3?16:17),end=eventMode?38:41;
       const homePosition=total<2?(start+end)/2:start+((end-start)*index/(total-1));
       if(side==='home')return homePosition;
-      const awayDefence=80,awayAttack=60;
+      // The away side needs the same name-to-next-row clearance as the home
+      // side.  Keep its deepest line clear of the goalkeeper and reserve the
+      // centre third so the two XIs never run into one another.
+      const awayDefence=eventMode?78:79,awayAttack=52;
       return total<2?(awayDefence+awayAttack)/2:awayDefence+((awayAttack-awayDefence)*index/(total-1));
     };
+    // Keep the home keeper in the goalmouth.  The outfield rows, rather than
+    // the keeper, move upward to remove dead space below the keeper's label.
+    const goalkeeperY=side==='home'?6:(eventMode?89:88);
     const players=[
-      ...(goalkeeper?[playerMarkup(goalkeeper,side,side==='home'?(eventMode?4:6):(eventMode?88:88),0,1,teamColor)]:[]),
+      ...(goalkeeper?[playerMarkup(goalkeeper,side,goalkeeperY,0,1,teamColor)]:[]),
       ...rows.flatMap((row,rowIndex)=>row.map((entry,index)=>playerMarkup(entry,side,rowPosition(rowIndex,rows.length),index,row.length,teamColor)))
     ].join('');
     return `<header class="soccer-pitch-team ${side}">${group.logo?`<img src="${lineupEscape(group.logo)}" alt="">`:''}<span>${lineupEscape(group.name)}</span><small>${lineupEscape(group.formation)}</small></header>${players}`;

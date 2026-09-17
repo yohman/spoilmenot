@@ -1941,3 +1941,49 @@
   .list-game>strong.match-stamp .stamp-league img[src$="epl-official.png"],
   .list-game>strong.match-stamp .stamp-league img[src$="laliga-official.png"]{width:14px!important;height:14px!important;max-width:14px!important;max-height:14px!important}
 }
+
+/* Spoilers are intentional: a half-second hold visibly fills the control
+   before its results are released. Letting go early resets it immediately. */
+.list-game.past [data-results].spoil-hold-active,
+.list-game.past [data-results].spoil-hold-complete{
+  --spoil-hold-progress:0%;
+  touch-action:manipulation;
+  background:linear-gradient(90deg,#b83d3b 0 var(--spoil-hold-progress),rgba(243,243,241,.11) var(--spoil-hold-progress) 100%)!important;
+  border-color:rgba(224,93,87,.92)!important;
+  color:#f7f4ef!important;
+  box-shadow:inset 0 0 0 1px rgba(255,183,174,.18),0 0 0 1px rgba(183,61,59,.12)!important;
+}
+.list-game.past [data-results].spoil-hold-active{cursor:progress!important}
+.list-game.past [data-results].spoil-hold-complete{--spoil-hold-progress:100%;background:#b83d3b!important}
+
+/* A meter reveal never shows a guessed number. The compact animated glyph is
+   deliberately distinct from both the hidden question mark and a final score. */
+.score-pending{display:grid!important;justify-items:center!important;gap:1px!important;line-height:1!important}
+.score-pending .score-spinner{width:15px!important;height:15px!important;border-color:rgba(22,19,15,.3)!important;border-top-color:#16130f!important}
+.score-pending em{color:#16130f!important;font:700 7px/1 "DM Mono",monospace!important;letter-spacing:1px!important;font-style:normal!important}
+
+/* Give every league mark a little more presence without giving EPL or La Liga
+   their old, mismatched special treatment. */
+.list-game>strong.match-stamp .stamp-league,
+.list-game>strong.match-stamp .stamp-league:has(img[src$="epl-official.png"]),
+.list-game>strong.match-stamp .stamp-league:has(img[src$="laliga-official.png"]){width:22px!important;height:22px!important}
+.list-game>strong.match-stamp .stamp-league img,
+.list-game>strong.match-stamp .stamp-league img[src$="epl-official.png"],
+.list-game>strong.match-stamp .stamp-league img[src$="laliga-official.png"]{width:18px!important;height:18px!important;max-width:18px!important;max-height:18px!important}
+@media(max-width:650px){
+  .list-game>strong.match-stamp .stamp-league,
+  .list-game>strong.match-stamp .stamp-league:has(img[src$="epl-official.png"]),
+  .list-game>strong.match-stamp .stamp-league:has(img[src$="laliga-official.png"]){width:20px!important;height:20px!important}
+  .list-game>strong.match-stamp .stamp-league img,
+  .list-game>strong.match-stamp .stamp-league img[src$="epl-official.png"],
+  .list-game>strong.match-stamp .stamp-league img[src$="laliga-official.png"]{width:16px!important;height:16px!important;max-width:16px!important;max-height:16px!important}
+}
+
+/* The app starts with its own Spoil Meter loading surface above the otherwise
+   hidden-in-practice map, then hands directly to the chronological list. */
+#loading.loading{position:fixed!important;z-index:30000!important;inset:0!important;display:grid!important;place-content:center!important;justify-items:center!important;gap:12px!important;margin:0!important;padding:28px!important;transform:none!important;background:#11110f!important;color:#e9e9e4!important;text-align:center!important}
+#loading.loading[hidden]{display:none!important}
+.app-loader-mark{position:relative!important;display:grid!important;place-items:center!important;width:72px!important;height:72px!important;border:1px solid rgba(243,243,241,.52)!important;border-radius:50%!important;background:#20201e!important;box-shadow:0 0 0 6px rgba(243,243,241,.035),0 12px 28px rgba(0,0,0,.22)!important}
+.app-loader-mark::before{content:""!important;position:absolute!important;inset:-5px!important;border:2px solid transparent!important;border-top-color:#db5a51!important;border-right-color:rgba(219,90,81,.4)!important;border-radius:50%!important;animation:app-loader-spin 1s linear infinite!important}.app-loader-mark i{position:absolute!important;inset:10px!important;border:1px dashed rgba(243,243,241,.23)!important;border-radius:50%!important}.app-loader-mark b{position:relative!important;color:#f3f3ef!important;font:600 29px/.8 Fraunces,Georgia,serif!important}.app-loader-mark em{position:absolute!important;right:8px!important;top:8px!important;width:7px!important;height:7px!important;border-radius:50%!important;background:#db5a51!important;box-shadow:0 0 0 3px rgba(219,90,81,.14)!important}
+.app-loader-leagues{display:flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;height:24px!important}.app-loader-leagues img{width:18px!important;height:18px!important;object-fit:contain!important;opacity:.75!important;animation:app-loader-breathe 1.4s ease-in-out infinite!important}.app-loader-leagues img:nth-child(2){animation-delay:.12s!important}.app-loader-leagues img:nth-child(3){animation-delay:.24s!important}.app-loader-leagues img:nth-child(4){animation-delay:.36s!important}.app-loader-leagues img:nth-child(5){animation-delay:.48s!important}.loading>b{margin-top:3px!important;font:700 10px/1 "DM Mono",monospace!important;letter-spacing:.15em!important}.loading small{color:#96958f!important;font:600 8px/1 "DM Mono",monospace!important;letter-spacing:.12em!important}@keyframes app-loader-spin{to{transform:rotate(360deg)}}@keyframes app-loader-breathe{50%{transform:translateY(-2px);opacity:1}}
+@media(prefers-reduced-motion:reduce){.app-loader-mark::before,.app-loader-leagues img{animation:none!important}}

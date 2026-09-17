@@ -11,7 +11,10 @@
 
   const applySpoilMeter = root => {
     root.querySelectorAll('.match-stamp.past').forEach(stamp => {
-      const value = Number(stamp.textContent.trim());
+      // A calculating stamp contains only an icon, whose empty text used to
+      // coerce to Number('') === 0 and briefly paint a false meter score.
+      const rawValue = stamp.textContent.trim();
+      const value = rawValue === '' ? NaN : Number(rawValue);
       if (Number.isFinite(value) && value >= 0 && value <= 100) {
         const [, label, band] = categoryFor(value);
         const lightness = 7 + 86 * Math.pow(value / 100, 1.25);

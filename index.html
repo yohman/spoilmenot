@@ -7,7 +7,7 @@
   <title>Spoil Me Not — Gameplot</title>
   <link rel="preconnect" href="https://site.api.espn.com">
   <link rel="icon" type="image/svg+xml" href="assets/spoil-me-not-icon.svg">
-  <link rel="stylesheet" href="style.css?v=20260918-tables-and-meter-1">
+  <link rel="stylesheet" href="style.css?v=20260918-meter-loading-1">
 </head>
 <body>
   <main id="app">
@@ -40,7 +40,20 @@
       <div id="time-axis" class="time-axis" aria-hidden="true"></div>
       <div id="now-line" class="now-line" aria-hidden="true"><b>NOW</b></div>
       <div class="hint">DRAG TO EXPLORE <span>·</span> SCROLL TO ZOOM</div>
-      <div id="loading" class="loading">Loading the season</div>
+      <div id="loading" class="loading" role="status" aria-live="polite">
+        <div class="app-loader-mark" aria-hidden="true">
+          <i></i><b>?</b><em></em>
+        </div>
+        <div class="app-loader-leagues" aria-hidden="true">
+          <img src="assets/leagues/epl-official.png" alt="">
+          <img src="assets/leagues/laliga-official.png" alt="">
+          <img src="assets/leagues/ucl-official.png" alt="">
+          <img src="assets/leagues/mlb-official.png" alt="">
+          <img src="assets/leagues/nfl-official.png" alt="">
+        </div>
+        <b>LOADING SPOIL METER</b>
+        <small>SYNCING LEAGUES &amp; FIXTURES</small>
+      </div>
       <div id="error" class="error" hidden></div>
     </section>
     <section id="list-shell" class="list-shell" hidden aria-label="Chronological fixture list"></section>
@@ -88,7 +101,7 @@
   <script src="js/anticipation.js"></script>
   <script src="js/data.js?v=20260918-penalty-summary-1"></script>
   <script src="js/gameplot.js?v=20260918-meter-reveal-1"></script>
-  <script src="js/app.js?v=20260918-tables-and-summary-1"></script>
-  <script src="js/brand.js?v=20260915-readme-and-meter-guide-1"></script>
+  <script src="js/app.js?v=20260918-meter-loading-1"></script>
+  <script src="js/brand.js?v=20260918-no-zero-meter-1"></script>
 </body>
 </html>

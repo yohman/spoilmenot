@@ -1425,3 +1425,52 @@
 .spoil-meter-weights{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:1px!important;background:#454542!important;border:1px solid #454542!important}.spoil-meter-weights>div{min-height:104px!important;padding:14px!important;background:#222220!important}.spoil-meter-weights b{display:block!important;color:#f1f1ed!important;font:600 20px/1 Fraunces,Georgia,serif!important}.spoil-meter-weights span{display:block!important;margin-top:5px!important;color:#aaa9a4!important;font:600 8px/1 "DM Mono",monospace!important;letter-spacing:.13em!important}.spoil-meter-weights p{margin:8px 0 0!important;color:#d0d0cb!important;font:12px/1.35 Inter,Arial,sans-serif!important}
 .spoil-meter-guide-note{margin:17px 0!important;color:#aaa9a4!important;font:12px/1.45 Inter,Arial,sans-serif!important}.spoil-meter-categories{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:6px!important}.spoil-meter-categories>div{display:grid!important;gap:5px!important;min-width:0!important;padding:10px 8px!important;background:#20201e!important;text-align:center!important}.spoil-meter-categories b{font:600 10px/1 "DM Mono",monospace!important;letter-spacing:-.04em!important}.spoil-meter-categories span{overflow:hidden!important;color:#aaa9a4!important;font:600 7px/1.15 "DM Mono",monospace!important;letter-spacing:.04em!important;text-overflow:ellipsis!important;white-space:nowrap!important}.spoil-meter-categories [data-band="4"]{border:2px solid #f5f5f1!important;background:#f1f1ed!important;color:#111!important}.spoil-meter-categories [data-band="4"] span{color:#343432!important}.spoil-meter-categories [data-band="3"]{border:1.5px solid #d5d5d0!important;background:#bcbcb7!important;color:#161615!important}.spoil-meter-categories [data-band="3"] span{color:#292927!important}.spoil-meter-categories [data-band="2"]{border:1px solid #a2a29d!important;background:#686864!important;color:#f3f3ef!important}.spoil-meter-categories [data-band="1"]{border:1px dashed #858580!important;background:#333331!important;color:#dfdfda!important}.spoil-meter-categories [data-band="0"]{border:1px dotted #686864!important;background:#20201e!important;color:#a4a49f!important}
 @media(max-width:650px){.masthead{grid-template-columns:minmax(112px,1fr) 72px 32px 48px 48px!important;column-gap:4px!important}.masthead-actions{display:contents!important}.spoil-meter-help{grid-column:3!important;align-self:end!important;justify-self:end!important;width:32px!important}.masthead-actions .meter-reveal-control{grid-column:4!important;align-self:end!important;justify-self:end!important}.masthead-actions .now-button{grid-column:5!important;align-self:end!important;justify-self:end!important}.spoil-meter-guide{padding:12px!important}.spoil-meter-guide-card{max-height:calc(100vh - 24px)!important;padding:22px 17px 18px!important}.spoil-meter-guide h2{font-size:27px!important}.spoil-meter-guide-intro{font-size:14px!important}.spoil-meter-weights{grid-template-columns:1fr!important}.spoil-meter-weights>div{min-height:0!important;padding:11px 12px!important}.spoil-meter-weights p{margin-top:5px!important}.spoil-meter-categories{grid-template-columns:repeat(2,minmax(0,1fr))!important}.spoil-meter-categories>div:last-child{grid-column:1/-1!important}}
+
+/* A revealed lineup needs its own desktop grid. Earlier card rules kept the
+   expanded content in the score-stamp column, which collapsed both squads into
+   a narrow strip. Keep the compact card header intact, then give the controls
+   and the two team sheets the full card width below it. */
+@media(min-width:651px){
+  .list-game:has(.lineups){
+    grid-template-columns:54px minmax(0,1fr) clamp(92px,12vw,116px)!important;
+    grid-template-areas:
+      "stamp teams meta"
+      ". tabs ."
+      "lineup lineup lineup"!important;
+    column-gap:14px!important;
+    row-gap:0!important;
+    align-items:start!important;
+  }
+  .list-game:has(.lineups)>strong{grid-area:stamp!important}
+  .list-game:has(.lineups)>.list-content{display:contents!important;width:auto!important;padding:0!important}
+  .list-game:has(.lineups)>.list-content>.list-teams{
+    grid-area:teams!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:3px 0 0!important;
+  }
+  .list-game:has(.lineups)>.list-content>.match-tabs{
+    grid-area:tabs!important;
+    width:max-content!important;
+    max-width:100%!important;
+    margin:12px 0 7px!important;
+  }
+  .list-game:has(.lineups)>.list-content>.lineups,
+  .list-game:has(.lineups)>.list-content>.lineup-empty{
+    grid-area:lineup!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+  }
+  .list-game:has(.lineups)>.list-content>.lineups{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:0 32px!important;
+  }
+  .list-game:has(.lineups)>.list-content>.lineups section{min-width:0!important}
+  .list-game:has(.lineups)>.list-meta{
+    grid-area:meta!important;
+    width:100%!important;
+    min-width:0!important;
+    align-self:start!important;
+  }
+}

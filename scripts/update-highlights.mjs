@@ -10,6 +10,7 @@ const output = resolve(root, 'assets/highlights.js');
 const day = 86_400_000;
 const maxChecks = Math.max(1, Number(process.env.MAX_HIGHLIGHT_CHECKS || 12));
 const ytDlp = process.env.SPOILMENOT_YTDLP || 'yt-dlp';
+const requestedLeagues = new Set(String(process.env.HIGHLIGHT_LEAGUES || '').split(',').map(value => value.trim()).filter(Boolean));
 const leagues = [
   { id: 'epl', sport: 'soccer', slug: 'eng.1', name: 'Premier League' },
   { id: 'laliga', sport: 'soccer', slug: 'esp.1', name: 'La Liga' },
@@ -22,7 +23,19 @@ const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
 const utcDate = value => new Date(value).toISOString().slice(0, 10);
 const espnDate = value => utcDate(value).replaceAll('-', '');
 const normal = value => clean(value).toLowerCase().replace(/[^a-z0-9]/g, '');
-const safeTitle = title => !/\b\d{1,3}\s*(?:[-–—:]\s*)\d{1,3}\b/.test(String(title || ''));
+const escapePattern = value => clean(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+const namedScoreInTitle = (game, title) => {
+  if (!game) return false;
+  const variants = side => [...new Set([game[side], game[`${side}Abbr`]].map(clean).filter(value => value.length >= 3))];
+  const pairs = [
+    [variants('home'), variants('away')],
+    [variants('away'), variants('home')]
+  ];
+  return pairs.some(([firstTeams, secondTeams]) => firstTeams.some(first => secondTeams.some(second =>
+    new RegExp(`\\b${escapePattern(first)}\\b\\s+\\d{1,3}\\s+${escapePattern(second)}\\b\\s+\\d{1,3}\\b`, 'i').test(clean(title))
+  )));
+};
+const safeTitle = (title, game) => !/\b\d{1,3}\s*(?:[-–—:]\s*)\d{1,3}\b/.test(String(title || '')) && !namedScoreInTitle(game, title);
 const unsuitableTitle = title => /\bmadden\b|\bsimulation\b|\bsim\b|\bgameplay\b|\bwatch live\b|\blive stream\b/i.test(String(title || ''));
 const durationSeconds = value => {
   if (Number.isFinite(Number(value))) return Number(value);
@@ -101,9 +114,25 @@ async function requestJson(url) {
 }
 
 async function soccerGames(league, start, end) {
-  const endpoint = `https://site.api.espn.com/apis/site/v2/sports/${league.sport}/${league.slug}/scoreboard?limit=1000&dates=${espnDate(start)}-${espnDate(end)}`;
-  const payload = await requestJson(endpoint);
-  return (payload.events || []).flatMap(event => {
+  // ESPN has begun returning HTTP 400 for otherwise valid date ranges. The
+  // client feed already works around that by requesting each bounded fixture
+  // day separately; do the same here so soccer cards receive official links
+  // instead of permanently falling through to “Find highlights”.
+  const dates = [];
+  const cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
+  const last = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
+  while (cursor <= last) {
+    dates.push(new Date(cursor));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  const base = `https://site.api.espn.com/apis/site/v2/sports/${league.sport}/${league.slug}/scoreboard?limit=1000&dates=`;
+  const responses = await Promise.allSettled(dates.map(date => requestJson(`${base}${espnDate(date)}`)));
+  const events = [...new Map(responses
+    .filter(response => response.status === 'fulfilled')
+    .flatMap(response => response.value.events || [])
+    .map(event => [String(event.id), event])).values()];
+  if (!events.length) throw Error(`${league.name} fixtures are unavailable.`);
+  return events.flatMap(event => {
     const competition = event.competitions?.[0];
     const home = competition?.competitors?.find(team => team.homeAway === 'home');
     const away = competition?.competitors?.find(team => team.homeAway === 'away');
@@ -203,7 +232,7 @@ async function pickHighlight(game, entries) {
       const title = clean(entry.title);
       return entry.id && entry.seconds >= 70 && entry.seconds <= 3_600
         && /highlight|ハイライト|condensed game|game recap|extended highlights/i.test(title)
-        && safeTitle(title)
+        && safeTitle(title, game)
         && !unsuitableTitle(title)
         && teamAppears(title, game.home, game.homeAbbr)
         && teamAppears(title, game.away, game.awayAbbr);
@@ -254,11 +283,18 @@ async function findTrustedHighlight(game, when) {
     ...sources.map(source => `${source} ${game.away} vs ${game.home} highlights ${when}`),
     generic
   ].filter((query, index, list) => list.indexOf(query) === index);
-  for (const query of queries) {
-    const picked = await pickHighlight(game, await youtubeSearch(query, 50));
-    if (picked) return picked;
-  }
-  return null;
+  // Do not stop at the first acceptable result. A DAZN query can surface a
+  // trusted broadcaster before a later U-NEXT, NFL, or competition query has
+  // a chance to surface the actual rights-holder upload. Pool the results and
+  // let pickHighlight rank official channels above every verified fallback.
+  const searches = await Promise.allSettled(queries.map(query => youtubeSearch(query, 50)));
+  const unique = new Map();
+  searches.filter(search => search.status === 'fulfilled').forEach(search => {
+    search.value.forEach(entry => {
+      if (entry?.id && !unique.has(entry.id)) unique.set(entry.id, entry);
+    });
+  });
+  return pickHighlight(game, [...unique.values()]);
 }
 
 async function readIndex() {
@@ -282,8 +318,11 @@ async function main() {
   const now = new Date(), start = new Date(now.getTime() - 7 * day);
   const index = await readIndex();
   const results = await Promise.allSettled([...leagues.map(league => soccerGames(league, start, now)), mlbGames(start, now)]);
-  const candidates = results.filter(result => result.status === 'fulfilled').flatMap(result => result.value)
+  const allCandidates = results.filter(result => result.status === 'fulfilled').flatMap(result => result.value)
     .sort((left, right) => right.time - left.time);
+  const candidates = requestedLeagues.size
+    ? allCandidates.filter(game => requestedLeagues.has(game.leagueId))
+    : allCandidates;
   // Recheck newly finished games often, but rotate the remainder of the
   // seven-day window. Without the rotation, unresolved recent games consume
   // every run and older cards never get a chance to receive a highlight.

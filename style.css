@@ -1904,3 +1904,40 @@
   .team-band-chosen .team-band-badge b{font-size:6px!important}
   .team-band-chosen .team-band-more{min-width:23px!important;height:23px!important;font-size:7px!important}
 }
+
+/* Every league mark uses the same measured footprint on the Spoil Meter.
+   EPL previously retained an older 22px exception, and La Liga appeared large
+   beside it because its mark filled its box more completely. */
+.list-game>strong.match-stamp .stamp-league,
+.list-game>strong.match-stamp .stamp-league:has(img[src$="epl-official.png"]),
+.list-game>strong.match-stamp .stamp-league:has(img[src$="laliga-official.png"]){
+  box-sizing:border-box!important;
+  width:20px!important;
+  height:20px!important;
+  padding:0!important;
+}
+.list-game>strong.match-stamp .stamp-league img,
+.list-game>strong.match-stamp .stamp-league img[src$="epl-official.png"],
+.list-game>strong.match-stamp .stamp-league img[src$="laliga-official.png"]{
+  box-sizing:border-box!important;
+  width:16px!important;
+  height:16px!important;
+  max-width:16px!important;
+  max-height:16px!important;
+  object-fit:contain!important;
+  transform:none!important;
+}
+
+/* Keep a compact team column, then dedicate an even, legible slot to every
+   statistic. This applies to soccer, MLB, and NFL table variants alike. */
+.league-table table{width:460px!important;min-width:460px!important}
+.league-table th:nth-child(2),.league-table td:nth-child(2){width:112px!important;max-width:112px!important}
+.league-table th:nth-child(n+3),.league-table td:nth-child(n+3){width:34px!important}
+@media(max-width:650px){
+  .list-game>strong.match-stamp .stamp-league,
+  .list-game>strong.match-stamp .stamp-league:has(img[src$="epl-official.png"]),
+  .list-game>strong.match-stamp .stamp-league:has(img[src$="laliga-official.png"]){width:18px!important;height:18px!important}
+  .list-game>strong.match-stamp .stamp-league img,
+  .list-game>strong.match-stamp .stamp-league img[src$="epl-official.png"],
+  .list-game>strong.match-stamp .stamp-league img[src$="laliga-official.png"]{width:14px!important;height:14px!important;max-width:14px!important;max-height:14px!important}
+}

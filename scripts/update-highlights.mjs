@@ -86,6 +86,11 @@ const verifiedSourcePatterns = {
   ucl: [/^cbssportsgolazo$/, /^tntsports?$/, /^beinsports?$/, /^skysports?$/, /^espn$/],
   carabao: [/^skysports?$/, /^tntsports?$/, /^espn$/, /^espnfc$/]
 };
+// These are the user-approved first-party rights holders. Their normal recap
+// titles may include the score, so do not discard an otherwise exact official
+// match just because that title is a spoiler. Every other source remains
+// subject to the strict spoiler-title guard below.
+const scoreTitleApprovedSourcePatterns = [/^efl(?:official)?$/, /^mlb(?:official)?$/, /^majorleaguebaseball$/, /^nfl(?:official)?$/, /^nflnetwork$/, /^dazn/, /^unext/];
 const trustedSearchSources = {
   mlb: ['MLB'],
   nfl: ['NFL'],
@@ -95,12 +100,14 @@ const trustedSearchSources = {
   carabao: ['Carabao Cup', 'EFL', 'DAZN', 'U-NEXT']
 };
 const sourceName = entry => clean(entry.channel || entry.uploader || entry.uploader_id || entry.channel_id || '');
+const allowsScoreInTitle = entry => scoreTitleApprovedSourcePatterns.some(pattern => pattern.test(normal(sourceName(entry))));
 const isOfficialTeamChannel = (game, source) => {
   const value = normal(source);
   return value.length > 4 && [game.home, game.away].some(team => value === normal(team));
 };
 const sourceTier = (game, entry) => {
   const name = sourceName(entry), source = normal(name);
+  if (scoreTitleApprovedSourcePatterns.some(pattern => pattern.test(source))) return 'official';
   if ((officialSourcePatterns[game.leagueId] || []).some(pattern => pattern.test(source))) return 'official';
   if (isOfficialTeamChannel(game, name) || (verifiedSourcePatterns[game.leagueId] || []).some(pattern => pattern.test(source))) return 'verified';
   return 'fallback';
@@ -228,22 +235,36 @@ function youtubeMetadata(id) {
 async function pickHighlight(game, entries) {
   const candidates = entries
     .map(entry => ({ ...entry, seconds: durationSeconds(entry.duration ?? entry.duration_string) }))
+    .map(entry => ({ ...entry, source: sourceName(entry), sourceTier: sourceTier(game, entry) }))
     .filter(entry => {
       const title = clean(entry.title);
       return entry.id && entry.seconds >= 70 && entry.seconds <= 3_600
         && /highlight|ハイライト|condensed game|game recap|extended highlights/i.test(title)
-        && safeTitle(title, game)
+        && (safeTitle(title, game) || allowsScoreInTitle(entry))
         && !unsuitableTitle(title)
         && teamAppears(title, game.home, game.homeAbbr)
         && teamAppears(title, game.away, game.awayAbbr);
-    })
-    .map(entry => ({ ...entry, source: sourceName(entry), sourceTier: sourceTier(game, entry) }));
+    });
   const longestFirst = (left, right) => right.seconds - left.seconds || String(right.upload_date || '').localeCompare(String(left.upload_date || ''));
+  // Official recaps are usually eight to fifteen minutes. Prefer that useful
+  // match-summary range ahead of short clips, then use duration as the tiebreak.
+  const officialRecapRank = entry => entry.seconds >= 480 && entry.seconds <= 900 ? 0 : entry.seconds >= 420 ? 1 : 2;
+  const officialFirst = (left, right) => {
+    const tierOrder = (left.sourceTier === 'official' ? 0 : 1) - (right.sourceTier === 'official' ? 0 : 1);
+    if (tierOrder) return tierOrder;
+    if (left.sourceTier === 'official') {
+      const recapOrder = officialRecapRank(left) - officialRecapRank(right);
+      if (recapOrder) return recapOrder;
+      const proximity = Math.abs(left.seconds - 600) - Math.abs(right.seconds - 600);
+      if (proximity) return proximity;
+    }
+    return longestFirst(left, right);
+  };
   // Never trade trust for coverage. This admits only the preferred official
   // tier and a named, vetted fallback tier — never a fan, reaction, gameplay,
   // or unrelated uploader.
   const approved = candidates.filter(entry => isApprovedTier(entry.sourceTier))
-    .sort((left, right) => (left.sourceTier === 'official' ? 0 : 1) - (right.sourceTier === 'official' ? 0 : 1) || longestFirst(left, right));
+    .sort(officialFirst);
   for (const candidate of approved) {
     let verified = candidate;
     try {
@@ -252,7 +273,8 @@ async function pickHighlight(game, entries) {
       continue;
     }
     const tier = sourceTier(game, verified);
-    if (!isApprovedTier(tier) || !publishedNearFixture(game, verified)) continue;
+    const verifiedTitle = clean(verified.title || candidate.title);
+    if (!isApprovedTier(tier) || !publishedNearFixture(game, verified) || (!safeTitle(verifiedTitle, game) && !allowsScoreInTitle(verified))) continue;
     return {
       ...verified,
       seconds: durationSeconds(verified.duration ?? verified.duration_string),

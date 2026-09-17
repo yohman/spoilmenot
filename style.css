@@ -789,6 +789,76 @@
   }
 }
 
+/* Soccer starters read as an actual formation first.  Bench players keep the
+   detailed roster treatment below, so nationalities, ages, and spoiler-safe
+   event indicators remain available without crowding the pitch. */
+.soccer-lineup-view{width:100%;margin-top:2px}
+.soccer-pitch{
+  position:relative;isolation:isolate;min-height:560px;width:100%;overflow:hidden;
+  border:1px solid rgba(243,243,241,.14);background:#1c1c1a;
+}
+.soccer-pitch:before,.soccer-pitch:after{content:"";position:absolute;left:50%;z-index:-1;transform:translateX(-50%);border:1px solid rgba(243,243,241,.12);pointer-events:none}
+.soccer-pitch:before{top:-1px;width:46%;height:12%;border-top:0;border-radius:0}
+.soccer-pitch:after{bottom:-1px;width:46%;height:12%;border-bottom:0;border-radius:0}
+.soccer-pitch.soccer-pitch-events{min-height:900px}
+.soccer-halfway-line{position:absolute;z-index:-1;top:50%;right:0;left:0;height:1px;background:rgba(243,243,241,.13);transform:translateY(-50%)}
+.soccer-centre-circle{position:absolute;z-index:-1;top:50%;left:50%;width:72px;height:72px;border:1px solid rgba(243,243,241,.13);border-radius:50%;transform:translate(-50%,-50%)}
+.soccer-centre-circle:after{content:"";position:absolute;top:50%;left:50%;width:4px;height:4px;border-radius:50%;background:rgba(243,243,241,.2);transform:translate(-50%,-50%)}
+.soccer-pitch-team{position:absolute;z-index:2;display:flex;align-items:center;gap:6px;max-width:calc(100% - 16px);color:#e8e8e3;font:600 10px/1 Inter,Arial,sans-serif;letter-spacing:.01em}
+.soccer-pitch-team.home{top:9px;left:9px}.soccer-pitch-team.away{right:9px;bottom:9px;flex-direction:row-reverse;text-align:right}
+.soccer-pitch-team img{width:16px;height:16px;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.45))}
+.soccer-pitch-team span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.soccer-pitch-team small{color:#969690;font:8px/1 "DM Mono",monospace;letter-spacing:.08em;white-space:nowrap}
+.soccer-pitch-player{
+  position:absolute!important;z-index:1;top:var(--y);right:auto!important;left:var(--x);display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;
+  width:62px!important;min-width:0!important;margin:0!important;padding:0!important;color:#ededeb!important;text-align:center;transform:translateX(-50%)!important;
+}
+.soccer-pitch-player:before{display:none!important}.soccer-pitch-player em,.soccer-pitch-player .lineup-flag,.soccer-pitch-player small{display:none!important}
+.soccer-player-photo{position:relative;display:grid;place-items:center;width:35px;height:35px;border:2px solid color-mix(in srgb,var(--team-colour,#353533) 68%,#f2f2ee);border-radius:50%;overflow:visible;background:var(--team-colour,#353533);box-shadow:0 2px 0 rgba(0,0,0,.32)}
+.soccer-player-headshot{width:calc(100% - 5px)!important;height:calc(100% - 5px)!important;border-radius:50%;object-fit:cover;object-position:center top}.soccer-player-photo i{display:none;color:var(--team-ink,#f1f1ed);font:600 10px/1 Inter,Arial,sans-serif;font-style:normal}.soccer-player-photo.no-photo i{display:grid!important;place-items:center;width:100%;height:100%}.soccer-player-flag{position:absolute!important;z-index:4;top:-4px;left:-5px;width:14px!important;height:10px!important;border:1px solid rgba(243,243,241,.72)!important;border-radius:1px!important;object-fit:cover!important;box-shadow:0 1px 2px rgba(0,0,0,.55)}
+.soccer-pitch-player>span[title]{align-self:center!important;display:block!important;max-width:68px!important;margin:3px auto 0!important;overflow:hidden!important;color:#ebeae5!important;font:9px/1.1 Inter,Arial,sans-serif!important;text-align:center!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.soccer-pitch-player>span[title] b{margin-right:2px;color:#a7a7a1;font:7px/1 "DM Mono",monospace;font-weight:500}
+.soccer-pitch-player>.player-events{position:static!important;z-index:3;display:flex!important;flex-wrap:wrap!important;justify-content:center!important;width:72px!important;max-width:72px!important;gap:2px!important;margin:4px auto 0!important;padding:0!important;transform:none!important}
+.soccer-pitch-player .player-event{padding:2px 3px!important;border:1px solid #696964!important;border-radius:8px!important;background:#1a1a18!important;color:#f1f1ed!important;font:7px/1 "DM Mono",monospace!important;white-space:nowrap!important;box-shadow:0 1px 2px rgba(0,0,0,.35)}
+.soccer-pitch-player .player-event.goal{font-size:8px!important}.soccer-pitch-player .player-event .card-glyph{width:5px!important;height:8px!important}
+.soccer-bench-list{margin-top:12px!important}.soccer-bench-list section{padding-top:10px!important}
+@media(min-width:651px){.soccer-pitch{min-height:680px}.soccer-pitch-player{width:70px!important}.soccer-pitch-player>span[title]{max-width:76px!important;font-size:10px!important}.soccer-player-photo{width:40px;height:40px}}
+@media(max-width:650px){.soccer-pitch{min-height:570px}.soccer-pitch-events{min-height:820px}.soccer-pitch-player{width:54px!important}.soccer-player-photo{width:31px;height:31px}.soccer-pitch-player>span[title]{max-width:60px!important;font-size:8px!important}.soccer-pitch-team{font-size:9px}.soccer-pitch-team small{font-size:7px}.soccer-centre-circle{width:62px;height:62px}}
+
+/* The formation wrapper is the expanded lineup payload on every breakpoint. */
+@media(min-width:651px){
+  .list-game:has(.soccer-lineup-view)>.list-content>.soccer-lineup-view{
+    grid-area:lineup!important;width:100%!important;min-width:0!important;margin:0!important;
+  }
+}
+@media(max-width:900px){
+  .list-game .soccer-lineup-view{grid-column:1/-1!important;grid-row:auto!important;display:block!important;width:100%!important;min-width:0!important;margin:0!important}
+}
+
+/* Soccer spoilers read like a compact final-score screen: teams frame the
+   result, while every scorer remains immediately legible underneath. */
+.tab-final-score:has(.soccer-result-card){margin:18px 0 9px!important;padding:4px 0 12px!important;border:0!important}
+.soccer-result-card{width:100%;padding:8px 0 13px;border-bottom:1px solid rgba(243,243,241,.12)}
+.soccer-result-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(86px,.72fr) minmax(0,1fr);align-items:center;gap:8px}
+.soccer-result-club{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0;text-align:center;color:#efefeb}
+.soccer-result-club img{width:48px;height:48px;object-fit:contain;filter:brightness(1.18) drop-shadow(0 1px 2px rgba(0,0,0,.55))}
+.soccer-result-club b{width:100%;overflow:hidden;font:600 14px/1.12 Inter,Arial,sans-serif;text-overflow:ellipsis;white-space:nowrap}
+.soccer-result-main{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;text-align:center}
+.tab-final-score .soccer-result-main strong{display:block!important;color:#f5f5f1!important;font:600 40px/.9 Fraunces,Georgia,serif!important;letter-spacing:-2px!important;white-space:nowrap!important}
+.soccer-result-main span{color:#aaa9a4;font:600 8px/1 "DM Mono",monospace;letter-spacing:.13em;white-space:nowrap}
+.soccer-result-scorers{display:grid;grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr);align-items:start;gap:7px;margin-top:14px}
+.soccer-result-scorers>.soccer-ball{align-self:start;justify-self:center;width:18px!important;height:18px!important;margin-top:1px;color:#efefeb!important;font-size:16px;line-height:1}
+.soccer-goal-list{display:grid;gap:5px;min-width:0;color:#d9d9d4;font:13px/1.23 Inter,Arial,sans-serif}
+.soccer-goal-list.home{text-align:right}.soccer-goal-list.away{text-align:left}
+.soccer-goal-list span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.soccer-goal-list:empty:before{content:"—";color:#777771}
+@media(max-width:650px){
+  .soccer-result-top{grid-template-columns:minmax(0,1fr) 80px minmax(0,1fr);gap:5px}
+  .soccer-result-club img{width:42px;height:42px}.soccer-result-club b{font-size:12px}
+  .tab-final-score .soccer-result-main strong{font-size:34px!important}.soccer-result-main span{font-size:7px}
+  .soccer-result-scorers{grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr);gap:4px;margin-top:12px}
+  .soccer-result-scorers>.soccer-ball{width:16px!important;height:16px!important;font-size:14px}.soccer-goal-list{gap:4px;font-size:11px}
+}
+
 /* MLB results use a fixed scorecard table: innings always share one grid and
    the two clubs are represented by their marks, not repeating long names. */
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important;border:0!important}

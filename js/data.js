@@ -10,7 +10,6 @@ window.EPLData = (() => {
   };
   const MLB_BASE = 'https://statsapi.mlb.com/api/v1', MLB_LIVE = 'https://statsapi.mlb.com/api/v1.1';
   let activeLeague = 'epl';
-  const eplRoundLookups = new Map();
   const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
   const color = team => team?.color ? `#${team.color}` : '#77736a';
   const espnBase = league => `https://site.api.espn.com/apis/site/v2/sports/${league.sport}/${league.slug}`;
@@ -18,14 +17,23 @@ window.EPLData = (() => {
   const soccerBase = slug => `https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}`;
   const formatSoccerDate = date => date.toISOString().slice(0, 10).replaceAll('-', '');
   const formatMlbDate = date => date.toISOString().slice(0, 10);
-  // Keep the single-league and All Leagues feeds on the same calendar policy.
-  // Most competitions have enough activity that three days of completed games
-  // is useful and compact. A knockout cup can have an entire round outside
-  // that window, so retain two weeks there without loading a whole season.
-  const fixtureWindow = league => ({
-    pastDays: league?.id === 'carabao' ? 14 : 3,
-    futureDays: 7
-  });
+  // Each league view retains completed fixtures from the start of its current
+  // season.  ESPN's day-range endpoint is unreliable, but its YYYYMM month
+  // endpoint is stable, so history is fetched one calendar month at a time.
+  // The separate daily window remains responsible for nearby live/upcoming
+  // matches that a monthly snapshot may not yet include.
+  const fixtureWindow = () => ({ pastDays: 3, futureDays: 7 });
+  const seasonStart = league => {
+    const now = new Date(), year = now.getUTCFullYear() - (now.getUTCMonth() < 7 ? 1 : 0);
+    // The supported soccer cups and the NFL season begin in August. This also
+    // keeps qualifying/early cup rounds that belong to the active campaign.
+    return new Date(Date.UTC(year, 7, 1));
+  };
+  const soccerSeasonMonths = league => {
+    const start = seasonStart(league), now = new Date(), end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)), months = [];
+    for (const cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1)); cursor <= end; cursor.setUTCMonth(cursor.getUTCMonth() + 1)) months.push(`${cursor.getUTCFullYear()}${String(cursor.getUTCMonth() + 1).padStart(2, '0')}`);
+    return months;
+  };
   const soccerFixtureDates = league => {
     const { pastDays, futureDays } = fixtureWindow(league);
     const now = new Date();
@@ -43,32 +51,31 @@ window.EPLData = (() => {
       return formatSoccerDate(day);
     });
   };
-  const mlbWindow = () => { const now = new Date(), start = new Date(now), end = new Date(now); start.setDate(now.getDate() - 3); end.setDate(now.getDate() + 7); return { startDate: formatMlbDate(start), endDate: formatMlbDate(end) }; };
+  const mlbWindow = () => {
+    const now = new Date(), start = new Date(Date.UTC(now.getUTCFullYear(), 2, 1)), end = new Date(now);
+    end.setDate(now.getDate() + 7);
+    return { startDate: formatMlbDate(start), endDate: formatMlbDate(end) };
+  };
   const isLiveStatus = status => { const type = status?.type || status || {}, name = String(type.name || status?.name || ''); return type.state === 'in' || status?.state === 'in' || /^STATUS_(?:FIRST|SECOND|HALF|EXTRA|IN_PROGRESS)/.test(name); };
   const fixtureDay = value => { const date = new Date(value); return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()); };
-  async function loadEplRoundLookup(seasonYear) {
-    const year = Number(seasonYear);
-    if (!Number.isInteger(year)) return new Map();
-    if (eplRoundLookups.has(year)) return eplRoundLookups.get(year);
-    const request = fetch(`${espnBase(LEAGUES.epl)}/scoreboard?limit=1000&dates=${year}0801-${year + 1}0601`)
-      .then(response => response.ok ? response.json() : null)
-      .then(payload => {
-        const fixtures = (payload?.events || []).slice().sort((left, right) => new Date(left.date) - new Date(right.date));
-        const opener = fixtures[0] ? fixtureDay(fixtures[0].date) : null;
-        const lookup = new Map();
-        if (opener != null) fixtures.forEach(fixture => {
-          const round = Math.floor((fixtureDay(fixture.date) - opener) / 604800000) + 1;
-          if (round >= 1 && round <= 38) lookup.set(String(fixture.id), round);
-        });
-        return lookup;
-      })
-      .catch(() => new Map());
-    eplRoundLookups.set(year, request);
-    return request;
-  }
+  const eplRoundLookup = fixtures => {
+    const ordered = fixtures.slice().sort((left, right) => new Date(left.date) - new Date(right.date)), opener = ordered[0] ? fixtureDay(ordered[0].date) : null, lookup = new Map();
+    if (opener != null) ordered.forEach(fixture => {
+      const round = Math.floor((fixtureDay(fixture.date) - opener) / 604800000) + 1;
+      if (round >= 1 && round <= 38) lookup.set(String(fixture.id), round);
+    });
+    return lookup;
+  };
   // MLB's own badges are dependable in standard document images. The map filters
   // these SVGs separately because deck.gl's bitmap icon loader needs dimensions.
   const mlbLogo = id => id ? `https://www.mlbstatic.com/team-logos/${id}.svg` : '';
+  // MLB's schedule endpoint does not include presentation colours. Keep a small
+  // primary-colour map here so a selected club gets its own quiet colour field
+  // instead of the generic grey used by the old selector.
+  const MLB_TEAM_COLORS = {
+    108:'#ba0021',109:'#a71930',110:'#df4601',111:'#bd3039',112:'#0e3386',113:'#c6011f',114:'#e31937',115:'#33006f',116:'#0c2c56',117:'#eb6e1f',118:'#004687',119:'#005a9c',120:'#ab0003',121:'#002d72',133:'#003831',134:'#fdb827',135:'#2f241d',136:'#005c5c',137:'#fd5a1e',138:'#c41e3a',139:'#092c5c',140:'#003278',141:'#134a8e',142:'#002b5c',143:'#e81828',144:'#ce1141',145:'#27251f',146:'#00a3e0',147:'#003087',158:'#12284b'
+  };
+  const mlbTeamColor = id => MLB_TEAM_COLORS[Number(id)] || '#454541';
   const MLB_MAP_CODES = { 108: 'laa', 109: 'ari', 110: 'bal', 111: 'bos', 112: 'chc', 113: 'cin', 114: 'cle', 115: 'col', 116: 'det', 117: 'hou', 118: 'kc', 119: 'lad', 120: 'wsh', 121: 'nym', 133: 'ath', 134: 'pit', 135: 'sd', 136: 'sea', 137: 'sf', 138: 'stl', 139: 'tb', 140: 'tex', 141: 'tor', 142: 'min', 143: 'phi', 144: 'atl', 145: 'chw', 146: 'mia', 147: 'nyy', 158: 'mil' };
   const mlbMapLogo = (id, abbreviation) => {
     const code = MLB_MAP_CODES[Number(id)] || { AZ: 'ari', CWS: 'chw' }[String(abbreviation || '').toUpperCase()] || String(abbreviation || '').toLowerCase();
@@ -100,7 +107,7 @@ window.EPLData = (() => {
     const home = game.teams?.home, away = game.teams?.away, status = game.status || {};
     if (!home?.team || !away?.team) return null;
     const completed = status.abstractGameState === 'Final', live = status.abstractGameState === 'Live', scored = completed || live;
-    return { id: String(game.gamePk), sport: 'baseball', leagueId: league.id, league: league.name, leagueLogo: league.logo, time: new Date(game.gameDate), home: clean(home.team.name), away: clean(away.team.name), homeId: String(home.team.id), awayId: String(away.team.id), homeAbbr: home.team.abbreviation, awayAbbr: away.team.abbreviation, homeLogo: mlbLogo(home.team.id), awayLogo: mlbLogo(away.team.id), homeMapLogo: mlbMapLogo(home.team.id, home.team.abbreviation), awayMapLogo: mlbMapLogo(away.team.id, away.team.abbreviation), homeColor: '#77736a', awayColor: '#b5b5b0', homeScore: scored ? Number(home.score) : null, awayScore: scored ? Number(away.score) : null, completed, live, venue: clean(game.venue?.name), status: status.detailedState || status.abstractGameState || '', probableHomePitcher: home.probablePitcher || null, probableAwayPitcher: away.probablePitcher || null, gameNumber: game.gameNumber, doubleHeader: game.doubleHeader, events: [], raw: game };
+    return { id: String(game.gamePk), sport: 'baseball', leagueId: league.id, league: league.name, leagueLogo: league.logo, time: new Date(game.gameDate), home: clean(home.team.name), away: clean(away.team.name), homeId: String(home.team.id), awayId: String(away.team.id), homeAbbr: home.team.abbreviation, awayAbbr: away.team.abbreviation, homeLogo: mlbLogo(home.team.id), awayLogo: mlbLogo(away.team.id), homeMapLogo: mlbMapLogo(home.team.id, home.team.abbreviation), awayMapLogo: mlbMapLogo(away.team.id, away.team.abbreviation), homeColor: mlbTeamColor(home.team.id), awayColor: mlbTeamColor(away.team.id), homeScore: scored ? Number(home.score) : null, awayScore: scored ? Number(away.score) : null, completed, live, venue: clean(game.venue?.name), status: status.detailedState || status.abstractGameState || '', probableHomePitcher: home.probablePitcher || null, probableAwayPitcher: away.probablePitcher || null, gameNumber: game.gameNumber, doubleHeader: game.doubleHeader, events: [], raw: game };
   }
 
   const addSoccerContext = (games, ranks) => games.forEach(game => {
@@ -137,11 +144,19 @@ window.EPLData = (() => {
     return { events, payloads };
   }
 
+  async function fetchSeasonSoccerFixtures(league) {
+    const [history, nearby] = await Promise.all([
+      fetchSoccerFixtures(league, soccerSeasonMonths(league)),
+      fetchSoccerFixtures(league, soccerFixtureDates(league))
+    ]);
+    const events = [...new Map([...history.events, ...nearby.events].map(event => [String(event.id), event])).values()];
+    return { events, payloads: [...history.payloads, ...nearby.payloads] };
+  }
+
   async function loadSoccer(id) {
     const league = LEAGUES[id];
-    const [{ events: fixtureEvents, payloads }, standings] = await Promise.all([fetchSoccerFixtures(league), fetch(espnStandings(league)).catch(() => null)]);
-    const seasonYear = payloads.find(payload => payload.leagues?.[0]?.season?.year)?.leagues?.[0]?.season?.year || fixtureEvents[0]?.season?.year;
-    const roundLookup = id === 'epl' ? await loadEplRoundLookup(seasonYear) : new Map();
+    const [{ events: fixtureEvents }, standings] = await Promise.all([fetchSeasonSoccerFixtures(league), fetch(espnStandings(league)).catch(() => null)]);
+    const roundLookup = id === 'epl' ? eplRoundLookup(fixtureEvents) : new Map();
     const games = fixtureEvents.map(event => {
       const game = normalize(event, league);
       if (game && roundLookup.has(String(event.id))) game.matchday = roundLookup.get(String(event.id));
@@ -155,14 +170,14 @@ window.EPLData = (() => {
   async function loadMlb() {
     const league = LEAGUES.mlb, { startDate, endDate } = mlbWindow();
     const [scheduleResponse, standingsResponse] = await Promise.all([
-      fetch(`${MLB_BASE}/schedule?sportId=1&startDate=${startDate}&endDate=${endDate}&hydrate=linescore,probablePitcher,decisions`),
+      fetch(`${MLB_BASE}/schedule?sportId=1&gameType=R&startDate=${startDate}&endDate=${endDate}&hydrate=probablePitcher`),
       fetch(`${MLB_BASE}/standings?leagueId=103,104&season=${new Date().getFullYear()}&standingsTypes=regularSeason`).catch(() => null)
     ]);
     if (!scheduleResponse.ok) throw Error(`MLB fixtures are unavailable (${scheduleResponse.status}).`);
-    const schedule = await scheduleResponse.json(), games = (schedule.dates || []).flatMap(date => date.games || []).map(game => normalizeMlb(game, league)).filter(Boolean), now = Date.now(), pastHorizon = now - 3 * 864e5, futureHorizon = now + 7 * 864e5;
+    const schedule = await scheduleResponse.json(), games = (schedule.dates || []).flatMap(date => date.games || []).map(game => normalizeMlb(game, league)).filter(Boolean), now = Date.now(), futureHorizon = now + 7 * 864e5;
     // Status, rather than scheduled first-pitch time, keeps rain delays and live games
     // in the active/future section instead of accidentally treating them as history.
-    const past = games.filter(game => game.completed && game.time >= pastHorizon).sort((a, b) => b.time - a.time).slice(0, league.pastCap).reverse();
+    const past = games.filter(game => game.completed).sort((a, b) => a.time - b.time);
     const future = games.filter(game => !game.completed && game.time <= futureHorizon).sort((a, b) => a.time - b.time).slice(0, league.futureCap);
     const limited = [...past, ...future];
     if (!limited.length) throw Error('The MLB feed returned no games in the current window.');
@@ -170,17 +185,10 @@ window.EPLData = (() => {
     addMlbContext(limited, table); return limited;
   }
   const loadOne = id => LEAGUES[id].sport === 'baseball' ? loadMlb() : loadSoccer(id);
-  const compactAllLeagueWindow = (games, league) => {
-    const now = Date.now(), window = fixtureWindow(league), pastLimit = league.sport === 'baseball' ? 30 : 24, futureLimit = league.sport === 'baseball' ? 72 : 44;
-    const past = games.filter(game => game.completed && game.time >= now - window.pastDays * 864e5).sort((a, b) => b.time - a.time).slice(0, pastLimit).reverse();
-    const live = games.filter(game => game.live && !game.completed);
-    const future = games.filter(game => !game.completed && !game.live && game.time >= now && game.time <= now + window.futureDays * 864e5).sort((a, b) => a.time - b.time).slice(0, futureLimit);
-    return [...past, ...live, ...future];
-  };
   async function load(id = activeLeague) {
     if (id === 'all') {
       activeLeague = 'all';
-      const results = await Promise.allSettled(Object.keys(LEAGUES).map(async leagueId => compactAllLeagueWindow(await loadOne(leagueId), LEAGUES[leagueId])));
+      const results = await Promise.allSettled(Object.keys(LEAGUES).map(loadOne));
       const combined = results.filter(result => result.status === 'fulfilled').flatMap(result => result.value).sort((a, b) => a.time - b.time);
       if (!combined.length) throw Error('No league feeds are available right now.');
       return applyHighlights(combined);
@@ -351,7 +359,7 @@ window.EPLData = (() => {
         return { ...roster, roster: players, starters, substitutes };
       });
       game.events = plays.map(play => {
-        const text = clean(play.text || play.shortText || play.description), footballDetail=`${text} ${play.type?.text||''} ${play.scoringType?.name||''} ${play.scoringType?.displayName||''}`, clock = String(play.clock?.displayValue || ''), participants = play.participants || [], minute = Number((clock || text).match(/\d+/)?.[0]), footballLabel = /touchdown/i.test(footballDetail) ? 'TOUCHDOWN' : /field.goal/i.test(footballDetail) ? 'FIELD GOAL' : /extra point|two.point/i.test(footballDetail) ? 'EXTRA POINT' : /safety/i.test(footballDetail) ? 'SAFETY' : 'SCORE', type = game.sport === 'football' ? 'score' : /goal/i.test(text) ? 'goal' : /red card/i.test(text) ? 'red' : /yellow card/i.test(text) ? 'yellow' : /penalty/i.test(text) ? 'penalty' : /substitution|replaces/i.test(text) ? 'sub' : /injur/i.test(text) ? 'injury' : 'other';
+        const text = clean(play.text || play.shortText || play.description), footballDetail=`${text} ${play.type?.text||''} ${play.scoringType?.name||''} ${play.scoringType?.displayName||''}`, soccerDetail=`${text} ${play.type?.text||''} ${play.type?.displayName||''}`, clock = String(play.clock?.displayValue || ''), participants = play.participants || [], minute = Number((clock || text).match(/\d+/)?.[0]), footballLabel = /touchdown/i.test(footballDetail) ? 'TOUCHDOWN' : /field.goal/i.test(footballDetail) ? 'FIELD GOAL' : /extra point|two.point/i.test(footballDetail) ? 'EXTRA POINT' : /safety/i.test(footballDetail) ? 'SAFETY' : 'SCORE', type = game.sport === 'football' ? 'score' : /goal/i.test(text) ? 'goal' : /red card/i.test(text) ? 'red' : /yellow card/i.test(text) ? 'yellow' : /penalty/i.test(text) ? 'penalty' : /substitution|replaces/i.test(text) ? 'sub' : /injur/i.test(text) ? 'injury' : 'other', isPenalty = game.sport === 'soccer' && /\bpenalty\b|\bpen\b|from the spot|spot kick/i.test(soccerDetail);
         const participantName = participant => clean(participant?.athlete?.displayName || participant?.displayName);
         const participantRole = participant => String(participant?.role || participant?.type?.text || participant?.type?.displayName || participant?.type || '').toLowerCase();
         const canonical = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -364,7 +372,7 @@ window.EPLData = (() => {
           ? participants.find(participant => /scor|goal/.test(participantRole(participant)) && !isAssistant(participant)) || participants.find(participant => !isAssistant(participant)) || null
           : participants[0] || null;
         const scorer = participantName(scorerParticipant);
-        return { type, scoreLabel: game.sport === 'football' ? footballLabel : '', minute: Number.isFinite(minute) ? minute : null, clock, period: play.period?.number || play.period, stoppage: /(?:45|90)\+\d+/.test(clock) || /(?:45|90)\+\d+/.test(text), text, teamId: String(play.team?.id || scorerParticipant?.team?.id || participants[0]?.team?.id || ''), players: type === 'goal' ? (scorer ? [scorer] : []) : participants.map(participantName).filter(Boolean), scorer, assist: announcedAssist, homeScore: Number.isFinite(Number(play.homeScore)) ? Number(play.homeScore) : null, awayScore: Number.isFinite(Number(play.awayScore)) ? Number(play.awayScore) : null, ownGoal: /own goal/i.test(text) };
+        return { type, scoreLabel: game.sport === 'football' ? footballLabel : '', minute: Number.isFinite(minute) ? minute : null, clock, period: play.period?.number || play.period, stoppage: /(?:45|90)\+\d+/.test(clock) || /(?:45|90)\+\d+/.test(text), text, teamId: String(play.team?.id || scorerParticipant?.team?.id || participants[0]?.team?.id || ''), players: type === 'goal' ? (scorer ? [scorer] : []) : participants.map(participantName).filter(Boolean), scorer, assist: announcedAssist, homeScore: Number.isFinite(Number(play.homeScore)) ? Number(play.homeScore) : null, awayScore: Number.isFinite(Number(play.awayScore)) ? Number(play.awayScore) : null, ownGoal: /own goal/i.test(text), isPenalty };
       });
       if (game.sport === 'football' && game.completed) game.scoreResult = nflScore(game, summary);
       game._enriched = true;

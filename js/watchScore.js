@@ -1,7 +1,7 @@
 /*
- * Watch Index v2 values sustained pressure and uncertainty over raw goal volume.
- * Components are bounded before combining, so unusual raw provider values cannot
- * overwhelm the recommendation.
+ * Watch Index v2 values sustained pressure and uncertainty, while preserving a
+ * clear signal for the rare goal-frenzy match. Components are bounded so raw
+ * provider values cannot overwhelm an upset, comeback, or late winner.
  */
 window.WatchScore = (() => {
   const WEIGHTS = { action: 30, drama: 30, competitiveness: 25, surpriseContext: 15 };
@@ -81,6 +81,44 @@ window.WatchScore = (() => {
     if (!parts.length) return goalActivity;
     const pressure = parts.reduce((sum, part) => sum + part.value * part.weight, 0) / parts.reduce((sum, part) => sum + part.weight, 0);
     return clamp(pressure * 0.88 + goalActivity * 0.12);
+  }
+
+  // A nine-goal match with a hat trick is memorable even when one team owns the
+  // shot count. The pressure component above intentionally rewards balance, so
+  // use a separate, capped floor for exceptional attacking spectacles. This
+  // keeps 90+ territory for matches that combine spectacle with a major upset,
+  // comeback, or late decisive twist.
+  function spectacleScore(game, stats, timeline) {
+    const goals = Math.max(0, Number(game.homeScore) + Number(game.awayScore));
+    const margin = Math.abs(Number(game.homeScore) - Number(game.awayScore));
+    const homeShots = Number(stats.home.shots), awayShots = Number(stats.away.shots);
+    const totalShots = Number.isFinite(homeShots) && Number.isFinite(awayShots) ? homeShots + awayShots : null;
+    const scorerCounts = new Map();
+    timeline.forEach(goal => {
+      if (goal.ownGoal || !goal.scorer) return;
+      const scorer = String(goal.scorer).trim();
+      if (!scorer) return;
+      const key = `${goal.teamId || ''}:${scorer.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+      scorerCounts.set(key, (scorerCounts.get(key) || 0) + 1);
+    });
+    const hatTricks = [...scorerCounts.values()].filter(count => count >= 3).length;
+
+    // Four goals is entertaining; from there, every extra goal raises the
+    // spectacle floor. A 7–2 result begins at 70 before the shot-volume and
+    // hat-trick signals lift it to the low 80s.
+    let floor = goals >= 4 ? 40 + (goals - 3) * 5 : 0;
+    if (floor && totalShots >= 35) floor += 4;
+    else if (floor && totalShots >= 30) floor += 3;
+    else if (floor && totalShots >= 24) floor += 1;
+    if (floor && hatTricks) floor += 4;
+    if (floor && goals >= 7 && margin >= 3) floor += 2;
+
+    return {
+      score: clamp(floor, 0, 80),
+      goals,
+      totalShots,
+      hatTricks
+    };
   }
 
   function scoreAt(timeline, minute) {
@@ -213,18 +251,20 @@ window.WatchScore = (() => {
     const stats = statistics(game), timeline = scoreTimeline(game);
     const drama = dramaScore(game, timeline), competitiveness = competitivenessScore(game, timeline, stats);
     const context = contextScore(game), action = actionScore(game, stats), comebackDenial = comebackDenialBonus(game, timeline);
+    const spectacle = spectacleScore(game, stats, timeline);
     const baseScore = combine([
       { value: action, weight: WEIGHTS.action }, { value: drama.score, weight: WEIGHTS.drama },
       { value: competitiveness, weight: WEIGHTS.competitiveness }, { value: context, weight: WEIGHTS.surpriseContext }
     ]);
     // A team overturning a two-goal deficit to win is a distinctive match arc.
-    const watchScore = round(baseScore + (drama.comebackWinner ? 14 : 0) + comebackDenial.score);
+    const narrativeScore = baseScore + (drama.comebackWinner ? 14 : 0) + comebackDenial.score;
+    const watchScore = round(Math.max(narrativeScore, spectacle.score));
     return {
       watchScore, action: round(action), drama: round(drama.score), competitiveness: round(competitiveness),
       // Kept as a compatibility alias for older UI code.
       exceptional: round(competitiveness), surpriseContext: context === null ? null : round(context),
       available: ['action', 'drama', 'competitiveness', ...(context === null ? [] : ['surpriseContext'])],
-      diagnostics: { goals: timeline.length, leadChanges: drama.leadChanges, equalizers: drama.equalizers, comebackWinner: drama.comebackWinner, comebackDenial, stats }
+      diagnostics: { goals: timeline.length, leadChanges: drama.leadChanges, equalizers: drama.equalizers, comebackWinner: drama.comebackWinner, comebackDenial, spectacle, stats }
     };
   }
 
@@ -238,6 +278,10 @@ window.WatchScore = (() => {
     else if (timeline.some(goal => goal.minute >= 86)) reasons.push('Late decisive moment');
     if ((game.events || []).some(event => event.type === 'red')) reasons.push('Red-card turning point');
     const stats = result?.diagnostics?.stats || statistics(game);
+    const spectacle = result?.diagnostics?.spectacle || spectacleScore(game, stats, timeline);
+    if (spectacle.goals >= 7) reasons.push(`${spectacle.goals}-goal spectacle`);
+    if (spectacle.hatTricks) reasons.push('Hat trick');
+    if (Number.isFinite(spectacle.totalShots) && spectacle.totalShots >= 30) reasons.push(`${spectacle.totalShots} total shots`);
     if (Number(stats.home.shotsOnTarget) + Number(stats.away.shotsOnTarget) >= 10) reasons.push('High-pressure chance creation');
     if (!reasons.length && Math.abs(Number(game.homeScore) - Number(game.awayScore)) <= 1) reasons.push('A closely contested league match');
     if (!reasons.length) reasons.push('A match shaped by its decisive moments');

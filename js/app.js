@@ -1,6 +1,6 @@
 const rememberedLeague=localStorage.getItem('spoil-me-not-last-league');
 const initialLeague=['all','epl','laliga','ucl','carabao','mlb','nfl'].includes(rememberedLeague)?rememberedLeague:'epl';
-(()=>{let plot,games=[],activeLeague=initialLeague,activeTeams=new Set(JSON.parse(localStorage.getItem('must-watch-teams')||'[]')),allLeagueTeamKeys=new Set(),logos={};const futureFormSpoilers=new Set(),info=document.getElementById('match-info'),search=document.getElementById('team-search'),results=document.getElementById('team-results'),picker=document.getElementById('team-picker'),toggle=document.getElementById('team-toggle'),ribbon=document.getElementById('team-ribbon'),ribbonLabel=document.getElementById('team-hover-label'),teamPreview=document.getElementById('team-preview'),listShell=document.getElementById('list-shell'),plotShell=document.querySelector('.plot-shell'),viewToggle=document.querySelector('.view-toggle'),leagueSwitcher=document.getElementById('league-switcher');toggle.onclick=()=>{picker.hidden=!picker.hidden;if(!picker.hidden)search.focus()};
+(()=>{let plot,games=[],activeLeague=initialLeague,activeTeams=new Set(JSON.parse(localStorage.getItem('must-watch-teams')||'[]')),allLeagueTeamKeys=new Set(),logos={},teamColors={},teamAbbrs={};const futureFormSpoilers=new Set(),info=document.getElementById('match-info'),search=document.getElementById('team-search'),results=document.getElementById('team-results'),picker=document.getElementById('team-picker'),toggle=document.getElementById('team-toggle'),ribbon=document.getElementById('team-ribbon'),ribbonLabel=document.getElementById('team-hover-label'),teamPreview=document.getElementById('team-preview'),listShell=document.getElementById('list-shell'),plotShell=document.querySelector('.plot-shell'),viewToggle=document.querySelector('.view-toggle'),leagueSwitcher=document.getElementById('league-switcher');toggle.onclick=()=>{picker.hidden=!picker.hidden;if(!picker.hidden)search.focus()};
 let listPositionLock=null;const listCardAnchors=new Map(),cardAnchor=card=>{const id=card?.dataset?.game,top=card?.getBoundingClientRect?.().top;if(!id||!Number.isFinite(top))return null;return{id,top,left:listShell.scrollLeft,until:Date.now()+3000}};
 const renderAtCardAnchor=anchor=>{if(anchor)listPositionLock=anchor;renderList();if(!anchor)return;const holdPosition=()=>{const card=[...listShell.querySelectorAll('[data-game]')].find(node=>node.dataset.game===anchor.id);if(!card)return;const drift=card.getBoundingClientRect().top-anchor.top;if(Math.abs(drift)>.5)listShell.scrollTop=Math.max(0,listShell.scrollTop+drift)};holdPosition();requestAnimationFrame(holdPosition);setTimeout(holdPosition,80)};
 const rerenderAtCard=card=>{const anchor=cardAnchor(card);if(anchor)listCardAnchors.set(anchor.id,anchor);renderAtCardAnchor(anchor)};
@@ -225,6 +225,8 @@ const allLeagueOption={id:'all',name:'All Leagues',shortName:'ALL'};
 const leagueOptions=()=>[allLeagueOption,...Object.values(EPLData.leagues)];
 const leagueLabel=league=>({all:'ALL',epl:'EPL',laliga:'La Liga',ucl:'UCL',carabao:'Carabao',mlb:'MLB',nfl:'NFL'}[league.id]||league.shortName||league.name);
 const leagueName=league=>({all:'All Leagues',epl:'Premier League',laliga:'La Liga',ucl:'Champions League',carabao:'Carabao Cup',mlb:'Major League Baseball',nfl:'National Football League'}[league.id]||league.name||leagueLabel(league));
+const teamBadgeColor=team=>/^#[0-9a-f]{6}$/i.test(String(teamColors[team]||''))?teamColors[team]:'#454541';
+const teamBadgeCode=team=>String(teamAbbrs[team]||team||'').replace(/[^a-z0-9]/gi,'').slice(0,3).toUpperCase()||'TEAM';
 const renderLeagueSelector=()=>{leagueGallery.innerHTML=leagueOptions().map(league=>`<button type="button" class="league-gallery-item ${league.id===activeLeague?'active':''}" data-select-league="${league.id}" aria-pressed="${league.id===activeLeague}">${league.logo?`<img class="league-choice-badge" src="${league.logo}" alt="">`:''}<span>${leagueName(league)}</span><small>${league.id===activeLeague?'SELECTED':'CHOOSE LEAGUE'}</small></button>`).join('')};
 const openLeagueSelector=()=>{teamSelector.hidden=true;renderLeagueSelector();leagueSelector.hidden=false};
 const closeLeagueSelector=()=>{leagueSelector.hidden=true};
@@ -238,8 +240,8 @@ teamSelector.querySelector('[data-select-all]').onclick=()=>{if(activeLeague==='
 teamGallery.addEventListener('click',event=>{const button=event.target.closest('[data-select-team]');if(!button)return;const team=button.dataset.selectTeam,all=ribbonTeams;let next;if(allTeamsSelected(all))next=new Set([team]);else{next=new Set(activeTeams);next.has(team)?next.delete(team):next.add(team)}activeTeams=next.size===all.length||next.size===0?new Set():next;setClubSelection(team,activeTeams.has(team));renderTeamSelector();applyTeamSelection(all,{goNow:true})});
 renderRibbon=function(all){
   ribbonTeams=all;const allSelected=allTeamsSelected(all),selected=allSelected?[]:all.filter(team=>activeTeams.has(team));
-  const shown=selected.slice(0,6),league=activeLeague==='all'?allLeagueOption:EPLData.leagues[activeLeague];
-  ribbon.innerHTML=`<div class="team-band-summary"><button type="button" class="league-band-current" data-edit-leagues aria-label="Change league">${league?.logo?`<img class="league-band-logo" src="${league.logo}" alt="">`:''}<span><b>${leagueLabel(league||{})}</b><i>LEAGUE</i></span></button><span class="league-band-divider" aria-hidden="true"></span><div class="team-selection-summary"><span class="team-band-count">${allSelected?'ALL TEAMS':`${selected.length} TEAM${selected.length===1?'':'S'} SELECTED`}</span><div class="team-band-chosen">${shown.map(team=>`<span><img src="${logos[team]||''}" alt="">${team}</span>`).join('')}${selected.length>shown.length?`<span>+${selected.length-shown.length}</span>`:''}</div></div><button type="button" data-edit-teams>EDIT</button></div>`;
+  const shown=selected.slice(0,8),league=activeLeague==='all'?allLeagueOption:EPLData.leagues[activeLeague];
+  ribbon.innerHTML=`<div class="team-band-summary"><button type="button" class="league-band-current" data-edit-leagues aria-label="Change league">${league?.logo?`<img class="league-band-logo" src="${league.logo}" alt="">`:''}<span><b>${leagueLabel(league||{})}</b><i>LEAGUE</i></span></button><span class="league-band-divider" aria-hidden="true"></span><div class="team-selection-summary"><span class="team-band-count">${allSelected?'ALL TEAMS':`${selected.length} SELECTED`}</span><div class="team-band-chosen" aria-label="${selected.map(team=>lineupEscape(team)).join(', ')}">${shown.map(team=>`<span class="team-band-badge" style="--team-badge-color:${teamBadgeColor(team)}" title="${lineupEscape(team)}"><img src="${logos[team]||''}" alt="${lineupEscape(team)}"><b>${lineupEscape(teamBadgeCode(team))}</b></span>`).join('')}${selected.length>shown.length?`<span class="team-band-more">+${selected.length-shown.length}</span>`:''}</div></div><button type="button" data-edit-teams>EDIT</button></div>`;
   ribbon.querySelector('[data-edit-leagues]').onclick=openLeagueSelector;
   ribbon.querySelector('[data-edit-teams]').onclick=openTeamSelector;
 };
@@ -420,12 +422,21 @@ const playerEventMarkup=(game,name)=>{
   return items.length?`<span class="player-events" aria-label="Match events">${items.join('')}</span>`:'';
 };
 incidentTimeline=function(game){
+  const incidentColour=teamId=>{
+    const raw=String(teamId)===String(game.homeId)?game.homeColor:String(teamId)===String(game.awayId)?game.awayColor:'';
+    const colour=String(raw||'').trim();
+    return /^#[\da-f]{3,8}$/i.test(colour)?colour:'';
+  };
+  const incidentStyle=teamId=>{
+    const colour=incidentColour(teamId);
+    return colour?` style="--incident-team-color:${colour}"`:'';
+  };
   if(game.sport==='baseball'){
     const scoring=(game.events||[]).filter(event=>event.type==='run');
     return scoring.map(event=>{
       const logo=event.teamId===game.homeId?game.homeLogo:event.teamId===game.awayId?game.awayLogo:'';
       const half=/bottom/i.test(String(event.half||''))?'▼':'▲',inning=Number.isFinite(Number(event.inning))?`${half} ${event.inning}`:'—',score=Number.isFinite(event.homeScore)&&Number.isFinite(event.awayScore)?`${event.homeScore}–${event.awayScore}`:'—';
-      return `<div class="incident run"><time>${inning}</time><span class="event-badge run">${logo?`<img src="${logo}" aria-hidden="true">`:''}</span><span class="event-mark">${score}</span><span>${event.text||'Scoring play'}</span></div>`;
+      return `<div class="incident run"${incidentStyle(event.teamId)}><time>${inning}</time><span class="event-badge run">${logo?`<img src="${logo}" aria-hidden="true">`:''}</span><span class="event-mark">${score}</span><span>${event.text||'Scoring play'}</span></div>`;
     }).join('')||'<p>Detailed scoring plays are not yet available.</p>';
   }
   let home=0,away=0;
@@ -458,7 +469,7 @@ incidentTimeline=function(game){
     // should never repeat TOUCHDOWN / FIELD GOAL above the description.
     const label='';
     const clock=game.sport==='football'?(event.period?`Q${event.period}${event.clock?` · ${event.clock}`:''}`:event.clock||'—'):(Number.isFinite(event.minute)?`${event.minute}'`:'—');
-    return `<div class="incident ${event.type}"><time>${clock}</time>${badge}<span class="event-mark">${marker}</span><span>${label}${rawText||'Scoring play'}</span></div>`;
+    return `<div class="incident ${event.type}"${incidentStyle(event.teamId)}><time>${clock}</time>${badge}<span class="event-mark">${marker}</span><span>${label}${rawText||'Scoring play'}</span></div>`;
   }).join('')||'<p>Detailed incidents are not yet available.</p>';
 };
 new MutationObserver(()=>listShell.querySelectorAll('[data-game] .lineup-player:not([data-events])').forEach(row=>{
@@ -714,7 +725,8 @@ function matchSummaryMarkup(game){
   const creditedTeam=event=>{const id=String(event.teamId||'');if(game.sport==='soccer'&&(event.ownGoal||/own goal/i.test(String(event.text||''))))return id===String(game.homeId)?String(game.awayId):id===String(game.awayId)?String(game.homeId):id;return id};
   const teamName=id=>String(id)===String(game.homeId)?game.home:String(id)===String(game.awayId)?game.away:'';
   const scoreInText=event=>{const escapeRegex=value=>String(value||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),match=String(event.text||'').match(new RegExp(`${escapeRegex(game.home)}\\s+(\\d+)\\s*,\\s*${escapeRegex(game.away)}\\s+(\\d+)`,'i'));return match?{home:Number(match[1]),away:Number(match[2])}:null};
-  const goals=(game.events||[]).filter(event=>eventTypes.includes(event.type)).map(event=>({...event,creditedId:creditedTeam(event)}));
+  const isPenaltyGoal=event=>game.sport==='soccer'&&event.type==='penalty'&&/\b(?:scores?|scored|converts?|converted|goal)\b/i.test(String(event.text||''));
+  const goals=(game.events||[]).filter(event=>eventTypes.includes(event.type)||isPenaltyGoal(event)).map(event=>({...event,creditedId:creditedTeam(event)}));
   let runningHome=0,runningAway=0,lastLead=0,leadChanges=0,equalisers=0;
   goals.forEach(event=>{
     const textScore=scoreInText(event),reported=hasScore(event.homeScore)&&hasScore(event.awayScore)?{home:Number(event.homeScore),away:Number(event.awayScore)}:null,cumulative=textScore&&textScore.home+textScore.away>runningHome+runningAway?textScore:reported&&reported.home+reported.away>runningHome+runningAway?reported:null;
@@ -730,12 +742,15 @@ function matchSummaryMarkup(game){
     event.runningScore=`${runningHome}–${runningAway}`;
   });
   const result=homeScore===null||awayScore===null?`${safe(game.home)} and ${safe(game.away)} completed their match.`:homeScore===awayScore?`${safe(game.home)} and ${safe(game.away)} finished level at ${score}.`:`${safe(homeScore>awayScore?game.home:game.away)} defeated ${safe(homeScore>awayScore?game.away:game.home)} ${score}.`;
-  const describe=event=>{const scorer=event.scorer?`${safe(event.scorer)}${event.ownGoal||/own goal/i.test(String(event.text||''))?' (OG)':''}`:`a ${game.sport==='baseball'?'run':'scoring play'}`,team=safe(teamName(event.creditedId)||'the scoring side');return `${scorer} for ${team} in ${clock(event)}`};
+  const goalSuffix=event=>`${event.ownGoal||/own goal/i.test(String(event.text||''))?' (OG)':''}${game.sport==='soccer'&&(event.isPenalty||isPenaltyGoal(event))?' (PK)':''}`;
+  const describe=event=>{const scorer=event.scorer?`${safe(event.scorer)}${goalSuffix(event)}`:`a ${game.sport==='baseball'?'run':'scoring play'}`,team=safe(teamName(event.creditedId)||'the scoring side');return `${scorer} for ${team} in ${clock(event)}`};
   const narrative=[];
   if(goals.length===1)narrative.push(`The only ${game.sport==='baseball'?'run':'goal'} of the match came from ${describe(goals[0])}.`);
   else if(goals.length>1){
     narrative.push(`The scoring started with ${describe(goals[0])}; the last scoring event was ${describe(goals.at(-1))}.`);
     if(leadChanges||equalisers)narrative.push(`${leadChanges?`${leadChanges} lead change${leadChanges===1?'':'s'}`:''}${leadChanges&&equalisers?' and ':''}${equalisers?`${equalisers} equaliser${equalisers===1?'':'s'}`:''} appeared in the scoring sequence.`);
+    const scoringTimeline=goals.map(event=>`${clock(event)} ${safe(event.scorer||teamName(event.creditedId)||'scoring play')}${goalSuffix(event)} (${event.runningScore})`).join(' · ');
+    narrative.push(`Scoring timeline: ${scoringTimeline}.`);
   }
   const teams=game.summary?.boxscore?.teams||game.summary?.boxscore?.teamStats||[];
   const homeTeam=teams.find(team=>String(team.team?.id||team.id||'')===String(game.homeId)),awayTeam=teams.find(team=>String(team.team?.id||team.id||'')===String(game.awayId));
@@ -746,13 +761,19 @@ function matchSummaryMarkup(game){
     if(xgHome!==''||xgAway!=='')statFacts.push(`xG: ${safe(game.home)} ${safe(xgHome||'—')} · ${safe(game.away)} ${safe(xgAway||'—')}`);
     if(shotsHome!==''||shotsAway!=='')statFacts.push(`Shots: ${safe(game.home)} ${safe(shotsHome||'—')} · ${safe(game.away)} ${safe(shotsAway||'—')}`);
     if(possessionHome!==''||possessionAway!==''){const percentage=value=>value===''||value==='—'?value:String(value).includes('%')?value:`${value}%`;statFacts.push(`Possession: ${safe(game.home)} ${safe(percentage(possessionHome||'—'))} · ${safe(game.away)} ${safe(percentage(possessionAway||'—'))}`)}
+    const numeric=value=>Number(String(value??'').replace(/[^\d.-]/g,''));
+    const comparison=[];
+    if(Number.isFinite(numeric(xgHome))&&Number.isFinite(numeric(xgAway))&&xgHome!==''&&xgAway!=='')comparison.push(`${safe(numeric(xgHome)>numeric(xgAway)?game.home:numeric(xgAway)>numeric(xgHome)?game.away:'Neither side')} ${numeric(xgHome)===numeric(xgAway)?'matched the other side on xG':`led xG ${safe(xgHome)}–${safe(xgAway)}`}`);
+    if(Number.isFinite(numeric(shotsHome))&&Number.isFinite(numeric(shotsAway))&&shotsHome!==''&&shotsAway!=='')comparison.push(`${safe(numeric(shotsHome)>numeric(shotsAway)?game.home:numeric(shotsAway)>numeric(shotsHome)?game.away:'Both teams')} ${numeric(shotsHome)===numeric(shotsAway)?'finished level for shots':`had more shots, ${safe(shotsHome)}–${safe(shotsAway)}`}`);
+    if(Number.isFinite(numeric(possessionHome))&&Number.isFinite(numeric(possessionAway))&&possessionHome!==''&&possessionAway!=='')comparison.push(`${safe(numeric(possessionHome)>numeric(possessionAway)?game.home:numeric(possessionAway)>numeric(possessionHome)?game.away:'The teams')} ${numeric(possessionHome)===numeric(possessionAway)?'shared possession evenly':`had more possession (${safe(possessionHome)}–${safe(possessionAway)})`}`);
+    if(comparison.length)narrative.push(`Across the match, ${comparison.join('; ')}.`);
   }
   const scorerRows=[
     [String(game.homeId),game.home,game.homeAbbr,game.homeLogo],
     [String(game.awayId),game.away,game.awayAbbr,game.awayLogo]
   ].map(([id,name,abbr,logo])=>{
     const entries=goals.filter(event=>event.creditedId===id);if(!entries.length)return '';
-    return `<div><b>${logo?`<img src="${safe(logo)}" alt="">`:''}${safe(abbr||name)}</b><span>${entries.map(event=>`${safe(event.scorer||'Scoring play')} ${safe(clock(event))}${event.ownGoal||/own goal/i.test(String(event.text||''))?' (OG)':''}`).join(' · ')}</span></div>`;
+    return `<div><b>${logo?`<img src="${safe(logo)}" alt="">`:''}${safe(abbr||name)}</b><span>${entries.map(event=>`${safe(event.scorer||'Scoring play')} ${safe(clock(event))}${goalSuffix(event)}`).join(' · ')}</span></div>`;
   }).join('');
   return `<section class="match-summary ${safe(game.sport)}-summary" aria-label="Spoiler match summary"><header><span aria-hidden="true">◉</span><div><b>SUMMARY</b><small>PROVIDER-BASED MATCH RECAP</small></div></header><p class="match-summary-result">${result}</p>${narrative.map(paragraph=>`<p>${paragraph}</p>`).join('')}${scorerRows?`<div class="match-summary-scorers" aria-label="Goals and scoring plays">${scorerRows}</div>`:''}${statFacts.length?`<ul class="match-summary-facts">${statFacts.map(fact=>`<li>${fact}</li>`).join('')}</ul>`:''}<footer>Built from the loaded match events and statistics.</footer></section>`;
 }
@@ -900,8 +921,29 @@ const localTeamForm=(game,teamId)=>games.filter(item=>item.completed&&item.time<
   if(!Number.isFinite(ownScore)||!Number.isFinite(opponentScore))return null;
   return {id:String(item.id),time:item.time,result:ownScore>opponentScore?'W':ownScore===opponentScore?'D':'L',score:`${ownScore}–${opponentScore}`,venue:home?'H':'A',opponent:home?item.away:item.home,abbr:home?(item.awayAbbr||item.away):(item.homeAbbr||item.home),logo:home?item.awayLogo:item.homeLogo};
 }).filter(Boolean).sort((left,right)=>right.time-left.time).slice(0,5);
+const mlbFormItemFromEvent=(event,teamId)=>{
+  const home=event?.teams?.home,away=event?.teams?.away,team=String(home?.team?.id)===String(teamId)?home:String(away?.team?.id)===String(teamId)?away:null,opponent=team===home?away:home;
+  const complete=/final/i.test(String(event?.status?.abstractGameState||event?.status?.detailedState||''));
+  const ownScore=standingNumber(team?.score),opponentScore=standingNumber(opponent?.score);
+  if(!team||!opponent||!complete||ownScore===null||opponentScore===null)return null;
+  const opponentTeam=opponent.team||{};
+  return {id:String(event.gamePk||event.gameGuid||`${event.gameDate||''}:${teamId}`),time:new Date(event.gameDate||0).getTime(),result:ownScore>opponentScore?'W':ownScore===opponentScore?'D':'L',score:`${ownScore}–${opponentScore}`,venue:team===home?'H':'A',opponent:opponentTeam.name||'Opponent',abbr:opponentTeam.abbreviation||opponentTeam.teamCode||opponentTeam.name||'OPP',logo:opponentTeam.id?`https://www.mlbstatic.com/team-logos/${opponentTeam.id}.svg`:''};
+};
+async function loadMlbTeamForm(game,teamId){
+  const fallback=()=>localTeamForm(game,teamId),season=game.time.getUTCFullYear(),key=`mlb:${teamId}:${season}:${game.id}`;
+  if(!teamId)return fallback();
+  if(!teamFormRequests.has(key))teamFormRequests.set(key,(async()=>{
+    try{
+      const endDate=new Date(game.time).toISOString().slice(0,10),endpoint=`https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=${encodeURIComponent(teamId)}&gameType=R&startDate=${season}-03-01&endDate=${endDate}&hydrate=team`,response=await fetch(endpoint),payload=response.ok?await response.json():null;
+      const form=(payload?.dates||[]).flatMap(date=>date.games||[]).map(event=>mlbFormItemFromEvent(event,teamId)).filter(Boolean).sort((left,right)=>right.time-left.time).slice(0,5);
+      return form.length?form:fallback();
+    }catch(_){return fallback()}
+  })());
+  return teamFormRequests.get(key);
+}
 async function loadTeamForm(game,teamId){
   const fallback=()=>localTeamForm(game,teamId),league=EPLData.leagues[game.leagueId],season=Number(game.raw?.season?.year)||game.time.getFullYear(),key=`${game.leagueId}:${teamId}:${season}`;
+  if(game.sport==='baseball')return loadMlbTeamForm(game,teamId);
   if(game.sport!=='soccer'||!league||!teamId)return fallback();
   if(!teamFormRequests.has(key))teamFormRequests.set(key,(async()=>{
     try{
@@ -1006,9 +1048,9 @@ renderList=function(){
   requestAnimationFrame(()=>{holdPosition();requestAnimationFrame(holdPosition)});
 };
 window.addEventListener('resize',()=>requestAnimationFrame(()=>fitTeamNames(listShell)),{passive:true});
-function prefetchCompleted(matches){const all=matches.filter(game=>game.completed&&!game._enriched).sort((a,b)=>b.time-a.time),queue=all.some(game=>game.sport==='baseball')?all.slice(0,18):all;let next=0;const worker=()=>{const game=queue[next++];if(!game)return;(game._enrichRequest||(game._enrichRequest=EPLData.enrich(game).finally(()=>{game._enrichRequest=null}))).then(()=>{if(game.completed&&!['baseball','football'].includes(game.sport))game.scoreResult=WatchScore.score(game)}).catch(()=>{}).finally(worker)};Array.from({length:3},worker)}
+function prefetchCompleted(matches){const queue=matches.filter(game=>game.completed&&!game._enriched).sort((a,b)=>b.time-a.time).slice(0,18);let next=0;const worker=()=>{const game=queue[next++];if(!game)return;(game._enrichRequest||(game._enrichRequest=EPLData.enrich(game).finally(()=>{game._enrichRequest=null}))).then(()=>{if(game.completed&&!['baseball','football'].includes(game.sport))game.scoreResult=WatchScore.score(game)}).catch(()=>{}).finally(worker)};Array.from({length:3},worker)}
 function prepareGames(loaded){
-  games=loaded;logos={};games.forEach(game=>{game.anticipation=Anticipation.score(game);game.anticipationBreakdown=Anticipation.breakdown(game);game.displayScore=50;logos[game.home]=game.homeLogo;logos[game.away]=game.awayLogo});
+  games=loaded;logos={};teamColors={};teamAbbrs={};games.forEach(game=>{game.anticipation=Anticipation.score(game);game.anticipationBreakdown=Anticipation.breakdown(game);game.displayScore=50;logos[game.home]=game.homeLogo;logos[game.away]=game.awayLogo;teamColors[game.home]=game.homeColor;teamColors[game.away]=game.awayColor;teamAbbrs[game.home]=game.homeAbbr;teamAbbrs[game.away]=game.awayAbbr});
   const all=[...new Set(games.flatMap(game=>[game.home,game.away]))].sort();
   try{
     if(activeLeague==='all'){

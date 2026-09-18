@@ -26,8 +26,13 @@
     };
   };
 
+  const meterStampsIn = root => [
+    ...(root instanceof Element && root.matches('.match-stamp.past') ? [root] : []),
+    ...(root.querySelectorAll?.('.match-stamp.past') || [])
+  ];
+
   const applySpoilMeter = root => {
-    root.querySelectorAll('.match-stamp.past').forEach(stamp => {
+    meterStampsIn(root).forEach(stamp => {
       // A calculating stamp contains only an icon, whose empty text used to
       // coerce to Number('') === 0 and briefly paint a false meter score.
       const rawValue = stamp.textContent.trim();
@@ -80,8 +85,13 @@
     });
   };
 
+  const listGamesIn = root => [
+    ...(root instanceof Element && root.matches('.list-game') ? [root] : []),
+    ...(root.querySelectorAll?.('.list-game') || [])
+  ];
+
   const promoteResultDetails = root => {
-    root.querySelectorAll('.list-game').forEach(card => {
+    listGamesIn(root).forEach(card => {
       const content = card.querySelector(':scope > .list-content');
       if (!content) return;
       const details = [...content.querySelectorAll(':scope > .tab-final-score, :scope > .box-score, :scope > .incident-list')];
@@ -89,10 +99,10 @@
     });
   };
 
-  const refresh = () => {
-    rebrandText(document.body);
-    applySpoilMeter(document);
-    promoteResultDetails(document);
+  const refresh = (root = document.body) => {
+    rebrandText(root);
+    applySpoilMeter(root);
+    promoteResultDetails(root);
   };
 
   const modal = document.getElementById('spoil-meter-modal');
@@ -133,5 +143,32 @@
   });
 
   refresh();
-  new MutationObserver(refresh).observe(document.body, {childList: true, subtree: true});
+  const pendingRefreshRoots = new Set();
+  let refreshFrame = 0;
+  const queueRefresh = root => {
+    if (!root) return;
+    const focused = root.closest?.('.match-stamp.past, .list-game') || root;
+    pendingRefreshRoots.add(focused);
+    if (refreshFrame) return;
+    refreshFrame = requestAnimationFrame(() => {
+      refreshFrame = 0;
+      const roots = [...pendingRefreshRoots];
+      pendingRefreshRoots.clear();
+      roots.forEach(refresh);
+    });
+  };
+  new MutationObserver(records => {
+    records.forEach(record => {
+      const target = record.target instanceof Element ? record.target : record.target.parentElement;
+      if (target?.closest('.match-stamp.past, .list-game')) queueRefresh(target);
+      record.addedNodes.forEach(node => {
+        if (!(node instanceof Element)) return;
+        if (node.matches('.list-game, .match-stamp.past')) queueRefresh(node);
+        else {
+          const affected = node.querySelector('.match-stamp.past, .list-game');
+          if (affected) queueRefresh(affected);
+        }
+      });
+    });
+  }).observe(document.body, {childList: true, subtree: true});
 })();

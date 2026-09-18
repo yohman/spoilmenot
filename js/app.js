@@ -213,6 +213,8 @@ new MutationObserver(()=>listShell.querySelectorAll('[data-game]').forEach(card=
 rosterMarkup=function(g){const iso={ENG:'gb',SCO:'gb',WAL:'gb',NIR:'gb',USA:'us',CAN:'ca',AUS:'au',NZ:'nz',IRL:'ie',FRA:'fr',ESP:'es',POR:'pt',BRA:'br',ARG:'ar',BEL:'be',NED:'nl',GER:'de',ITA:'it',DEN:'dk',SWE:'se',NOR:'no',FIN:'fi',POL:'pl',CRO:'hr',SRB:'rs',UKR:'ua',CZE:'cz',SVK:'sk',HUN:'hu',AUT:'at',SUI:'ch',TUR:'tr',GRE:'gr',ROU:'ro',BUL:'bg',SVN:'si',ALB:'al',MAR:'ma',ALG:'dz',TUN:'tn',EGY:'eg',SEN:'sn',GHA:'gh',NGA:'ng',CIV:'ci',CMR:'cm',MLI:'ml',RSA:'za',JPN:'jp',KOR:'kr',CHN:'cn',URU:'uy',COL:'co',CHI:'cl',ECU:'ec',PAR:'py',PER:'pe',MEX:'mx',JAM:'jm'},player=(raw,role)=>{const p=raw.athlete||raw,number=raw.jersey||p.jersey||p.jerseyNumber||'—',position=raw.position?.abbreviation||p.position?.abbreviation||raw.position?.displayName||p.position?.displayName||'—',country=p.flag||raw.flag||p.country||raw.country||p.nationality||raw.nationality||p.citizenship||raw.citizenship||{},label=country.alt||country.displayName||country.name||country.fullName||country.abbreviation||country.code||'',code=String(country.abbreviation||country.code||country.isoCode||country.id||'').toUpperCase(),url=p.flag?.href||raw.flag?.href||country.href||country.logo||(iso[code]?`https://flagcdn.com/24x18/${iso[code]}.png`:''),flag=url?`<img class="lineup-flag" src="${url}" alt="${label||'Country flag'}">`:'<i class="lineup-flag empty" aria-hidden="true"></i>';return `<div class="lineup-player ${role}"><em>${number}</em>${flag}<span title="${p.displayName||p.fullName||'Unknown player'}">${p.displayName||p.fullName||'Unknown player'}</span><small>${position}</small></div>`},groups=(g.rosters||[]).map(r=>{const name=r.team?.abbreviation||r.team?.displayName||'SQUAD',logo=r.team?.logo||r.team?.logos?.[0]?.href||(name===g.homeAbbr?g.homeLogo:name===g.awayAbbr?g.awayLogo:''),all=r.roster||r.athletes||r.entries||r.players||[],starters=r.starters||r.startingXI||all.filter(x=>x.starter===true||x.isStarter===true||x.status?.type==='starter'),subs=r.substitutes||r.bench||all.filter(x=>x.substitute===true||x.isSubstitute===true||x.status?.type==='substitute');return {name,logo,all,starters,subs,hasRoles:starters.length||subs.length}}).filter(x=>x.all.length||x.starters.length||x.subs.length);if(!groups.length)return '<p class="lineup-empty">Official lineup data is not available for this match.</p>';return `<div class="lineups">${groups.map(group=>`<section><b>${group.logo?`<img src="${group.logo}">`:''}${group.name}</b>${group.hasRoles?`${group.starters.length?`<h4>STARTING XI</h4>${group.starters.map(p=>player(p,'starter')).join('')}`:''}${group.subs.length?`<h4>BENCH</h4>${group.subs.map(p=>player(p,'sub')).join('')}`:''}`:group.all.map(p=>player(p,'squad')).join('')}</section>`).join('')}</div>`};
 function incidentTimeline(g){const events=(g.events||[]).filter(e=>['goal','red','yellow','penalty','sub'].includes(e.type)).slice(0,10);return events.map(e=>{const logo=e.teamId&&e.teamId===g.homeId?g.homeLogo:e.teamId&&e.teamId===g.awayId?g.awayLogo:'',icon=e.type==='goal'&&logo?`<img class="incident-badge" src="${logo}" aria-hidden="true">`:`<i class="incident-mark ${e.type}" aria-hidden="true"></i>`,text=e.scorer&&e.text.includes(e.scorer)?e.text.split(e.scorer).join(`<strong class="incident-player">${e.scorer}</strong>`):e.text;return `<div class="incident ${e.type}"><time>${Number.isFinite(e.minute)?`${e.minute}'`:'—'}</time>${icon}<span>${text}</span></div>`}).join('')||'<p>Detailed incidents are not yet available.</p>'}function rosterMarkup(g){const groups=(g.rosters||[]).map(r=>{const name=r.team?.abbreviation||r.team?.displayName||'SQUAD',logo=r.team?.logo||r.team?.logos?.[0]?.href||(name===g.homeAbbr?g.homeLogo:name===g.awayAbbr?g.awayLogo:'');return {name,logo,players:r.roster||r.athletes||r.entries||r.players||[]}}).filter(x=>x.players.length);if(!groups.length)return '<p class="lineup-empty">Official lineup data is not available for this match.</p>';return `<div class="lineups">${groups.map(group=>`<section><b>${group.logo?`<img src="${group.logo}">`:''}${group.name}</b>${group.players.map(raw=>{const p=raw.athlete||raw,number=raw.jersey||p.jersey||'—',position=raw.position?.abbreviation||p.position?.abbreviation||raw.position?.displayName||p.position?.displayName||'—',flag=p.flag?.href||raw.flag?.href||'',country=p.flag?.alt||raw.flag?.alt||'';return `<div class="lineup-player"><em>${number}</em>${flag?`<img src="${flag}" alt="${country}">`:''}<span>${p.displayName||p.fullName||'Unknown player'}</span><small>${position}</small></div>`}).join('')}</section>`).join('')}</div>`}function openInfo(g,spoilers=false){const s=g.scoreResult||WatchScore.score(g),injuries=(g.injuries||[]).length,teams=spoilers?`<span class="result-team"><img src="${g.homeLogo||''}">${g.homeAbbr||g.home}</span><strong class="result-final">${g.homeScore}–${g.awayScore}</strong><span class="result-team"><img src="${g.awayLogo||''}">${g.awayAbbr||g.away}</span>`:`<span class="result-team"><img src="${g.homeLogo||''}">${g.homeAbbr||g.home}</span><strong class="result-versus">v</strong><span class="result-team"><img src="${g.awayLogo||''}">${g.awayAbbr||g.away}</span>`;info.innerHTML=`<button class="close" aria-label="Close">×</button><span class="eyebrow">${g.completed?'MATCH NOTES':'MATCH PREVIEW'}</span><h2 class="result-title">${teams}</h2>${g.completed?`<div class="info-score">${s?.watchScore??'—'}</div><p>${WatchScore.reasons(g,s||{}).join(' · ')}</p><div class="detail-tabs">${spoilers?'':'<button data-results>SHOW MATCH RESULTS</button>'}<button data-lineup>SHOW LINEUP</button></div>${spoilers?`<div class="incident-list">${incidentTimeline(g)}</div>`:''}<div data-lineup-content></div>`:`<p>${g.league} · ${g.venue}</p><p>${g.time.toLocaleString(undefined,{weekday:'long',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'})}</p>${g.rosters?.length?'<p>OFFICIAL SQUAD INFORMATION AVAILABLE</p>':''}${injuries?`<p>${injuries} provider injury / availability update${injuries>1?'s':''}`:''}`}`;info.hidden=false;info.querySelector('.close').onclick=()=>info.hidden=true;info.querySelector('[data-results]')?.addEventListener('click',()=>openInfo(g,true));info.querySelector('[data-lineup]')?.addEventListener('click',e=>{const box=info.querySelector('[data-lineup-content]');box.innerHTML=box.innerHTML?'':rosterMarkup(g);e.currentTarget.textContent=box.innerHTML?'HIDE LINEUP':'SHOW LINEUP'})}
 const meterResultFor=game=>{
+  const locked=game.__meterScore;
+  if(Number.isFinite(Number(locked?.watchScore)))return locked;
   const supplied=game.scoreResult;
   if(Number.isFinite(Number(supplied?.watchScore)))return supplied;
   const calculated=WatchScore.score(game);
@@ -1181,6 +1183,19 @@ const bindFutureStandingsButtons=()=>listShell.querySelectorAll('button[data-for
 });
 new MutationObserver(bindFutureStandingsButtons).observe(listShell,{childList:true,subtree:true});
 bindFutureStandingsButtons();
+const paintMeterAtCard=(card,game)=>{
+  const stamp=card?.querySelector(':scope > strong');
+  if(!stamp)return;
+  const leagueStamp=stamp.querySelector('.stamp-league')?.outerHTML||'';
+  const score=Number(game.__meterScore?.watchScore);
+  card.classList.toggle('score-calculating',!!game.__watchCalculating);
+  if(game.__watchCalculating){
+    stamp.classList.remove('spoil-meter-badge','spoil-meter-trigger');
+    stamp.innerHTML=`<span class="score-pending" role="status" aria-label="Calculating Spoil Meter"><i class="score-spinner" aria-hidden="true"></i><em>···</em></span>${leagueStamp}`;
+    return;
+  }
+  stamp.innerHTML=`${game.__mwRevealed&&Number.isFinite(score)?Math.round(score):'?'}${leagueStamp}`;
+};
 const toggleCardMeter=(button,card)=>{
   const game=games.find(item=>String(item.id)===String(card?.dataset.game));
   if(!game?.completed)return;
@@ -1189,51 +1204,48 @@ const toggleCardMeter=(button,card)=>{
   // from the same physical click while that rebuild is in flight.
   if(now-(game.__meterToggleAt||0)<250)return;
   game.__meterToggleAt=now;
+  if(game.__watchCalculating)return;
   if(game.__mwRevealed){
     game.__mwRevealed=false;
     game.displayScore=50;
     if(!document.body.classList.contains('view-list'))plot?.render();
-    rerenderAtCard(card);
+    paintMeterAtCard(card,game);
+    syncMeterRevealControl();
     return;
   }
-  const anchor=cardAnchor(card);
-  if(anchor)listCardAnchors.set(anchor.id,anchor);
-  // Fixture scores are already present in the list feed.  Give the reader a
-  // genuine initial meter immediately, then quietly replace it with the
-  // richer event-and-stat version when the provider detail arrives.
+  // Freeze the first valid calculation for this reveal.  Previously a second
+  // provider pass painted over the number and rebuilt the long fixture list,
+  // which made the score flicker and occasionally displaced the reader.
   const reveal=score=>{
     if(!score||!Number.isFinite(Number(score.watchScore)))return false;
-    game.scoreResult=score;
-    game.displayScore=Math.round(Number(score.watchScore));
+    game.__meterScore={...score,watchScore:Math.round(Number(score.watchScore))};
+    game.scoreResult=game.__meterScore;
+    game.displayScore=game.__meterScore.watchScore;
     game.__mwRevealed=true;
     game.__watchCalculating=false;
     game._watchLoading=false;
     if(!document.body.classList.contains('view-list'))plot?.render();
-    rerenderAtCard(card);
+    paintMeterAtCard(card,game);
+    syncMeterRevealControl();
     return true;
   };
   const immediate=meterResultFor(game);
   if(immediate){
     reveal(immediate);
-    if(!game._enriched&&!game._meterRefineRequest){
-      game._meterRefineRequest=EPLData.enrich(game).then(()=>{
-        const refined=meterResultFor(game);
-        if(!refined)return;
-        const changed=Math.round(Number(refined.watchScore))!==game.displayScore;
-        game.scoreResult=refined;
-        game.displayScore=Math.round(Number(refined.watchScore));
-        if(changed){
-          if(!document.body.classList.contains('view-list'))plot?.render();
-          rerenderAtGame(game.id);
-        }
-      }).catch(()=>{}).finally(()=>{game._meterRefineRequest=null});
-    }
     return;
   }
-  card.classList.add('score-calculating');
-  const stamp=card.querySelector(':scope > strong'),leagueStamp=stamp?.querySelector('.stamp-league')?.outerHTML||'';
-  if(stamp)stamp.innerHTML=`<span class="score-pending" role="status" aria-label="Calculating Spoil Meter"><i class="score-spinner" aria-hidden="true"></i><em>···</em></span>${leagueStamp}`;
-  plot?.activate(game);
+  game.__watchCalculating=true;
+  game._watchLoading=true;
+  paintMeterAtCard(card,game);
+  const request=game._enrichRequest||EPLData.enrich(game);
+  request.then(()=>reveal(meterResultFor(game))).catch(()=>{}).finally(()=>{
+    if(game._meterRequest!==request)return;
+    game.__watchCalculating=false;
+    game._watchLoading=false;
+    if(!game.__mwRevealed)paintMeterAtCard(card,game);
+    game._meterRequest=null;
+  });
+  game._meterRequest=request;
 };
 const bindCardMeterButtons=()=>listShell.querySelectorAll('.spoil-meter-value:not([data-meter-bound])').forEach(button=>{
   button.dataset.meterBound='true';

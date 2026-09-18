@@ -1060,32 +1060,71 @@ listRow=function(game){
   const team=(side,name,logo)=>`<span class="${side}-team"><img src="${logo||''}" alt=""><b class="team-name" title="${name}">${name}</b></span>`;
   const anticipation=game.anticipationBreakdown||{};
   const preview=!game.completed&&!game.live?`<small class="match-preview">COMPETITIVENESS ${anticipation.competitiveness??'—'} · CONTEXT ${anticipation.tableContext??'—'} · TIMING ${anticipation.seasonTiming??'—'}</small>`:'';
-  const lineupAction=game.completed?`<div class="schedule-card-actions"><button type="button" data-schedule-lineup aria-expanded="${!!game.__showLineup}">${game.__showLineup?'HIDE LINEUP':'SHOW LINEUP'}</button></div>`:'';
+  const lineupAction=game.completed?`<button class="schedule-card-lineup" type="button" data-schedule-lineup aria-expanded="${!!game.__showLineup}">LINEUP</button>`:'';
   const details=game.__showLineup?`<section class="schedule-lineup" aria-label="Spoiler-free lineup">${game.__lineupLoading?'<p class="lineup-loading">LOADING OFFICIAL LINEUP…</p>':rosterMarkup(game)}</section>`:'';
   const leagueStamp=activeLeague==='all'&&game.leagueLogo?`<span class="stamp-league" title="${game.league||''}" aria-label="${game.league||''}"><img src="${game.leagueLogo}" alt="${game.league||''}"></span>`:'';
   const round=eplMatchday(game);
   const matchday=game.leagueId==='epl'&&Number.isFinite(round)?`<small class="card-matchday">MATCHDAY ${round}</small>`:'';
   const formShown=!!game.__showForm||futureFormSpoilers.has(String(game.id));
   const formToggle=!game.completed&&!game.live?`<label class="form-spoiler-toggle"><input type="checkbox" data-form-spoilers aria-label="Show records and standings" ${formShown?'checked':''}><span class="form-spoiler-show">SPOILER</span><span class="form-spoiler-hide">HIDE</span></label>`:'';
-  return `<article class="list-game ${state} ${game.completed?'match-page-link':''} ${game.sport==='football'?'football-game':''} ${formShown?'form-spoilers':''}" data-game="${game.id}"><strong aria-hidden="${game.completed?'false':'true'}">${stamp}${leagueStamp}</strong><div class="list-content"><div class="list-teams">${team('home',game.home,game.homeLogo)}${team('away',game.away,game.awayLogo)}</div>${lineupAction}${preview}${details}</div><div class="list-meta"><b>${game.live?'IN PROGRESS':timeAway(game)}</b><small class="match-datetime">${cardDateMarkup(game.time)}</small>${matchday}${formToggle}</div></article>`;
+  const kickoff=`<div class="card-kickoff"><b>${game.live?'IN PROGRESS':timeAway(game)}</b><small class="match-datetime">${cardDateMarkup(game.time)}</small>${matchday}${formToggle}${lineupAction}</div>`;
+  return `<article class="list-game ${state} ${game.completed?'match-page-link':''} ${game.sport==='football'?'football-game':''} ${formShown?'form-spoilers':''}" data-game="${game.id}"><strong aria-hidden="${game.completed?'false':'true'}">${stamp}${leagueStamp}</strong><div class="list-content"><div class="list-teams">${team('home',game.home,game.homeLogo)}${kickoff}${team('away',game.away,game.awayLogo)}</div>${preview}${details}</div><div class="list-meta"></div></article>`;
 };
-listShell.addEventListener('click',event=>{
-  const button=event.target.closest('[data-schedule-lineup]'),card=event.target.closest('[data-game]');
-  if(!button||!card)return;
-  const game=games.find(item=>String(item.id)===String(card.dataset.game));
+const hasSpoilerFreeLineup=game=>Array.isArray(game?.rosters)&&game.rosters.some(roster=>rosterEntries(roster).length);
+const loadSpoilerFreeLineup=game=>{
+  if(hasSpoilerFreeLineup(game))return hydrateRosterFlags(game).catch(()=>game);
+  if(game._lineupRequest)return game._lineupRequest;
+  const request=EPLData.enrich(game,{lineup:true})
+    .then(()=>hydrateRosterFlags(game))
+    .catch(()=>game)
+    .finally(()=>{if(game._lineupRequest===request)game._lineupRequest=null});
+  game._lineupRequest=request;
+  return request;
+};
+let lineupPrefetchSerial=0;
+const prefetchCardLineups=matches=>{
+  const serial=++lineupPrefetchSerial,now=Date.now(),recent=matches
+    .filter(game=>game.completed&&game.time>=now-5*864e5&&!hasSpoilerFreeLineup(game))
+    .sort((left,right)=>Math.abs(left.time-now)-Math.abs(right.time-now));
+  const upcoming=lineupCandidates(matches).filter(game=>!hasSpoilerFreeLineup(game));
+  const queue=[...recent,...upcoming].slice(0,activeLeague==='all'?6:8);
+  let cursor=0;
+  const worker=()=>{
+    if(serial!==lineupPrefetchSerial)return;
+    const game=queue[cursor++];if(!game)return;
+    loadSpoilerFreeLineup(game).catch(()=>{}).finally(worker);
+  };
+  const begin=()=>Array.from({length:2},worker);
+  if('requestIdleCallback'in window)window.requestIdleCallback(begin,{timeout:1600});else window.setTimeout(begin,320);
+};
+const toggleScheduleLineup=(button,card)=>{
+  const game=games.find(item=>String(item.id)===String(card?.dataset.game));
   if(!game)return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
   game.__showLineup=!game.__showLineup;
   game.__lineupSpoilers=false;
   game.__showResults=false;
   game.__showSummary=false;
   if(!game.__showLineup){rerenderAtCard(card);return}
-  game.__lineupLoading=true;
+  game.__lineupLoading=!hasSpoilerFreeLineup(game);
   rerenderAtCard(card);
-  EPLData.enrich(game,{lineup:true})
-    .then(()=>hydrateRosterFlags(game))
-    .finally(()=>{game.__lineupLoading=false;rerenderAtCard(card)});
+  loadSpoilerFreeLineup(game).finally(()=>{game.__lineupLoading=false;rerenderAtCard(card)});
+};
+const bindScheduleLineupButtons=()=>listShell.querySelectorAll('[data-schedule-lineup]:not([data-lineup-bound])').forEach(button=>{
+  button.dataset.lineupBound='true';
+  button.addEventListener('click',event=>{
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    toggleScheduleLineup(button,button.closest('[data-game]'));
+  });
+});
+new MutationObserver(bindScheduleLineupButtons).observe(listShell,{childList:true,subtree:true});
+bindScheduleLineupButtons();
+listShell.addEventListener('click',event=>{
+  const button=event.target.closest('[data-schedule-lineup]'),card=event.target.closest('[data-game]');
+  if(!button||!card)return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  toggleScheduleLineup(button,card);
 },true);
 listShell.addEventListener('click',event=>{
   const button=event.target.closest('[data-result-tab]'),card=event.target.closest('[data-game]');
@@ -1173,7 +1212,7 @@ function prepareGames(loaded){
 function renderLeagueSwitcher(){leagueSwitcher.innerHTML=leagueOptions().map(league=>`<button type="button" data-league="${league.id}" class="${league.id===activeLeague?'active':''}">${leagueLabel(league)}</button>`).join('')}
 leagueSwitcher.addEventListener('click',event=>{const button=event.target.closest('[data-league]');if(!button)return;event.preventDefault();switchLeague(button.dataset.league)});
 const lineupCandidates=source=>{const horizon=Date.now()+3*60*60*1000;return source.filter(game=>game.live||(!game.completed&&game.time>Date.now()&&(game.sport!=='baseball'||game.time<=horizon))).sort((a,b)=>a.time-b.time).slice(0,activeLeague==='mlb'?12:activeLeague==='all'?40:100)};
-async function switchLeague(id){if(id===activeLeague&&games.length)return;const league=id==='all'?allLeagueOption:EPLData.leagues[id];if(!league)return;const serial=(switchLeague.serial||0)+1;switchLeague.serial=serial;document.body.classList.add('league-switching');info.hidden=true;showLoader(`LOADING ${leagueName(league).toUpperCase()}…`);try{EPLData.setLeague(id);const loaded=await EPLData.load(id);if(serial!==switchLeague.serial)return;activeLeague=id;localStorage.setItem('spoil-me-not-last-league',id);const all=prepareGames(loaded);if(plot){plot.games=games;plot.now=new Date();plot.setTeamFilter(activeTeams);plot.recenter()}renderLeagueSwitcher();renderRibbon(all);renderList();loadTeamTable(id);requestAnimationFrame(()=>{document.getElementById('list-now')?.scrollIntoView({block:'center'});decorateCards();fitTeamNames(listShell)})}catch(error){const box=document.getElementById('error');box.textContent=`LIVE DATA UNAVAILABLE — ${error.message}`;box.hidden=false}finally{if(serial===switchLeague.serial){document.body.classList.remove('league-switching');await hideLoader()}}}
+async function switchLeague(id){if(id===activeLeague&&games.length)return;const league=id==='all'?allLeagueOption:EPLData.leagues[id];if(!league)return;const serial=(switchLeague.serial||0)+1;switchLeague.serial=serial;document.body.classList.add('league-switching');info.hidden=true;showLoader(`LOADING ${leagueName(league).toUpperCase()}…`);try{EPLData.setLeague(id);const loaded=await EPLData.load(id);if(serial!==switchLeague.serial)return;activeLeague=id;localStorage.setItem('spoil-me-not-last-league',id);const all=prepareGames(loaded);if(plot){plot.games=games;plot.now=new Date();plot.setTeamFilter(activeTeams);plot.recenter()}renderLeagueSwitcher();renderRibbon(all);renderList();loadTeamTable(id);requestAnimationFrame(()=>{document.getElementById('list-now')?.scrollIntoView({block:'center'});decorateCards();fitTeamNames(listShell)})}catch(error){const box=document.getElementById('error');box.textContent=`LIVE DATA UNAVAILABLE — ${error.message}`;box.hidden=false}finally{if(serial===switchLeague.serial){document.body.classList.remove('league-switching');await hideLoader();prefetchCardLineups(games)}}}
 window.addEventListener('spoil-me-not:choose-league',event=>{const id=event.detail?.id;if(!id)return;localStorage.setItem('spoil-me-not-last-league',id);switchLeague(id)});
 const meterRevealControl=document.getElementById('reveal-all'),meterRevealWrap=document.createElement('div');
 leagueSwitcher.hidden=true;meterRevealWrap.className='meter-reveal-control';meterRevealWrap.innerHTML='<span>SPOIL METERS?</span>';meterRevealWrap.append(meterRevealControl);document.querySelector('.masthead-actions')?.insertBefore(meterRevealWrap,document.getElementById('now-button'));
@@ -1182,4 +1221,4 @@ syncMeterRevealControl();
 const enrichForReveal=async completed=>{let cursor=0;const worker=async()=>{while(cursor<completed.length){const game=completed[cursor++];if(!game._enriched)await EPLData.enrich(game).catch(()=>game)}};await Promise.all(Array.from({length:3},worker))};
 meterRevealControl.onclick=async event=>{event.preventDefault();event.stopImmediatePropagation();const completed=games.filter(game=>game.completed),allRevealed=completed.length>0&&completed.every(game=>game.__mwRevealed);if(allRevealed){completed.forEach(game=>{game.__mwRevealed=false;game.displayScore=50});plot?.render();renderList();syncMeterRevealControl();return}meterRevealControl.disabled=true;await enrichForReveal(completed);completed.forEach(game=>{const score=game.scoreResult||(['baseball','football'].includes(game.sport)?null:WatchScore.score(game));if(score){game.scoreResult=score;plot?.reveal(game,score)}});renderList();meterRevealControl.disabled=false;syncMeterRevealControl()};
 new MutationObserver(syncMeterRevealControl).observe(listShell,{childList:true,subtree:true});
-async function boot(){showLoader(matchRouteId?'PREPARING FULL MATCH SPOILER':'SYNCING LEAGUES & FIXTURES',1000);try{EPLData.setLeague(activeLeague);const all=prepareGames(await EPLData.load(activeLeague));if(matchRouteId){const game=games.find(item=>String(item.id)===String(matchRouteId));if(!game)throw Error('This match is not available in the current season feed.');document.documentElement.classList.add('view-match');document.body.classList.add('view-match');plotShell.hidden=true;listShell.hidden=true;await EPLData.enrich(game,{lineup:true});if(!game.scoreResult)game.scoreResult=WatchScore.score(game);game.__resultTab='stats';renderMatchPage(game);await hideLoader();hydrateRosterFlags(game).then(()=>renderMatchPage(game));return}plot=new Gameplot({games,onSelect:select});plot.setTeamFilter(activeTeams);renderLeagueSwitcher();renderRibbon(all);renderList();loadTeamTable(activeLeague);document.body.classList.add('view-list');plotShell.hidden=true;listShell.hidden=false;await hideLoader();requestAnimationFrame(()=>{document.getElementById('list-now')?.scrollIntoView({block:'center'});decorateCards();fitTeamNames(listShell)});search.oninput=()=>renderTeams(all);search.onfocus=()=>renderTeams(all)}catch(error){await hideLoader();const box=document.getElementById('error');box.textContent=`LIVE DATA UNAVAILABLE — ${error.message}`;box.hidden=false}}boot()})();
+async function boot(){showLoader(matchRouteId?'PREPARING FULL MATCH SPOILER':'SYNCING LEAGUES & FIXTURES',1000);try{EPLData.setLeague(activeLeague);const all=prepareGames(await EPLData.load(activeLeague));if(matchRouteId){const game=games.find(item=>String(item.id)===String(matchRouteId));if(!game)throw Error('This match is not available in the current season feed.');document.documentElement.classList.add('view-match');document.body.classList.add('view-match');plotShell.hidden=true;listShell.hidden=true;await EPLData.enrich(game,{lineup:true});if(!game.scoreResult)game.scoreResult=WatchScore.score(game);game.__resultTab='stats';renderMatchPage(game);await hideLoader();hydrateRosterFlags(game).then(()=>renderMatchPage(game));return}plot=new Gameplot({games,onSelect:select});plot.setTeamFilter(activeTeams);renderLeagueSwitcher();renderRibbon(all);renderList();loadTeamTable(activeLeague);document.body.classList.add('view-list');plotShell.hidden=true;listShell.hidden=false;await hideLoader();prefetchCardLineups(games);requestAnimationFrame(()=>{document.getElementById('list-now')?.scrollIntoView({block:'center'});decorateCards();fitTeamNames(listShell)});search.oninput=()=>renderTeams(all);search.onfocus=()=>renderTeams(all)}catch(error){await hideLoader();const box=document.getElementById('error');box.textContent=`LIVE DATA UNAVAILABLE — ${error.message}`;box.hidden=false}}boot()})();

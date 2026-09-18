@@ -835,6 +835,7 @@
 .soccer-player-photo{position:relative;order:1;display:grid;place-items:center;width:35px;height:35px;border:2px solid color-mix(in srgb,var(--team-colour,#353533) 68%,#f2f2ee);border-radius:50%;overflow:visible;background:var(--team-colour,#353533);box-shadow:0 2px 0 rgba(0,0,0,.32)}
 .soccer-player-headshot{width:calc(100% - 5px)!important;height:calc(100% - 5px)!important;border-radius:50%;object-fit:cover;object-position:center top}.soccer-player-photo i{position:absolute;z-index:3;inset:0;display:grid!important;place-items:center;border-radius:50%;background:rgba(0,0,0,.14);color:var(--team-ink,#f1f1ed);font:600 11px/1 Inter,Arial,sans-serif;font-style:normal;text-shadow:0 1px 2px rgba(0,0,0,.45)}.soccer-player-photo.no-photo i{background:transparent}.soccer-player-flag{position:absolute!important;z-index:4;top:-4px;left:-5px;width:14px!important;height:10px!important;border:1px solid rgba(243,243,241,.72)!important;border-radius:1px!important;object-fit:cover!important;box-shadow:0 1px 2px rgba(0,0,0,.55)}
 .soccer-pitch-player>span[title]{order:2;align-self:center!important;display:block!important;max-width:68px!important;margin:5px auto 0!important;overflow:hidden!important;color:#ebeae5!important;font:9px/1.1 Inter,Arial,sans-serif!important;text-align:center!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.soccer-pitch-player>span[title] .soccer-player-country{display:block!important;max-width:68px!important;margin-top:2px!important;overflow:hidden!important;color:rgba(235,234,229,.62)!important;font:7px/1 "DM Mono",monospace!important;font-style:normal!important;letter-spacing:.02em!important;text-overflow:ellipsis!important;white-space:nowrap!important}
 .soccer-pitch-player>.player-events{position:static!important;z-index:3;order:3;display:flex!important;flex-wrap:wrap!important;justify-content:center!important;width:70px!important;max-width:70px!important;gap:3px!important;margin:4px auto 0!important;padding:0!important;transform:none!important}
 .soccer-pitch-player .player-event{display:inline-flex!important;min-width:0!important;justify-content:center!important;padding:2px 4px!important;border:1px solid #696964!important;border-radius:8px!important;background:#1a1a18!important;color:#f1f1ed!important;font:7px/1 "DM Mono",monospace!important;white-space:nowrap!important;box-shadow:0 1px 2px rgba(0,0,0,.35)}
 .soccer-pitch-player .player-event.goal{font-size:8px!important}.soccer-pitch-player .player-event .card-glyph{width:5px!important;height:8px!important}
@@ -1488,6 +1489,7 @@
    switcher. This keeps every spoiler interaction in one predictable place. */
 .spoiler-workspace{width:100%;min-width:0;margin:16px 0 2px}.spoiler-workspace>.soccer-result-card,.spoiler-workspace>.baseball-scorecard,.spoiler-workspace>.football-scorecard{margin-top:0!important}.spoiler-tabs{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:2px!important;width:100%!important;margin:12px 0 0!important;padding:3px!important;border:1px solid rgba(243,243,241,.11)!important;border-radius:8px!important;background:#1b1b1a!important}.spoiler-tabs button{min-width:0!important;min-height:29px!important;margin:0!important;padding:6px 3px!important;border:0!important;border-radius:5px!important;background:transparent!important;color:#96958f!important;font:700 7.5px/1 "DM Mono",monospace!important;letter-spacing:.075em!important;text-align:center!important;white-space:nowrap!important;cursor:pointer!important}.spoiler-tabs button:hover{background:rgba(243,243,241,.08)!important;color:#e8e8e3!important}.spoiler-tabs button.active,.spoiler-tabs button[aria-selected="true"]{background:#e9e9e4!important;color:#171716!important}.spoiler-tabs button:focus-visible{outline:1px solid #f3f3ef!important;outline-offset:2px!important}.spoiler-panel{min-width:0!important}.spoiler-panel>.box-score.soccer-box-score{margin-top:12px!important}.spoiler-panel>.incident-list{margin-top:12px!important}.spoiler-panel>.match-summary{margin-top:12px!important}.spoiler-empty{margin:14px 0 2px!important;color:#94938e!important;font:500 10px/1.45 "DM Mono",monospace!important;letter-spacing:.03em!important}
 .league-table{width:100%!important;margin:12px 0 2px!important;padding:13px!important;border:1px solid rgba(243,243,241,.11)!important;border-radius:11px!important;background:#20201e!important}.league-table>header{display:flex!important;justify-content:space-between!important;gap:10px!important;align-items:baseline!important;margin:0 0 10px!important;padding:0 0 9px!important;border-bottom:1px solid rgba(243,243,241,.09)!important}.league-table>header b{color:#e7e7e2!important;font:700 9px/1 "DM Mono",monospace!important;letter-spacing:.1em!important}.league-table>header small{color:#85847f!important;font:600 7px/1.2 "DM Mono",monospace!important;letter-spacing:.07em!important;text-align:right!important}.league-table-scroll{width:100%!important;overflow-x:auto!important;overscroll-behavior-x:contain!important;padding-bottom:2px!important}.league-table table{width:100%!important;min-width:500px!important;border-collapse:collapse!important;font:600 9px/1.2 Inter,Arial,sans-serif!important}.league-table th,.league-table td{height:29px!important;padding:0 5px!important;border-bottom:1px solid rgba(243,243,241,.065)!important;color:#aaa9a4!important;text-align:center!important;white-space:nowrap!important}.league-table thead th{height:21px!important;color:#85847f!important;font:700 7px/1 "DM Mono",monospace!important;letter-spacing:.06em!important}.league-table th:nth-child(2){min-width:100px!important;text-align:left!important}.league-table tbody th{display:flex!important;align-items:center!important;gap:5px!important;color:#d5d4cf!important;font:600 9px/1 Inter,Arial,sans-serif!important}.league-table tbody th img{width:17px!important;height:17px!important;object-fit:contain!important}.league-table tbody td:last-child b{color:#e9e9e4!important;font:700 10px/1 Inter,Arial,sans-serif!important}.league-table tr.is-home,.league-table tr.is-away{background:color-mix(in srgb,var(--table-team,#77736a) 18%,transparent)!important;box-shadow:inset 2px 0 var(--table-team,#d9d9d4)!important}.league-table tr.is-home th,.league-table tr.is-away th,.league-table tr.is-home td:last-child b,.league-table tr.is-away td:last-child b{color:#f2f2ed!important}.match-form{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important;width:100%!important;margin:12px 0 2px!important}.team-form{min-width:0!important;padding:12px!important;border:1px solid rgba(243,243,241,.11)!important;border-radius:11px!important;background:#20201e!important}.team-form>header{display:flex!important;align-items:center!important;gap:7px!important;margin:0 0 10px!important;padding:0 0 9px!important;border-bottom:1px solid rgba(243,243,241,.09)!important}.team-form>header>img{width:19px!important;height:19px!important;object-fit:contain!important}.team-form>header div{display:grid!important;min-width:0!important;gap:3px!important}.team-form>header b{overflow:hidden!important;color:#e7e7e2!important;font:650 11px/1.1 Inter,Arial,sans-serif!important;text-overflow:ellipsis!important;white-space:nowrap!important}.team-form>header small{color:#85847f!important;font:700 7px/1 "DM Mono",monospace!important;letter-spacing:.07em!important}.team-form ol{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:3px!important;margin:0!important;padding:0!important;list-style:none!important}.team-form li{display:grid!important;justify-items:center!important;gap:3px!important;min-width:0!important;padding:5px 2px!important;border:1px solid rgba(243,243,241,.08)!important;border-radius:5px!important;background:#1a1a18!important}.team-form li>b{display:grid!important;place-items:center!important;width:17px!important;height:17px!important;border-radius:50%!important;color:#161615!important;font:800 8px/1 Inter,Arial,sans-serif!important}.team-form .form-w>b{background:#82c99a!important}.team-form .form-d>b{background:#c0bfae!important}.team-form .form-l>b{background:#d27a72!important}.team-form li span{display:grid!important;justify-items:center!important;min-width:0!important;gap:2px!important}.team-form li img{width:14px!important;height:14px!important;object-fit:contain!important}.team-form li strong{overflow:hidden!important;max-width:100%!important;color:#dcdcd7!important;font:700 7px/1 "DM Mono",monospace!important;text-overflow:ellipsis!important;white-space:nowrap!important}.team-form li small{color:#92918c!important;font:600 7px/1 "DM Mono",monospace!important;white-space:nowrap!important}.team-form>p{margin:0!important;color:#96958f!important;font:500 9px/1.35 Inter,Arial,sans-serif!important}
+.league-table .division-table+.division-table{margin-top:15px!important;padding-top:13px!important;border-top:1px solid rgba(243,243,241,.1)!important}.league-table .division-table>b{display:block!important;margin:0 0 7px!important;color:#b9b8b2!important;font:700 8px/1 "DM Mono",monospace!important;letter-spacing:.12em!important}
 @media(max-width:500px){.spoiler-workspace{margin-top:13px!important}.spoiler-tabs{margin-top:10px!important}.spoiler-tabs button{min-height:28px!important;padding-inline:2px!important;font-size:6.8px!important;letter-spacing:.035em!important}.league-table{padding:11px!important}.match-form{grid-template-columns:1fr!important}.team-form{padding:11px!important}}
 
 /* The Spoil Me workspace is deliberately a full card row. Keeping it inside
@@ -1992,6 +1994,9 @@
    hold opens one focused spoiler route, so rich stats never expand inside a
    long, continuously reflowing fixture list. */
 .list-game.match-page-link{cursor:cell;touch-action:manipulation}
+.list-game.match-page-link{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.list-game.match-page-link img{-webkit-user-drag:none;user-drag:none}
+.list-game.match-page-link button,.list-game.match-page-link a{user-select:auto;-webkit-user-select:auto}
 .list-game.match-page-link::before{content:"HOLD TO OPEN SPOILER";position:absolute;right:13px;bottom:9px;color:rgba(243,243,239,.4);font:700 6px/1 "DM Mono",monospace;letter-spacing:.11em;pointer-events:none}
 .list-game.match-page-link.spoil-hold-active,
 .list-game.match-page-link.spoil-hold-complete{--spoil-hold-progress:0%;background:linear-gradient(90deg,rgba(184,61,59,.48) 0 var(--spoil-hold-progress),#181818 var(--spoil-hold-progress) 100%)!important;border-color:rgba(224,93,87,.9)!important;box-shadow:inset 0 0 0 1px rgba(255,183,174,.14),0 0 0 1px rgba(183,61,59,.1)!important}
@@ -2930,6 +2935,14 @@ html body #spoil-meter-modal img[src$="epl-official.png"]:not([data-no-outline])
   background:#2b2b29!important;
   object-fit:contain!important;
 }
+#spoil-meter-modal .league-choice-grid img.league-choice-mark.league-choice-image[src$="epl-official.png"]{
+  opacity:1!important;
+  filter:brightness(1) saturate(1)
+    drop-shadow(.6px 0 0 rgba(255,255,255,.58))
+    drop-shadow(-.6px 0 0 rgba(255,255,255,.58))
+    drop-shadow(0 .6px 0 rgba(255,255,255,.58))
+    drop-shadow(0 -.6px 0 rgba(255,255,255,.58))!important;
+}
 #spoil-meter-modal .league-choice-grid button b{grid-column:2!important;grid-row:1!important;align-self:end!important;color:#e9e9e4!important;font:700 9px/1 "DM Mono",monospace!important;letter-spacing:.09em!important}
 #spoil-meter-modal .league-choice-grid button span{grid-column:2!important;grid-row:2!important;align-self:start!important;margin-top:4px!important;color:#8f8f89!important;font:11px/1.15 Inter,Arial,sans-serif!important}
 #spoil-meter-modal .league-choice-grid button:hover,
@@ -2940,4 +2953,74 @@ html body #spoil-meter-modal img[src$="epl-official.png"]:not([data-no-outline])
   #spoil-meter-modal .league-choice-grid button:first-child{grid-column:auto!important}
   .modal-meter-mark{width:47px!important;height:47px!important}
   .league-choice-head h1{font-size:24px!important}
+}
+
+/* MLB line scores use marks only: club names belong in the match header, not
+   in the narrow inning grid. Pitching decisions deliberately break into a
+   name line and a detail line. */
+.sport-scorecard .baseball-scorecard-team{width:48px!important;padding-right:8px!important}
+.sport-scorecard .baseball-scorecard-team .sport-scorecard-identity{justify-content:center!important}
+.sport-scorecard .baseball-scorecard-team .sport-scorecard-identity>img{width:25px!important;height:25px!important;max-width:25px!important;max-height:25px!important;flex-basis:25px!important}
+.sport-scorecard .baseball-decisions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px 16px!important;width:100%!important}
+.sport-scorecard .baseball-decision{display:grid!important;grid-template-columns:20px minmax(0,1fr)!important;align-items:start!important;gap:7px!important;min-width:0!important}
+.sport-scorecard .baseball-decision>b{padding-top:2px!important;color:#f1f1ed!important;font:700 9px/1 "DM Mono",monospace!important}
+.sport-scorecard .baseball-decision>span{display:grid!important;gap:3px!important;min-width:0!important;overflow:visible!important;white-space:normal!important}
+.sport-scorecard .baseball-decision strong{display:block!important;overflow:hidden!important;color:#ecece7!important;font:650 11px/1.15 Inter,Arial,sans-serif!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.sport-scorecard .baseball-decision small{display:block!important;color:#989893!important;font:8px/1.35 "DM Mono",monospace!important;white-space:normal!important}
+.spoiler-panel>.incident-list .incident.run{background:rgba(243,243,241,.045)!important;border-left-color:var(--incident-team-color,rgba(243,243,241,.24))!important}
+@media(max-width:520px){
+  .sport-scorecard .baseball-scorecard-team{width:38px!important}
+  .sport-scorecard .baseball-decisions{grid-template-columns:1fr!important}
+}
+
+/* Match-page sport scorecards share the same quiet instrument-panel language
+   as Stats. These selectors intentionally work both inside list cards and the
+   focused match page. */
+.sport-scorecard{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0 0 12px!important;
+  padding:13px!important;
+  overflow:hidden!important;
+  border:1px solid rgba(243,243,239,.11)!important;
+  border-radius:11px!important;
+  background:#20201e!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+.sport-scorecard>header{
+  display:flex!important;
+  align-items:baseline!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  margin:0 0 8px!important;
+  padding:0 0 9px!important;
+  border-bottom:1px solid rgba(243,243,239,.09)!important;
+}
+.sport-scorecard>header b{color:#deded9!important;font:700 8px/1 "DM Mono",monospace!important;letter-spacing:.12em!important}
+.sport-scorecard>header small{color:#777772!important;font:600 7px/1 "DM Mono",monospace!important;letter-spacing:.07em!important;text-align:right!important}
+.sport-scorecard-scroll{width:100%!important;min-width:0!important;overflow-x:auto!important;overscroll-behavior-x:contain!important;scrollbar-width:thin!important}
+.sport-scorecard table{display:table!important;width:100%!important;margin:0!important;border:0!important;border-collapse:collapse!important;table-layout:fixed!important;background:transparent!important;color:#d7d7d2!important;font:600 10px/1 "DM Mono",monospace!important}
+.sport-scorecard table.baseball-linescore{min-width:545px!important}
+.sport-scorecard th,.sport-scorecard td{height:34px!important;padding:0 4px!important;border:0!important;text-align:center!important;vertical-align:middle!important;white-space:nowrap!important}
+.sport-scorecard thead th{height:24px!important;color:#858580!important;font-size:7.5px!important;font-weight:700!important;letter-spacing:.06em!important}
+.sport-scorecard thead th:first-child{text-align:left!important}
+.sport-scorecard tbody tr{border-top:1px solid rgba(243,243,239,.075)!important}
+.sport-scorecard .sport-scorecard-team{width:132px!important;padding:5px 7px 5px 0!important;text-align:left!important}
+.sport-scorecard-identity{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important}
+.sport-scorecard-identity>img{display:block!important;flex:0 0 24px!important;width:24px!important;height:24px!important;max-width:24px!important;max-height:24px!important;margin:0!important;object-fit:contain!important}
+.sport-scorecard-identity>span{display:grid!important;min-width:0!important;gap:2px!important}
+.sport-scorecard-identity b{color:#ecece7!important;font:750 10px/1 "DM Mono",monospace!important;letter-spacing:.04em!important}
+.sport-scorecard-identity small{overflow:hidden!important;color:#8d8d88!important;font:500 8px/1.1 Inter,Arial,sans-serif!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.sport-scorecard .baseball-total,.sport-scorecard .football-total{background:rgba(243,243,239,.035)!important;color:#f3f3ee!important;font-weight:800!important}
+.sport-scorecard .football-linescore{min-width:390px!important}
+.sport-scorecard .football-linescore .sport-scorecard-team{width:150px!important}
+@media(max-width:520px){
+  .sport-scorecard{padding:11px!important;border-radius:9px!important}
+  .sport-scorecard>header small{display:none!important}
+  .sport-scorecard table.baseball-linescore{min-width:510px!important}
+  .sport-scorecard .sport-scorecard-team{width:106px!important}
+  .sport-scorecard .football-linescore .sport-scorecard-team{width:116px!important}
+  .sport-scorecard-identity>img{flex-basis:21px!important;width:21px!important;height:21px!important;max-width:21px!important;max-height:21px!important}
+  .sport-scorecard-identity small{max-width:72px!important}
 }

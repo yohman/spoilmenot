@@ -6,13 +6,16 @@
   <meta name="theme-color" content="#11110f">
   <title>Spoil Me Not — Gameplot</title>
   <link rel="preconnect" href="https://site.api.espn.com">
-  <link rel="icon" type="image/svg+xml" href="assets/spoil-me-not-icon.svg">
-  <link rel="stylesheet" href="style.css?v=20260918-match-route-1">
+  <link rel="icon" type="image/svg+xml" href="assets/spoil-me-not-icon.svg?v=20260918-brandmark-1">
+  <link rel="stylesheet" href="style.css?v=20260918-brandmark-1">
 </head>
 <body>
   <main id="app">
     <header class="masthead">
-      <a class="wordmark" href="#" aria-label="Spoil Me Not home"><img src="assets/spoil-me-not-logo.png" alt="Spoil Me Not"></a>
+      <a class="wordmark" href="#" aria-label="Spoil Me Not home">
+        <span class="brand-orbit" aria-hidden="true"><i></i><b>?</b><em></em></span>
+        <span class="brand-type"><b>SPOIL</b><i>ME</i><b>NOT</b></span>
+      </a>
       <nav id="league-switcher" class="league-switcher" aria-label="Choose league"></nav>
       <nav id="team-ribbon" class="team-ribbon" aria-label="Filter teams"></nav>
       <div class="team-filter"><button id="team-toggle" class="team-toggle">TEAMS</button><div id="team-picker" class="team-picker" hidden><input id="team-search" type="search" placeholder="Filter teams" aria-label="Filter teams"><div id="team-results" class="team-results"></div></div></div>

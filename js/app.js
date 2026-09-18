@@ -262,12 +262,12 @@ const leagueLabel=league=>({all:'ALL',epl:'EPL',laliga:'La Liga',ucl:'UCL',carab
 const leagueName=league=>({all:'All Leagues',epl:'Premier League',laliga:'La Liga',ucl:'Champions League',carabao:'Carabao Cup',mlb:'Major League Baseball',nfl:'National Football League'}[league.id]||league.name||leagueLabel(league));
 const teamBadgeColor=team=>/^#[0-9a-f]{6}$/i.test(String(teamColors[team]||''))?teamColors[team]:'#454541';
 const teamBadgeCode=team=>String(teamAbbrs[team]||team||'').replace(/[^a-z0-9]/gi,'').slice(0,3).toUpperCase()||'TEAM';
-const renderLeagueSelector=()=>{leagueGallery.innerHTML=leagueOptions().map(league=>`<button type="button" class="league-gallery-item ${league.id===activeLeague?'active':''}" data-select-league="${league.id}" aria-pressed="${league.id===activeLeague}">${league.logo?`<img class="league-choice-badge" src="${league.logo}" alt="">`:''}<span>${leagueName(league)}</span><small>${league.id===activeLeague?'SELECTED':'CHOOSE LEAGUE'}</small></button>`).join('')};
+const renderLeagueSelector=()=>{leagueGallery.innerHTML=leagueOptions().map(league=>`<button type="button" class="league-gallery-item ${league.id===activeLeague?'active':''}" data-select-league="${league.id}" aria-pressed="${league.id===activeLeague}">${league.logo?`<img class="league-choice-badge" src="${league.logo}" alt="">`:'<i class="league-choice-badge league-choice-all" aria-hidden="true">ALL</i>'}<span>${leagueName(league)}</span><small>${league.id===activeLeague?'CURRENT LEAGUE':'OPEN LEAGUE'}</small></button>`).join('')};
 const openLeagueSelector=()=>{teamSelector.hidden=true;renderLeagueSelector();leagueSelector.hidden=false};
 const closeLeagueSelector=()=>{leagueSelector.hidden=true};
 leagueSelector.querySelector('[data-close-leagues]').onclick=closeLeagueSelector;
 leagueGallery.addEventListener('click',event=>{const button=event.target.closest('[data-select-league]');if(!button)return;closeLeagueSelector();switchLeague(button.dataset.selectLeague)});
-const renderTeamSelector=()=>{const all=ribbonTeams,allSelected=allTeamsSelected(all);teamGallery.innerHTML=all.map(team=>`<button type="button" class="team-gallery-item ${(allSelected||activeTeams.has(team))?'active':''}" data-select-team="${team}" aria-pressed="${allSelected||activeTeams.has(team)}"><img src="${logos[team]||''}" alt=""><span>${team}</span></button>`).join('')};
+const renderTeamSelector=()=>{const all=ribbonTeams,allSelected=allTeamsSelected(all);teamGallery.innerHTML=all.map(team=>`<button type="button" class="team-gallery-item ${(allSelected||activeTeams.has(team))?'active':''}" data-select-team="${team}" aria-pressed="${allSelected||activeTeams.has(team)}" style="--team-badge-color:${teamBadgeColor(team)}"><img src="${logos[team]||''}" alt=""><span>${team}</span></button>`).join('')};
 const openTeamSelector=()=>{leagueSelector.hidden=true;renderTeamSelector();teamSelector.hidden=false};
 const closeTeamSelector=()=>{teamSelector.hidden=true};
 teamSelector.querySelector('[data-close-selector]').onclick=closeTeamSelector;
@@ -1107,7 +1107,7 @@ listRow=function(game){
   const round=eplMatchday(game);
   const matchday=game.leagueId==='epl'&&Number.isFinite(round)?`<small class="card-matchday">MATCHDAY ${round}</small>`:'';
   const formShown=!!game.__showForm||futureFormSpoilers.has(String(game.id));
-  const formToggle=!game.completed&&!game.live?`<button class="form-spoiler-toggle" type="button" data-form-spoilers aria-pressed="${formShown}" aria-label="${formShown?'Hide standings':'Show standings'}"><span class="form-spoiler-show">SHOW STANDINGS</span><span class="form-spoiler-hide">HIDE STANDINGS</span></button>`:'';
+  const formToggle=!game.completed&&!game.live?`<button class="form-spoiler-toggle" type="button" data-form-spoilers aria-pressed="${formShown}" aria-label="Show standings">SHOW STANDINGS</button>`:'';
   const liveInfoAction=game.live?`<button class="schedule-card-info" type="button" data-live-info aria-expanded="${!!game.__showLiveInfo}">MATCH INFO</button>`:'';
   const actions=[formToggle,liveInfoAction,lineupAction].filter(Boolean).join('');
   const kickoff=`<div class="card-kickoff"><b>${game.live?'IN PROGRESS':timeAway(game)}</b><small class="match-datetime">${cardDateMarkup(game.time)}</small>${matchday}${actions?`<div class="card-kickoff-actions">${actions}</div>`:''}</div>`;

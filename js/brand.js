@@ -8,6 +8,23 @@
   ];
 
   const categoryFor = score => categories.find(([minimum]) => score >= minimum) || categories.at(-1);
+  const meterPaletteFor = score => {
+    if (score >= 80) return {
+      tone: '#e13f45', deep: '#65131e', highlight: '#ffd2b8', edge: '#ffb5a2', glow: 'rgba(225,63,69,.48)', ink: '#fffaf4'
+    };
+    if (score >= 65) return {
+      tone: '#ea7436', deep: '#773117', highlight: '#ffe1a5', edge: '#ffc27d', glow: 'rgba(234,116,54,.38)', ink: '#fffaf1'
+    };
+    if (score >= 45) return {
+      tone: '#c79b39', deep: '#5c4715', highlight: '#fff0ad', edge: '#e6c46b', glow: 'rgba(199,155,57,.25)', ink: '#fffbed'
+    };
+    if (score >= 25) return {
+      tone: '#59666e', deep: '#273238', highlight: '#c9d8dd', edge: '#84969d', glow: 'rgba(98,121,130,.17)', ink: '#f1f5f4'
+    };
+    return {
+      tone: '#34383a', deep: '#171a1b', highlight: '#a7afb0', edge: '#626a6b', glow: 'rgba(0,0,0,.24)', ink: '#d8dddc'
+    };
+  };
 
   const applySpoilMeter = root => {
     root.querySelectorAll('.match-stamp.past').forEach(stamp => {
@@ -17,13 +34,17 @@
       const value = rawValue === '' ? NaN : Number(rawValue);
       if (Number.isFinite(value) && value >= 0 && value <= 100) {
         const [, label, band] = categoryFor(value);
-        const lightness = 7 + 86 * Math.pow(value / 100, 1.25);
+        const palette = meterPaletteFor(value);
         stamp.classList.add('spoil-meter-badge');
         stamp.classList.remove('spoil-meter-trigger');
         stamp.dataset.spoilCategory = label;
         stamp.dataset.meterBand = band;
-        stamp.style.setProperty('--meter-tone', `hsl(0 0% ${lightness}%)`);
-        stamp.style.setProperty('--meter-ink', lightness > 58 ? '#111' : '#f3f3f1');
+        stamp.style.setProperty('--meter-tone', palette.tone);
+        stamp.style.setProperty('--meter-deep', palette.deep);
+        stamp.style.setProperty('--meter-highlight', palette.highlight);
+        stamp.style.setProperty('--meter-edge', palette.edge);
+        stamp.style.setProperty('--meter-glow', palette.glow);
+        stamp.style.setProperty('--meter-ink', palette.ink);
         if (!stamp.querySelector('.spoil-meter-value')) {
           const leagueMark = stamp.querySelector('.stamp-league')?.outerHTML || '';
           stamp.innerHTML = `<button type="button" class="spoil-meter-value" data-watch-toggle aria-label="Toggle Spoil Meter">${value}</button>${leagueMark}`;
@@ -33,6 +54,10 @@
         stamp.dataset.spoilCategory = 'SPOIL METER';
         delete stamp.dataset.meterBand;
         stamp.style.removeProperty('--meter-tone');
+        stamp.style.removeProperty('--meter-deep');
+        stamp.style.removeProperty('--meter-highlight');
+        stamp.style.removeProperty('--meter-edge');
+        stamp.style.removeProperty('--meter-glow');
         stamp.style.removeProperty('--meter-ink');
         if (!stamp.querySelector('.spoil-meter-value')) {
           const leagueMark = stamp.querySelector('.stamp-league')?.outerHTML || '';

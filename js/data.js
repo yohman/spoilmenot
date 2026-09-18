@@ -310,7 +310,13 @@ window.EPLData = (() => {
       // A feed can expose a usable roster before it marks all nine batting
       // spots as official.  When the user has explicitly opened a lineup,
       // hydrate its nationality details whenever roster players exist.
-      if ((lineup || (game.lineupAvailable && (game.live || (!game.completed && game.time - Date.now() <= 3 * 60 * 60 * 1000)))) && game.rosters?.some(roster => roster.roster?.length)) await hydrateMlbRosterCountries(game);
+      if ((lineup || (game.lineupAvailable && (game.live || (!game.completed && game.time - Date.now() <= 3 * 60 * 60 * 1000)))) && game.rosters?.some(roster => roster.roster?.length)) {
+        // Country metadata is useful decoration, but the people lookup is a
+        // second network request and should never block the batting order.
+        const details=hydrateMlbRosterCountries(game).catch(()=>game);
+        game._lineupDetailsPromise=details;
+        details.finally(()=>{if(game._lineupDetailsPromise===details)game._lineupDetailsPromise=null});
+      }
       const allPlays = feed.liveData?.plays?.allPlays || [];
       game.events = allPlays.filter(play => play.about?.isScoringPlay).map(play => ({ type: 'run', minute: Number(play.about?.inning || 0), inning: play.about?.inning, half: play.about?.halfInning, text: clean(play.result?.description), teamId: String(play.team?.id || ''), scorer: clean(play.matchup?.batter?.fullName), homeScore: Number(play.result?.homeScore), awayScore: Number(play.result?.awayScore), rbi: Number(play.result?.rbi || 0), captivating: Number(play.about?.captivatingIndex || 0) }));
       game.summary = { boxscore: { teams: Object.entries(sides).map(([side]) => ({ team: { id: side === 'home' ? game.homeId : game.awayId }, statistics: flattenStats(feed.liveData?.boxscore?.teams?.[side]) })) } };

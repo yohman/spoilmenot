@@ -1987,3 +1987,100 @@
 .app-loader-mark::before{content:""!important;position:absolute!important;inset:-5px!important;border:2px solid transparent!important;border-top-color:#db5a51!important;border-right-color:rgba(219,90,81,.4)!important;border-radius:50%!important;animation:app-loader-spin 1s linear infinite!important}.app-loader-mark i{position:absolute!important;inset:10px!important;border:1px dashed rgba(243,243,241,.23)!important;border-radius:50%!important}.app-loader-mark b{position:relative!important;color:#f3f3ef!important;font:600 29px/.8 Fraunces,Georgia,serif!important}.app-loader-mark em{position:absolute!important;right:8px!important;top:8px!important;width:7px!important;height:7px!important;border-radius:50%!important;background:#db5a51!important;box-shadow:0 0 0 3px rgba(219,90,81,.14)!important}
 .app-loader-leagues{display:flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;height:24px!important}.app-loader-leagues img{width:18px!important;height:18px!important;object-fit:contain!important;opacity:.75!important;animation:app-loader-breathe 1.4s ease-in-out infinite!important}.app-loader-leagues img:nth-child(2){animation-delay:.12s!important}.app-loader-leagues img:nth-child(3){animation-delay:.24s!important}.app-loader-leagues img:nth-child(4){animation-delay:.36s!important}.app-loader-leagues img:nth-child(5){animation-delay:.48s!important}.loading>b{margin-top:3px!important;font:700 10px/1 "DM Mono",monospace!important;letter-spacing:.15em!important}.loading small{color:#96958f!important;font:600 8px/1 "DM Mono",monospace!important;letter-spacing:.12em!important}@keyframes app-loader-spin{to{transform:rotate(360deg)}}@keyframes app-loader-breathe{50%{transform:translateY(-2px);opacity:1}}
 @media(prefers-reduced-motion:reduce){.app-loader-mark::before,.app-loader-leagues img{animation:none!important}}
+
+/* Completed fixtures are deliberately light in the schedule. A half-second
+   hold opens one focused spoiler route, so rich stats never expand inside a
+   long, continuously reflowing fixture list. */
+.list-game.match-page-link{cursor:cell;touch-action:manipulation}
+.list-game.match-page-link::before{content:"HOLD TO OPEN SPOILER";position:absolute;right:13px;bottom:9px;color:rgba(243,243,239,.4);font:700 6px/1 "DM Mono",monospace;letter-spacing:.11em;pointer-events:none}
+.list-game.match-page-link.spoil-hold-active,
+.list-game.match-page-link.spoil-hold-complete{--spoil-hold-progress:0%;background:linear-gradient(90deg,rgba(184,61,59,.48) 0 var(--spoil-hold-progress),#181818 var(--spoil-hold-progress) 100%)!important;border-color:rgba(224,93,87,.9)!important;box-shadow:inset 0 0 0 1px rgba(255,183,174,.14),0 0 0 1px rgba(183,61,59,.1)!important}
+.list-game.match-page-link.spoil-hold-active{cursor:progress}
+.list-game.match-page-link.spoil-hold-complete{--spoil-hold-progress:100%;background:#b83d3b!important}
+
+/* A focused match route has the space to show every spoiler without keeping a
+   season-length schedule and its observers alive beneath it. */
+html.view-match,body.view-match,body.view-match #app{height:auto!important;min-height:100%;overflow:auto!important}
+body.view-match .masthead,
+body.view-match #team-selector,
+body.view-match #league-selector,
+body.view-match .view-toggle,
+body.view-match #reveal-all,
+body.view-match #team-hover-label,
+body.view-match #team-preview,
+body.view-match .plot-shell,
+body.view-match #list-shell{display:none!important}
+body.view-match #match-page{display:block!important;min-height:100vh;padding:24px max(18px,calc((100vw - 1000px)/2)) 64px;background:#11110f}
+.match-page-card{width:min(100%,960px);margin:0 auto;padding:18px;border:1px solid rgba(243,243,239,.16);background:#1b1b19;box-shadow:0 18px 42px rgba(0,0,0,.18)}
+.match-page-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:16px;border-bottom:1px solid rgba(243,243,239,.11)}
+.match-page-top a{color:#d7d7d2;text-decoration:none;font:700 9px/1 "DM Mono",monospace;letter-spacing:.12em}
+.match-page-top a:hover{color:#fff}
+.match-page-top>span{display:inline-flex;align-items:center;gap:7px;color:#9e9d96;font:700 8px/1 "DM Mono",monospace;letter-spacing:.12em}
+.match-page-top img{width:20px;height:20px;object-fit:contain}
+.match-page-hero{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:18px;padding:28px 10px 21px}
+.match-page-team{display:grid;justify-items:center;gap:9px;min-width:0;text-align:center}
+.match-page-team img{width:50px;height:50px;object-fit:contain;filter:drop-shadow(0 0 1px rgba(243,243,239,.9))}
+.match-page-team b{max-width:100%;overflow:hidden;color:#f1f1ed;font:600 clamp(16px,2.2vw,24px)/1.02 Fraunces,Georgia,serif;text-overflow:ellipsis;white-space:nowrap}
+.match-page-final{display:grid;justify-items:center;gap:5px;text-align:center}
+.match-page-final strong{color:#f2f1ed;font:600 clamp(42px,7vw,68px)/.9 Fraunces,Georgia,serif;letter-spacing:-.075em;white-space:nowrap}
+.match-page-final small{color:#9e9d96;font:700 8px/1 "DM Mono",monospace;letter-spacing:.15em}
+.match-page-final time{color:#aaa9a2;font:500 9px/1.35 Inter,Arial,sans-serif;white-space:nowrap}
+.match-page-actions{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 23px}
+.match-page-actions button{min-height:31px;padding:0 12px;border:1px solid rgba(243,243,239,.2);background:#272725;color:#e7e6e1;font:700 8px/1 "DM Mono",monospace;letter-spacing:.11em;cursor:pointer}
+.match-page-actions button:hover{border-color:rgba(243,243,239,.65);background:#333330}
+.match-page-actions .highlight-link{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;width:auto!important;max-width:100%!important;min-height:31px!important;margin:0!important;padding:0 11px!important;border:1px solid rgba(243,243,239,.2)!important;background:#272725!important;color:#e7e6e1!important;text-decoration:none!important;font:700 8px/1 "DM Mono",monospace!important;letter-spacing:.11em!important;white-space:nowrap!important}
+.match-page-actions .highlight-link:hover{border-color:rgba(243,243,239,.65)!important;background:#333330!important;color:#fff!important}
+.match-page-actions .highlight-link svg{display:block!important;width:14px!important;height:10px!important;flex:0 0 auto!important;fill:#d64b45!important}
+.match-page-actions .highlight-link .youtube-play{fill:#fff!important}
+.match-page-actions .highlight-link small{display:inline!important;color:inherit!important;font:inherit!important;letter-spacing:0!important;opacity:.72!important}
+.match-page-actions .highlight-link .highlight-provider{display:inline-block!important;min-width:14px!important;color:inherit!important;font:inherit!important;letter-spacing:0!important}
+.match-page-lineup{margin:0 0 24px;padding:17px;border-top:1px solid rgba(243,243,239,.12);border-bottom:1px solid rgba(243,243,239,.12)}
+.match-page-card .spoiler-workspace{margin-top:0!important}
+@media(max-width:650px){
+  body.view-match #match-page{padding:10px 8px 34px}
+  .match-page-card{padding:12px 9px;border-color:rgba(243,243,239,.13)}
+  .match-page-top{padding:3px 3px 13px}
+  .match-page-hero{gap:8px;padding:23px 1px 18px}
+  .match-page-team img{width:38px;height:38px}
+  .match-page-team b{font-size:16px;white-space:normal}
+  .match-page-final strong{font-size:46px}
+  .match-page-final time{font-size:8px;max-width:105px;white-space:normal}
+  .match-page-lineup{padding:9px 0}
+  .list-game.match-page-link::before{right:10px;bottom:8px;font-size:5px}
+}
+
+/* A lineup is available directly from a schedule card without exposing the
+   result. The match page's Lineup tab deliberately uses the event-aware view. */
+.schedule-card-actions{display:flex!important;align-items:center!important;margin:11px 0 0!important}
+.schedule-card-actions button{min-height:30px!important;padding:0 11px!important;border:0!important;border-radius:2px!important;background:rgba(243,243,241,.1)!important;color:#deded9!important;font:700 8px/1 "DM Mono",monospace!important;letter-spacing:.1em!important;cursor:pointer!important}
+.schedule-card-actions button:hover{background:rgba(243,243,241,.18)!important;color:#fff!important}
+.schedule-lineup{width:100%!important;margin:14px 0 0!important;padding-top:1px!important;border-top:1px solid rgba(243,243,241,.12)!important}
+.schedule-lineup .soccer-lineup-view{margin-top:0!important}
+.lineup-loading{margin:14px 0!important;color:#96958f!important;font:600 9px/1.3 "DM Mono",monospace!important;letter-spacing:.1em!important}
+@media(min-width:901px){
+  .list-game.match-page-link:has(.schedule-lineup)>.list-content{display:contents!important}
+  .list-game.match-page-link:has(.schedule-lineup)>.list-content>.list-teams{grid-column:2!important;grid-row:1!important;min-width:0!important}
+  .list-game.match-page-link:has(.schedule-lineup)>.list-content>.schedule-card-actions{grid-column:2!important;grid-row:2!important}
+  .list-game.match-page-link:has(.schedule-lineup)>.list-content>.schedule-lineup{grid-column:1/-1!important;grid-row:3!important;min-width:0!important}
+  .list-game.match-page-link:has(.schedule-lineup)>.list-meta{grid-column:3!important;grid-row:1 / span 2!important;min-width:0!important}
+}
+@media(max-width:900px){
+  .list-game.match-page-link .schedule-card-actions,.list-game.match-page-link .schedule-lineup{grid-column:1/-1!important;grid-row:auto!important;width:100%!important}
+}
+
+/* Keep one score presentation on the dedicated page. Soccer's scorers live
+   directly beneath that hero instead of repeating the complete score card. */
+.match-page-scorers{display:grid!important;grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr)!important;align-items:start!important;gap:8px!important;max-width:720px!important;margin:-2px auto 18px!important;padding:11px 16px 0!important;border-top:1px solid rgba(243,243,241,.1)!important}
+.match-page-scorers>.soccer-ball{align-self:start!important;justify-self:center!important;width:18px!important;height:18px!important;margin-top:1px!important;color:#efefeb!important;font-size:16px!important;line-height:1!important}
+.match-page-scorers .soccer-goal-list{display:grid!important;gap:5px!important;min-width:0!important;color:#d9d9d4!important;font:13px/1.23 Inter,Arial,sans-serif!important}
+.match-page-scorers .soccer-goal-list.home{text-align:right!important}.match-page-scorers .soccer-goal-list.away{text-align:left!important}
+.match-page-scorers .soccer-goal-list span{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.match-page-scorers .soccer-goal-list:empty:before{content:"—"!important;color:#777771!important}
+.spoiler-tabs{grid-template-columns:repeat(var(--spoiler-tab-count,5),minmax(0,1fr))!important}
+.spoiler-lineup{width:100%!important;min-width:0!important;margin:12px 0 2px!important}
+.spoiler-lineup .soccer-lineup-view{margin-top:0!important}
+@media(max-width:650px){
+  .match-page-scorers{grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr)!important;gap:4px!important;margin-bottom:14px!important;padding:10px 4px 0!important}
+  .match-page-scorers>.soccer-ball{width:16px!important;height:16px!important;font-size:14px!important}
+  .match-page-scorers .soccer-goal-list{gap:4px!important;font-size:11px!important}
+}

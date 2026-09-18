@@ -83,7 +83,9 @@
     window.dispatchEvent(new CustomEvent('spoil-me-not:choose-league', { detail: { id: choice.dataset.chooseLeague } }));
     dismiss();
   });
-  if (sessionStorage.getItem(modalVersionKey) === 'true') dismiss();
+  if (new URLSearchParams(location.search).has('match')) {
+    modal?.setAttribute('hidden', '');
+  } else if (sessionStorage.getItem(modalVersionKey) === 'true') dismiss();
 
   const guide = document.getElementById('spoil-meter-guide');
   const guideTrigger = document.getElementById('spoil-meter-help');

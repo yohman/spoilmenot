@@ -2322,3 +2322,108 @@ body.view-match #match-page{display:block!important;min-height:100vh;padding:24p
   .wordmark .brand-orbit em{top:2px!important;right:2px!important;width:4px!important;height:4px!important}
   .wordmark .brand-type,.wordmark .brand-type i{font-size:15px!important}
 }
+
+/* The score stamp is its own control: it must sit above the card hold target. */
+.list-game.past>strong.match-stamp.spoil-meter-badge{
+  position:relative!important;
+  z-index:6!important;
+  pointer-events:auto!important;
+}
+.list-game.past>strong.match-stamp.spoil-meter-badge .spoil-meter-value{
+  position:relative!important;
+  z-index:1!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+}
+
+/* All card actions live beneath the central kickoff information. */
+.card-kickoff-actions{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-wrap:wrap!important;
+  gap:4px!important;
+  width:100%!important;
+  margin-top:4px!important;
+}
+.card-kickoff .schedule-card-info,
+.card-kickoff .form-spoiler-toggle{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:20px!important;
+  margin:0!important;
+  padding:0 7px!important;
+  border:0!important;
+  border-radius:2px!important;
+  background:rgba(243,243,241,.1)!important;
+  color:#deded9!important;
+  font:700 7px/1 "DM Mono",monospace!important;
+  letter-spacing:.08em!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+  cursor:pointer!important;
+}
+.card-kickoff .form-spoiler-toggle{gap:5px!important}
+.card-kickoff .form-spoiler-hide{display:none!important}
+.list-game.future.form-spoilers .card-kickoff .form-spoiler-show{display:none!important}
+.list-game.future.form-spoilers .card-kickoff .form-spoiler-hide{display:inline!important}
+.card-kickoff .form-spoiler-toggle::before{
+  content:""!important;
+  display:block!important;
+  width:5px!important;
+  height:5px!important;
+  margin:0!important;
+  border-radius:50%!important;
+  background:#c84e4e!important;
+  box-shadow:0 0 0 2px rgba(200,78,78,.13)!important;
+}
+.card-kickoff .schedule-card-info:hover,
+.card-kickoff .form-spoiler-toggle:hover{background:rgba(243,243,241,.18)!important;color:#fff!important}
+.card-kickoff .schedule-card-info[aria-expanded="true"],
+.list-game.future.form-spoilers .card-kickoff .form-spoiler-toggle,
+.card-kickoff .form-spoiler-toggle[aria-pressed="true"]{background:#e9e9e4!important;color:#151515!important}
+.list-game.future.form-spoilers .card-kickoff .form-spoiler-toggle::before,
+.card-kickoff .form-spoiler-toggle[aria-pressed="true"]::before{background:#c84e4e!important;box-shadow:none!important}
+.list-game .list-teams:has(.card-kickoff)>.home-team .team-table-context,
+.list-game .list-teams:has(.card-kickoff)>.away-team .team-table-context{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  text-align:center!important;
+}
+
+/* Team selection is a focused editing surface, with its actions always available. */
+.team-band-summary [data-edit-teams],
+.team-selector-head button{
+  border:0!important;
+  border-radius:2px!important;
+  background:rgba(243,243,241,.1)!important;
+  color:#deded9!important;
+  font:700 8px/1 "DM Mono",monospace!important;
+  letter-spacing:.09em!important;
+  box-shadow:none!important;
+}
+.team-band-summary [data-edit-teams]{padding:7px 9px!important}
+.team-selector-head button{padding:7px 9px!important}
+.team-band-summary [data-edit-teams]:hover,
+.team-selector-head button:hover{border:0!important;background:rgba(243,243,241,.18)!important;color:#fff!important}
+.team-selector-head [data-close-selector],
+.team-selector-head [data-close-leagues]{background:#e9e9e4!important;color:#151515!important}
+.team-selector-head{
+  position:sticky!important;
+  top:-18px!important;
+  z-index:4!important;
+  margin:-18px -18px 14px!important;
+  padding:18px 18px 13px!important;
+  background:#20201e!important;
+  border-bottom:1px solid rgba(243,243,241,.12)!important;
+}
+@media(max-width:650px){
+  .card-kickoff-actions{gap:3px!important;margin-top:3px!important}
+  .card-kickoff .schedule-card-info,
+  .card-kickoff .form-spoiler-toggle{min-height:18px!important;padding:0 5px!important;font-size:5.8px!important;letter-spacing:.055em!important}
+  .team-selector-head{top:-14px!important;margin:-14px -14px 11px!important;padding:14px 14px 11px!important}
+  .team-selector-head button,.team-band-summary [data-edit-teams]{padding:6px 7px!important;font-size:7px!important}
+}

@@ -2854,3 +2854,90 @@ html body #spoil-meter-modal img[src$="epl-official.png"]:not([data-no-outline])
   grid-row:2!important;
   width:100%!important;
 }
+
+/* Opening choice: the same restrained instrument-and-card language used by
+   the masthead, Spoil Meter and redesigned selectors. */
+#spoil-meter-modal{
+  padding:18px!important;
+  background:rgba(9,9,8,.86)!important;
+  backdrop-filter:blur(9px)!important;
+}
+#spoil-meter-modal .league-choice-dialog{
+  width:min(500px,100%)!important;
+  padding:22px!important;
+  border:1px solid rgba(243,243,239,.16)!important;
+  border-radius:14px!important;
+  background:#181817!important;
+  box-shadow:0 24px 80px rgba(0,0,0,.58),inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+.league-choice-head{
+  display:flex!important;
+  align-items:center!important;
+  gap:14px!important;
+  margin:0 0 18px!important;
+  padding:0 1px 17px!important;
+  border-bottom:1px solid rgba(243,243,239,.1)!important;
+}
+.league-choice-head>span:last-child{display:grid!important;gap:3px!important;min-width:0!important}
+.league-choice-head small{color:#db5a51!important;font:700 7px/1 "DM Mono",monospace!important;letter-spacing:.16em!important}
+.league-choice-head h1{margin:0!important;color:#f3f3ef!important;font:600 27px/.98 Fraunces,Georgia,serif!important;letter-spacing:-.035em!important}
+.league-choice-head p{margin:1px 0 0!important;color:#8f8f89!important;font:10px/1.3 Inter,Arial,sans-serif!important}
+.modal-meter-mark{
+  position:relative!important;
+  display:grid!important;
+  flex:0 0 auto!important;
+  place-items:center!important;
+  width:53px!important;
+  height:53px!important;
+  border:1px solid rgba(243,243,239,.62)!important;
+  border-radius:50%!important;
+  background:#252523!important;
+  box-shadow:0 0 0 3px #181817,0 0 0 4px rgba(243,243,239,.12),0 8px 18px rgba(0,0,0,.34)!important;
+}
+.modal-meter-mark i{position:absolute!important;inset:5px!important;border:1px solid rgba(243,243,239,.2)!important;border-radius:50%!important}
+.modal-meter-mark b{color:#f3f3ef!important;font:600 24px/.8 Fraunces,Georgia,serif!important}
+.modal-meter-mark em{position:absolute!important;top:4px!important;right:4px!important;width:6px!important;height:6px!important;border-radius:50%!important;background:#db5a51!important}
+#spoil-meter-modal .league-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+#spoil-meter-modal .league-choice-grid button{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:43px minmax(0,1fr)!important;
+  grid-template-rows:auto auto!important;
+  align-items:center!important;
+  column-gap:10px!important;
+  min-height:74px!important;
+  margin:0!important;
+  padding:11px 12px!important;
+  border:1px solid rgba(243,243,239,.1)!important;
+  border-radius:9px!important;
+  background:#20201e!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025)!important;
+  text-align:left!important;
+  transition:transform .15s ease,border-color .15s ease,background .15s ease!important;
+}
+#spoil-meter-modal .league-choice-grid button:first-child{grid-column:1/-1!important;grid-template-columns:43px minmax(0,1fr)!important}
+#spoil-meter-modal .league-choice-grid button:first-child::before{content:"ALL";display:grid;grid-column:1!important;grid-row:1/span 2!important;place-items:center;width:41px;height:41px;border-radius:50%;background:#30302d;color:#e8e8e3;font:700 8px/1 "DM Mono",monospace;letter-spacing:.08em}
+#spoil-meter-modal .league-choice-grid button:first-child>b{font-size:0!important}
+#spoil-meter-modal .league-choice-grid button:first-child>b::after{content:"ALL LEAGUES";font:700 9px/1 "DM Mono",monospace!important}
+#spoil-meter-modal .league-choice-grid .league-choice-mark{
+  grid-column:1!important;
+  grid-row:1/span 2!important;
+  width:41px!important;
+  height:41px!important;
+  padding:5px!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:#2b2b29!important;
+  object-fit:contain!important;
+}
+#spoil-meter-modal .league-choice-grid button b{grid-column:2!important;grid-row:1!important;align-self:end!important;color:#e9e9e4!important;font:700 9px/1 "DM Mono",monospace!important;letter-spacing:.09em!important}
+#spoil-meter-modal .league-choice-grid button span{grid-column:2!important;grid-row:2!important;align-self:start!important;margin-top:4px!important;color:#8f8f89!important;font:11px/1.15 Inter,Arial,sans-serif!important}
+#spoil-meter-modal .league-choice-grid button:hover,
+#spoil-meter-modal .league-choice-grid button:focus-visible{transform:translateY(-1px)!important;border-color:rgba(219,90,81,.55)!important;background:#292725!important;outline:0!important}
+@media(max-width:520px){
+  #spoil-meter-modal .league-choice-dialog{padding:17px!important;border-radius:11px!important}
+  #spoil-meter-modal .league-choice-grid{grid-template-columns:1fr!important}
+  #spoil-meter-modal .league-choice-grid button:first-child{grid-column:auto!important}
+  .modal-meter-mark{width:47px!important;height:47px!important}
+  .league-choice-head h1{font-size:24px!important}
+}

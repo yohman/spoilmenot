@@ -7,7 +7,7 @@
   <title>Spoil Me Not — Gameplot</title>
   <link rel="preconnect" href="https://site.api.espn.com">
   <link rel="icon" type="image/svg+xml" href="assets/spoil-me-not-icon.svg?v=20260918-brandmark-1">
-  <link rel="stylesheet" href="style.css?v=20260918-fast-card-controls-1">
+  <link rel="stylesheet" href="style.css?v=20260918-instant-controls-1">
 </head>
 <body>
   <main id="app">
@@ -64,7 +64,10 @@
   </div>
   <section id="spoil-meter-modal" class="spoil-meter-modal" aria-label="Choose a league" role="dialog" aria-modal="true">
     <div class="spoil-meter-dialog league-choice-dialog">
-      <h1>Choose a league</h1>
+      <header class="league-choice-head">
+        <span class="modal-meter-mark" aria-hidden="true"><i></i><b>?</b><em></em></span>
+        <span><small>SPOIL ME NOT</small><h1>Choose a league</h1><p>Your spoiler-safe match guide.</p></span>
+      </header>
       <div class="league-choice-grid">
         <button type="button" data-choose-league="all"><b>ALL</b><span>All Leagues</span></button>
         <button type="button" data-choose-league="epl"><img class="league-choice-mark league-choice-image" src="assets/leagues/epl-official.png" alt=""><b>EPL</b><span>Premier League</span></button>
@@ -105,7 +108,7 @@
   <script src="js/anticipation.js"></script>
   <script src="js/data.js?v=20260918-fast-lineups-1"></script>
   <script src="js/gameplot.js?v=20260918-meter-reveal-1"></script>
-  <script src="js/app.js?v=20260918-fast-card-controls-1"></script>
-  <script src="js/brand.js?v=20260918-meter-observer-1"></script>
+  <script src="js/app.js?v=20260918-instant-controls-1"></script>
+  <script src="js/brand.js?v=20260918-direct-meter-1"></script>
 </body>
 </html>

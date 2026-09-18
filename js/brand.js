@@ -71,6 +71,7 @@
       }
     });
   };
+  window.refreshSpoilMeterStamp = stamp => applySpoilMeter(stamp);
 
   const rebrandText = root => {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);

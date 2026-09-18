@@ -1141,7 +1141,7 @@ listRow=function(game){
   const anticipation=game.anticipationBreakdown||{};
   const preview=!game.completed&&!game.live?`<small class="match-preview">COMPETITIVENESS ${anticipation.competitiveness??'—'} · CONTEXT ${anticipation.tableContext??'—'} · TIMING ${anticipation.seasonTiming??'—'}</small>`:'';
   const lineupAction=(game.completed||hasOfficialLineup(game))?`<button class="schedule-card-lineup" type="button" data-schedule-lineup aria-expanded="${!!game.__showLineup}">LINEUP</button>`:'';
-  const details=game.__showLineup?`<section class="schedule-lineup" aria-label="Spoiler-free lineup">${game.__lineupLoading?'<p class="lineup-loading">LOADING OFFICIAL LINEUP…</p>':rosterMarkup(game)}</section>`:'';
+  const details=lineupAction?`<section class="schedule-lineup-shell${game.__showLineup?' schedule-lineup':''}" aria-label="Spoiler-free lineup" ${game.__showLineup?'':'hidden'}><p class="lineup-loading">LOADING OFFICIAL LINEUP…</p></section>`:'';
   const leagueStamp=activeLeague==='all'&&game.leagueLogo?`<span class="stamp-league" title="${game.league||''}" aria-label="${game.league||''}"><img src="${game.leagueLogo}" alt="${game.league||''}"></span>`:'';
   const round=eplMatchday(game);
   const matchday=game.leagueId==='epl'&&Number.isFinite(round)?`<small class="card-matchday">MATCHDAY ${round}</small>`:'';
@@ -1157,10 +1157,11 @@ const loadSpoilerFreeLineup=game=>{
   const finishDetails=()=>{
     // Nationality flags and missing positions are enhancements, not a reason
     // to hold the official lineup behind a loading message.
-    hydrateRosterFlags(game).catch(()=>{}).finally(()=>{if(game.__showLineup)paintScheduleLineupAtGame(game)});
+    paintScheduleLineupAtGame(game);
+    hydrateRosterFlags(game).catch(()=>{}).finally(()=>paintScheduleLineupAtGame(game));
     hydrateRosterPositions(game);
     const providerDetails=game._lineupDetailsPromise;
-    if(providerDetails)Promise.resolve(providerDetails).catch(()=>{}).finally(()=>{if(game.__showLineup)paintScheduleLineupAtGame(game)});
+    if(providerDetails)Promise.resolve(providerDetails).catch(()=>{}).finally(()=>paintScheduleLineupAtGame(game));
     return game;
   };
   if(hasSpoilerFreeLineup(game))return Promise.resolve(finishDetails());
@@ -1188,15 +1189,19 @@ const prefetchCardLineups=matches=>{
   const begin=()=>Array.from({length:3},worker);
   window.setTimeout(begin,60);
 };
-function paintScheduleLineupAtGame(game){
+function paintScheduleLineupAtGame(game,{deferContent=false}={}){
   const current=[...listShell.querySelectorAll('[data-game]')].find(node=>String(node.dataset.game)===String(game.id));
   if(!current)return;
   const control=current.querySelector('[data-schedule-lineup]');
   control?.setAttribute('aria-expanded',String(!!game.__showLineup));
-  let section=current.querySelector('.schedule-lineup');
-  if(!game.__showLineup){section?.remove();return}
-  if(!section){section=document.createElement('section');section.className='schedule-lineup';section.setAttribute('aria-label','Spoiler-free lineup');current.querySelector('.list-content')?.append(section)}
-  section.innerHTML=game.__lineupLoading?'<p class="lineup-loading">LOADING OFFICIAL LINEUP…</p>':rosterMarkup(game);
+  let section=current.querySelector('.schedule-lineup,.schedule-lineup-shell');
+  if(!section){section=document.createElement('section');section.className='schedule-lineup-shell';section.hidden=true;section.setAttribute('aria-label','Spoiler-free lineup');section.innerHTML='<p class="lineup-loading">LOADING OFFICIAL LINEUP…</p>';current.querySelector('.list-content')?.append(section)}
+  section.classList.toggle('schedule-lineup',!!game.__showLineup);
+  section.hidden=!game.__showLineup;
+  if(deferContent)return;
+  if(hasSpoilerFreeLineup(game)){
+    if(section.dataset.lineupReady!=='true'){section.innerHTML=rosterMarkup(game);section.dataset.lineupReady='true'}
+  }else if(section.dataset.lineupReady!=='true'&&!section.querySelector('.lineup-loading'))section.innerHTML='<p class="lineup-loading">LOADING OFFICIAL LINEUP…</p>';
 }
 const toggleScheduleLineup=(button,card)=>{
   const game=games.find(item=>String(item.id)===String(card?.dataset.game));
@@ -1211,7 +1216,8 @@ const toggleScheduleLineup=(button,card)=>{
   game.__showLiveInfo=false;
   if(!game.__showLineup){paintScheduleLineupAtGame(game);return}
   game.__lineupLoading=!hasSpoilerFreeLineup(game);
-  paintScheduleLineupAtGame(game);
+  paintScheduleLineupAtGame(game,{deferContent:true});
+  requestAnimationFrame(()=>paintScheduleLineupAtGame(game));
   loadSpoilerFreeLineup(game).finally(()=>{game.__lineupLoading=false;paintScheduleLineupAtGame(game)});
 };
 const toggleFutureStandings=(button,card)=>{
@@ -1236,12 +1242,19 @@ const paintMeterAtCard=(card,game)=>{
   const score=Number(game.__meterScore?.watchScore);
   let control=stamp.querySelector('.spoil-meter-value');
   if(!control){control=document.createElement('button');control.type='button';control.className='spoil-meter-value';control.dataset.watchToggle='';control.setAttribute('aria-label','Toggle Spoil Meter');stamp.prepend(control)}
+  const setControlText=value=>{
+    const text=control.firstChild;
+    if(text?.nodeType===Node.TEXT_NODE&&control.childNodes.length===1)text.nodeValue=value;
+    else control.replaceChildren(document.createTextNode(value));
+  };
   card.classList.toggle('score-calculating',!!game.__watchCalculating);
   if(game.__watchCalculating){
-    control.innerHTML='<span class="score-pending" role="status" aria-label="Calculating Spoil Meter"><i class="score-spinner" aria-hidden="true"></i><em>···</em></span>';
+    setControlText('···');
+    window.refreshSpoilMeterStamp?.(stamp);
     return;
   }
-  control.textContent=game.__mwRevealed&&Number.isFinite(score)?String(Math.round(score)):'?';
+  setControlText(game.__mwRevealed&&Number.isFinite(score)?String(Math.round(score)):'?');
+  window.refreshSpoilMeterStamp?.(stamp);
 };
 const toggleCardMeter=(button,card)=>{
   const game=games.find(item=>String(item.id)===String(card?.dataset.game));

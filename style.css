@@ -2955,12 +2955,44 @@ html body #spoil-meter-modal img[src$="epl-official.png"]:not([data-no-outline])
   .league-choice-head h1{font-size:24px!important}
 }
 
+/* A regulation NFL line score is compact enough to fit without a horizontal
+   gesture. The match header already carries the full club names. */
+.sport-scorecard .football-linescore{width:100%!important;min-width:0!important;table-layout:fixed!important}
+.sport-scorecard .football-linescore thead th:first-child{width:52px!important}
+.sport-scorecard .football-linescore .football-scorecard-team{width:52px!important;padding:4px 6px!important}
+.sport-scorecard .football-scorecard-team .sport-scorecard-identity{justify-content:center!important}
+.sport-scorecard .football-scorecard-team .sport-scorecard-identity>img{width:25px!important;height:25px!important;max-width:25px!important;max-height:25px!important;flex-basis:25px!important}
+.football-scorecard .sport-scorecard-scroll{overflow-x:hidden!important}
+@media(max-width:520px){
+  .sport-scorecard .football-linescore thead th:first-child{width:40px!important}
+  .sport-scorecard .football-linescore .football-scorecard-team{width:40px!important;padding-inline:3px!important}
+  .sport-scorecard .football-linescore th,.sport-scorecard .football-linescore td{padding-inline:2px!important}
+}
+
 /* MLB line scores use marks only: club names belong in the match header, not
    in the narrow inning grid. Pitching decisions deliberately break into a
    name line and a detail line. */
 .sport-scorecard .baseball-scorecard-team{width:48px!important;padding-right:8px!important}
 .sport-scorecard .baseball-scorecard-team .sport-scorecard-identity{justify-content:center!important}
 .sport-scorecard .baseball-scorecard-team .sport-scorecard-identity>img{width:25px!important;height:25px!important;max-width:25px!important;max-height:25px!important;flex-basis:25px!important}
+.sport-scorecard .baseball-linescore thead .baseball-linescore-groups th{height:20px!important;border-bottom:1px solid rgba(243,243,239,.055)!important;color:#777772!important;font-size:6.5px!important;letter-spacing:.12em!important}
+.sport-scorecard .baseball-linescore thead .baseball-linescore-groups th:first-child{color:#858580!important;text-align:center!important;vertical-align:bottom!important}
+.sport-scorecard .baseball-linescore .baseball-totals-heading,
+.sport-scorecard .baseball-linescore .baseball-totals-start,
+.sport-scorecard .baseball-linescore tbody td:nth-child(11){border-left:1px solid rgba(243,243,239,.24)!important}
+.sport-scorecard .baseball-linescore .baseball-totals-heading{background:rgba(243,243,239,.035)!important;color:#aaa9a4!important}
+.sport-scorecard .baseball-linescore thead tr:last-child th:nth-last-child(-n+3){background:rgba(243,243,239,.035)!important;color:#d0d0cb!important;font-weight:800!important}
+.baseball-match-stats{margin-top:12px!important}
+.baseball-scorecard .sport-scorecard-scroll{overflow-x:hidden!important}
+.sport-scorecard table.baseball-linescore{width:100%!important;min-width:0!important;table-layout:fixed!important}
+.sport-scorecard .baseball-linescore thead th:first-child{width:48px!important}
+.sport-scorecard .baseball-linescore th,.sport-scorecard .baseball-linescore td{padding-inline:2px!important}
+@media(max-width:520px){
+  .sport-scorecard .baseball-linescore thead th:first-child{width:34px!important}
+  .sport-scorecard .baseball-linescore th,.sport-scorecard .baseball-linescore td{padding-inline:1px!important;font-size:8px!important}
+  .sport-scorecard .baseball-scorecard-team{width:34px!important;padding-right:3px!important}
+  .sport-scorecard .baseball-scorecard-team .sport-scorecard-identity>img{width:20px!important;height:20px!important;max-width:20px!important;max-height:20px!important;flex-basis:20px!important}
+}
 .sport-scorecard .baseball-decisions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px 16px!important;width:100%!important}
 .sport-scorecard .baseball-decision{display:grid!important;grid-template-columns:20px minmax(0,1fr)!important;align-items:start!important;gap:7px!important;min-width:0!important}
 .sport-scorecard .baseball-decision>b{padding-top:2px!important;color:#f1f1ed!important;font:700 9px/1 "DM Mono",monospace!important}
@@ -3023,4 +3055,17 @@ html body #spoil-meter-modal img[src$="epl-official.png"]:not([data-no-outline])
   .sport-scorecard .football-linescore .sport-scorecard-team{width:116px!important}
   .sport-scorecard-identity>img{flex-basis:21px!important;width:21px!important;height:21px!important;max-width:21px!important;max-height:21px!important}
   .sport-scorecard-identity small{max-width:72px!important}
+}
+
+/* Final responsive line-score constraint: all nine innings and R/H/E remain
+   visible together, including on phone-width match pages. */
+.baseball-scorecard .sport-scorecard-scroll{overflow-x:hidden!important}
+.sport-scorecard table.baseball-linescore{width:100%!important;min-width:0!important;table-layout:fixed!important}
+.sport-scorecard .baseball-linescore thead th:first-child{width:48px!important}
+@media(max-width:520px){
+  .sport-scorecard table.baseball-linescore{min-width:0!important}
+  .sport-scorecard .baseball-linescore thead th:first-child{width:34px!important}
+  .sport-scorecard .baseball-linescore th,.sport-scorecard .baseball-linescore td{padding-inline:1px!important;font-size:8px!important}
+  .sport-scorecard .baseball-scorecard-team{width:34px!important;padding-right:3px!important}
+  .sport-scorecard .baseball-scorecard-team .sport-scorecard-identity>img{width:20px!important;height:20px!important;max-width:20px!important;max-height:20px!important;flex-basis:20px!important}
 }

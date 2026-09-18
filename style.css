@@ -395,8 +395,8 @@
 @keyframes live-ring-pulse{0%,100%{opacity:.85;transform:scale(1)}50%{opacity:.32;transform:scale(1.14)}}
 
 /* Pitching context belongs below the matchup only while it is genuinely predictive. */
-.mlb-probables{display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;align-items:baseline!important;gap:8px!important;width:100%!important;max-width:100%!important;margin:10px 0 2px!important;padding:7px 0 0!important;border-top:1px solid rgba(243,243,241,.1)!important;color:#bcbcb7!important;font:9px/1.35 "DM Mono",monospace!important;letter-spacing:.04em!important}
-.mlb-probables>span{color:#969691!important;white-space:nowrap!important}.mlb-probables>div{display:flex!important;flex-wrap:wrap!important;align-items:baseline!important;gap:4px 7px!important;min-width:0!important}.mlb-probables b{color:#eeeeea!important;font:500 10px/1.35 Inter,Arial,sans-serif!important;white-space:nowrap!important}.mlb-probables i{color:#81817c!important;font-style:normal!important}.baseball-game.past .mlb-probables,.baseball-game.live .mlb-probables{display:none!important}
+.mlb-probables{display:grid!important;grid-template-columns:1fr!important;justify-items:center!important;align-items:baseline!important;gap:4px!important;width:100%!important;max-width:100%!important;margin:10px 0 2px!important;padding:7px 0 0!important;border-top:1px solid rgba(243,243,241,.1)!important;color:#bcbcb7!important;font:9px/1.35 "DM Mono",monospace!important;letter-spacing:.04em!important;text-align:center!important}
+.mlb-probables>span{color:#969691!important;white-space:nowrap!important}.mlb-probables>div{display:flex!important;flex-wrap:wrap!important;justify-content:center!important;align-items:baseline!important;gap:4px 7px!important;min-width:0!important;width:100%!important}.mlb-probables b{color:#eeeeea!important;font:500 10px/1.35 Inter,Arial,sans-serif!important;white-space:nowrap!important}.mlb-probables i{color:#81817c!important;font-style:normal!important}.baseball-game.past .mlb-probables,.baseball-game.live .mlb-probables{display:none!important}
 
 @media(max-width:650px){
   .list-game .list-teams{gap:10px!important}
@@ -2426,4 +2426,44 @@ body.view-match #match-page{display:block!important;min-height:100vh;padding:24p
   .card-kickoff .form-spoiler-toggle{min-height:18px!important;padding:0 5px!important;font-size:5.8px!important;letter-spacing:.055em!important}
   .team-selector-head{top:-14px!important;margin:-14px -14px 11px!important;padding:14px 14px 11px!important}
   .team-selector-head button,.team-band-summary [data-edit-teams]{padding:6px 7px!important;font-size:7px!important}
+}
+
+/* Team form and league position are themselves spoilers. Cards never expose
+   them for live or completed matches; an upcoming fixture reveals both teams
+   only through its explicit SHOW STANDINGS control. */
+.list-game.live .list-teams:has(.card-kickoff) .team-table-context,
+.list-game.past .list-teams:has(.card-kickoff) .team-table-context,
+.list-game.future:not(.form-spoilers) .list-teams:has(.card-kickoff) .team-table-context{
+  display:none!important;
+}
+.list-game.future.form-spoilers .list-teams:has(.card-kickoff) .team-table-context{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  justify-items:center!important;
+  align-content:start!important;
+  gap:3px!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  text-align:center!important;
+  white-space:normal!important;
+}
+.list-game.future.form-spoilers .team-table-context b,
+.list-game.future.form-spoilers .team-table-context i{
+  display:block!important;
+  width:100%!important;
+  overflow:hidden!important;
+  text-align:center!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.list-game.future.form-spoilers .team-table-context b{
+  color:#e8e8e3!important;
+  font:600 8px/1 "DM Mono",monospace!important;
+  letter-spacing:.05em!important;
+}
+.list-game.future.form-spoilers .team-table-context i{
+  color:#a7a7a1!important;
+  font:500 7px/1.15 "DM Mono",monospace!important;
+  letter-spacing:.04em!important;
 }

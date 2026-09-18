@@ -2325,7 +2325,7 @@ body.view-match #match-page{display:block!important;min-height:100vh;padding:24p
 
 /* The score stamp is its own control: it must sit above the card hold target. */
 .list-game.past>strong.match-stamp.spoil-meter-badge{
-  position:relative!important;
+  position:absolute!important;
   z-index:6!important;
   pointer-events:auto!important;
 }
@@ -2802,4 +2802,55 @@ body.view-match #match-page{display:block!important;min-height:100vh;padding:24p
   #team-selector .team-gallery{grid-template-columns:repeat(auto-fill,minmax(76px,1fr))!important;gap:7px!important}
   #team-selector .team-gallery-item{min-height:92px!important}
   #team-selector .team-gallery-item img{width:39px!important;height:39px!important;padding:4px!important}
+}
+
+/* The Premier League lion is dark purple and disappears on charcoal without
+   a contour. Apply the same one-pixel outline to every use of the official
+   asset, including the startup loader and league-choice modal. */
+html body #app img[src$="epl-official.png"]:not([data-no-outline]),
+html body #loading img[src$="epl-official.png"]:not([data-no-outline]),
+html body #spoil-meter-modal img[src$="epl-official.png"]:not([data-no-outline]){
+  opacity:1!important;
+  filter:brightness(1) saturate(1)
+    drop-shadow(.55px 0 0 rgba(255,255,255,.48))
+    drop-shadow(-.55px 0 0 rgba(255,255,255,.48))
+    drop-shadow(0 .55px 0 rgba(255,255,255,.48))
+    drop-shadow(0 -.55px 0 rgba(255,255,255,.48))!important;
+}
+
+/* Opening a spoiler-free lineup must not reactivate the legacy desktop card
+   grid. Keep the exact same one-column header geometry in both states, then
+   place the lineup in a normal full-width row underneath it. */
+.list-game:has(> .list-content > .schedule-lineup):not(:has(.spoiler-workspace)){
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-areas:none!important;
+  row-gap:0!important;
+}
+.list-game:has(> .list-content > .schedule-lineup):not(:has(.spoiler-workspace))>strong{
+  grid-area:auto!important;
+}
+.list-game:has(> .list-content > .schedule-lineup):not(:has(.spoiler-workspace))>.list-content{
+  display:block!important;
+  grid-column:1!important;
+  grid-row:1!important;
+  width:100%!important;
+  min-width:0!important;
+  padding:4px 0 0!important;
+}
+.list-game:has(> .list-content > .schedule-lineup):not(:has(.spoiler-workspace))>.list-content>.list-teams{
+  grid-column:auto!important;
+  grid-row:auto!important;
+  width:100%!important;
+  padding-left:0!important;
+}
+.list-game:has(> .list-content > .schedule-lineup):not(:has(.spoiler-workspace))>.list-content>.schedule-lineup{
+  grid-column:auto!important;
+  grid-row:auto!important;
+  width:100%!important;
+}
+.list-game:has(> .list-content > .schedule-lineup):not(:has(.spoiler-workspace))>.list-meta{
+  display:flex!important;
+  grid-column:1!important;
+  grid-row:2!important;
+  width:100%!important;
 }

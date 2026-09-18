@@ -94,9 +94,28 @@ async function loadTeamTable(id=activeLeague){
   Object.keys(teamTable).forEach(key=>delete teamTable[key]);
   const leagues=id==='all'?Object.values(EPLData.leagues):[EPLData.leagues[id]].filter(Boolean);
   await Promise.all(leagues.map(fetchLeagueStandings));
-  if(games.length)renderList();
+  listShell.querySelectorAll('[data-game]').forEach(card=>{
+    const game=games.find(item=>String(item.id)===String(card.dataset.game));
+    if(game)paintStandingContextAtCard(card,game);
+  });
 }
 const ordinal=value=>{const n=Number(value),tail=n%100;return `${n}${tail>=11&&tail<=13?'th':n%10===1?'st':n%10===2?'nd':n%10===3?'rd':'th'}`};
+function paintStandingContextAtCard(card,game){
+  const teams=card?.querySelectorAll('.list-teams:has(.card-kickoff) > .home-team, .list-teams:has(.card-kickoff) > .away-team');
+  if(!teams?.length)return;
+  [game.home,game.away].forEach((name,index)=>{
+    const team=teams[index];if(!team)return;
+    let context=team.querySelector('.team-table-context');
+    if(!context){context=document.createElement('small');context.className='team-table-context';team.append(context)}
+    const row=teamTable[teamTableKey(game.leagueId,name)];
+    if(!row){context.innerHTML='<b>—</b><i>STANDINGS LOADING…</i>';return}
+    const baseball=game.sport==='baseball',values=baseball?[row.wins,row.losses]:[row.wins,row.draws,row.losses];
+    const record=values.every(Number.isFinite)?values.join('–'):'—';
+    const standing=Number.isFinite(Number(row.rank))&&Number(row.rank)>0?`${ordinal(row.rank)} IN ${baseball?'DIV.':tableLeagueLabel(game)}`:tableLeagueLabel(game);
+    context.dataset.split='true';context.dataset.standingReady='true';
+    context.innerHTML=`<b>${record}</b><i data-standing="${standing}">${standing}</i>`;
+  });
+}
 ribbon.addEventListener('click',event=>{if(!event.target.closest('[data-team]'))return;requestAnimationFrame(()=>document.body.classList.contains('view-list')?document.getElementById('list-now')?.scrollIntoView({behavior:'smooth',block:'center'}):plot?.recenter())});
 // Match rounds come from the provider. Never infer them from the fixture index:
 // that fabricated a "MATCHWEEK" for every competition.
@@ -222,10 +241,8 @@ function hydrateRosterPositions(g){
    const position=athlete?.position||athlete?.primaryPosition||athlete?.positionAbbreviation||athlete?.positionName;
    if(position)player.position=typeof position==='string'?{abbreviation:position}:position;
   }catch(_){}
- })).finally(()=>{g._positionsReady=true;g._positionsLoading=false;if(g.__showLineup)rerenderAtGame(g.id)});
+ })).finally(()=>{g._positionsReady=true;g._positionsLoading=false;if(g.__showLineup)paintScheduleLineupAtGame(g)});
 }
-new MutationObserver(()=>listShell.querySelectorAll('[data-game]').forEach(card=>{const g=games.find(x=>x.id===card.dataset.game);if(g?.__showLineup)hydrateRosterFlags(g)})).observe(listShell,{childList:true,subtree:true});
-new MutationObserver(()=>listShell.querySelectorAll('[data-game]').forEach(card=>{const g=games.find(x=>x.id===card.dataset.game);if(g?.__showLineup)hydrateRosterPositions(g)})).observe(listShell,{childList:true,subtree:true});
 rosterMarkup=function(g){const iso={ENG:'gb',SCO:'gb',WAL:'gb',NIR:'gb',USA:'us',CAN:'ca',AUS:'au',NZ:'nz',IRL:'ie',FRA:'fr',ESP:'es',POR:'pt',BRA:'br',ARG:'ar',BEL:'be',NED:'nl',GER:'de',ITA:'it',DEN:'dk',SWE:'se',NOR:'no',FIN:'fi',POL:'pl',CRO:'hr',SRB:'rs',UKR:'ua',CZE:'cz',SVK:'sk',HUN:'hu',AUT:'at',SUI:'ch',TUR:'tr',GRE:'gr',ROU:'ro',BUL:'bg',SVN:'si',ALB:'al',MAR:'ma',ALG:'dz',TUN:'tn',EGY:'eg',SEN:'sn',GHA:'gh',NGA:'ng',CIV:'ci',CMR:'cm',MLI:'ml',RSA:'za',JPN:'jp',KOR:'kr',CHN:'cn',URU:'uy',COL:'co',CHI:'cl',ECU:'ec',PAR:'py',PER:'pe',MEX:'mx',JAM:'jm'},player=(raw,role)=>{const p=raw.athlete||raw,number=raw.jersey||p.jersey||p.jerseyNumber||'—',position=raw.position?.abbreviation||p.position?.abbreviation||raw.position?.displayName||p.position?.displayName||'—',country=p.flag||raw.flag||p.country||raw.country||p.nationality||raw.nationality||p.citizenship||raw.citizenship||{},label=country.alt||country.displayName||country.name||country.fullName||country.abbreviation||country.code||'',code=String(country.abbreviation||country.code||country.isoCode||country.id||'').toUpperCase(),url=p.flag?.href||raw.flag?.href||country.href||country.logo||(iso[code]?`https://flagcdn.com/24x18/${iso[code]}.png`:''),flag=url?`<img class="lineup-flag" src="${url}" alt="${label||'Country flag'}">`:'<i class="lineup-flag empty" aria-hidden="true"></i>';return `<div class="lineup-player ${role}"><em>${number}</em>${flag}<span title="${p.displayName||p.fullName||'Unknown player'}">${p.displayName||p.fullName||'Unknown player'}</span><small>${position}</small></div>`},groups=(g.rosters||[]).map(r=>{const name=r.team?.abbreviation||r.team?.displayName||'SQUAD',logo=r.team?.logo||r.team?.logos?.[0]?.href||(name===g.homeAbbr?g.homeLogo:name===g.awayAbbr?g.awayLogo:''),all=r.roster||r.athletes||r.entries||r.players||[],starters=r.starters||r.startingXI||all.filter(x=>x.starter===true||x.isStarter===true||x.status?.type==='starter'),subs=r.substitutes||r.bench||all.filter(x=>x.substitute===true||x.isSubstitute===true||x.status?.type==='substitute');return {name,logo,all,starters,subs,hasRoles:starters.length||subs.length}}).filter(x=>x.all.length||x.starters.length||x.subs.length);if(!groups.length)return '<p class="lineup-empty">Official lineup data is not available for this match.</p>';return `<div class="lineups">${groups.map(group=>`<section><b>${group.logo?`<img src="${group.logo}">`:''}${group.name}</b>${group.hasRoles?`${group.starters.length?`<h4>STARTING XI</h4>${group.starters.map(p=>player(p,'starter')).join('')}`:''}${group.subs.length?`<h4>BENCH</h4>${group.subs.map(p=>player(p,'sub')).join('')}`:''}`:group.all.map(p=>player(p,'squad')).join('')}</section>`).join('')}</div>`};
 function incidentTimeline(g){const events=(g.events||[]).filter(e=>['goal','red','yellow','penalty','sub'].includes(e.type)).slice(0,10);return events.map(e=>{const logo=e.teamId&&e.teamId===g.homeId?g.homeLogo:e.teamId&&e.teamId===g.awayId?g.awayLogo:'',icon=e.type==='goal'&&logo?`<img class="incident-badge" src="${logo}" aria-hidden="true">`:`<i class="incident-mark ${e.type}" aria-hidden="true"></i>`,text=e.scorer&&e.text.includes(e.scorer)?e.text.split(e.scorer).join(`<strong class="incident-player">${e.scorer}</strong>`):e.text;return `<div class="incident ${e.type}"><time>${Number.isFinite(e.minute)?`${e.minute}'`:'—'}</time>${icon}<span>${text}</span></div>`}).join('')||'<p>Detailed incidents are not yet available.</p>'}function rosterMarkup(g){const groups=(g.rosters||[]).map(r=>{const name=r.team?.abbreviation||r.team?.displayName||'SQUAD',logo=r.team?.logo||r.team?.logos?.[0]?.href||(name===g.homeAbbr?g.homeLogo:name===g.awayAbbr?g.awayLogo:'');return {name,logo,players:r.roster||r.athletes||r.entries||r.players||[]}}).filter(x=>x.players.length);if(!groups.length)return '<p class="lineup-empty">Official lineup data is not available for this match.</p>';return `<div class="lineups">${groups.map(group=>`<section><b>${group.logo?`<img src="${group.logo}">`:''}${group.name}</b>${group.players.map(raw=>{const p=raw.athlete||raw,number=raw.jersey||p.jersey||'—',position=raw.position?.abbreviation||p.position?.abbreviation||raw.position?.displayName||p.position?.displayName||'—',flag=p.flag?.href||raw.flag?.href||'',country=p.flag?.alt||raw.flag?.alt||'';return `<div class="lineup-player"><em>${number}</em>${flag?`<img src="${flag}" alt="${country}">`:''}<span>${p.displayName||p.fullName||'Unknown player'}</span><small>${position}</small></div>`}).join('')}</section>`).join('')}</div>`}function openInfo(g,spoilers=false){const s=g.scoreResult||WatchScore.score(g),injuries=(g.injuries||[]).length,teams=spoilers?`<span class="result-team"><img src="${g.homeLogo||''}">${g.homeAbbr||g.home}</span><strong class="result-final">${g.homeScore}–${g.awayScore}</strong><span class="result-team"><img src="${g.awayLogo||''}">${g.awayAbbr||g.away}</span>`:`<span class="result-team"><img src="${g.homeLogo||''}">${g.homeAbbr||g.home}</span><strong class="result-versus">v</strong><span class="result-team"><img src="${g.awayLogo||''}">${g.awayAbbr||g.away}</span>`;info.innerHTML=`<button class="close" aria-label="Close">×</button><span class="eyebrow">${g.completed?'MATCH NOTES':'MATCH PREVIEW'}</span><h2 class="result-title">${teams}</h2>${g.completed?`<div class="info-score">${s?.watchScore??'—'}</div><p>${WatchScore.reasons(g,s||{}).join(' · ')}</p><div class="detail-tabs">${spoilers?'':'<button data-results>SHOW MATCH RESULTS</button>'}<button data-lineup>SHOW LINEUP</button></div>${spoilers?`<div class="incident-list">${incidentTimeline(g)}</div>`:''}<div data-lineup-content></div>`:`<p>${g.league} · ${g.venue}</p><p>${g.time.toLocaleString(undefined,{weekday:'long',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'})}</p>${g.rosters?.length?'<p>OFFICIAL SQUAD INFORMATION AVAILABLE</p>':''}${injuries?`<p>${injuries} provider injury / availability update${injuries>1?'s':''}`:''}`}`;info.hidden=false;info.querySelector('.close').onclick=()=>info.hidden=true;info.querySelector('[data-results]')?.addEventListener('click',()=>openInfo(g,true));info.querySelector('[data-lineup]')?.addEventListener('click',e=>{const box=info.querySelector('[data-lineup-content]');box.innerHTML=box.innerHTML?'':rosterMarkup(g);e.currentTarget.textContent=box.innerHTML?'HIDE LINEUP':'SHOW LINEUP'})}
 const meterResultFor=game=>{
@@ -389,7 +406,11 @@ const decorateCards=()=>listShell.querySelectorAll('[data-game]').forEach(card=>
 const divider=listShell.querySelector('#list-now'),firstLive=listShell.querySelector('.live-game');
 if(divider&&firstLive&&(divider.compareDocumentPosition(firstLive)&Node.DOCUMENT_POSITION_PRECEDING)){let anchor=firstLive;while(anchor.previousElementSibling?.matches('.list-date'))anchor=anchor.previousElementSibling;anchor.before(divider)}
 if(firstLive&&!listShell.querySelector('.live-divider-past')){const original=listShell.querySelector('#list-now'),liveCards=[...listShell.querySelectorAll('.live-game')],first=liveCards[0],last=liveCards[liveCards.length-1];original?.remove();const past=document.createElement('div'),future=document.createElement('div');past.id='list-now';past.className='list-now live-divider-past';past.innerHTML='<span>PAST MATCHES <b>↑</b></span>';future.className='list-now live-divider-future';future.innerHTML='<span><b>↓</b> UPCOMING MATCHES</span>';first.before(past);last.after(future)}
-new MutationObserver(decorateCards).observe(listShell,{childList:true,subtree:true});
+let decorateCardsFrame=0;
+new MutationObserver(()=>{
+  if(decorateCardsFrame)return;
+  decorateCardsFrame=requestAnimationFrame(()=>{decorateCardsFrame=0;decorateCards()});
+}).observe(listShell,{childList:true,subtree:true});
 listShell.addEventListener('click',event=>{const button=event.target.closest('[data-live-info]'),card=event.target.closest('[data-game]');if(!button||!card)return;const game=games.find(item=>item.id===card.dataset.game);if(!game)return;event.preventDefault();event.stopImmediatePropagation();game.__showLiveInfo=!game.__showLiveInfo;game.__showLineup=false;renderList()},true);
 listShell.addEventListener('click',event=>{const card=event.target.closest('[data-game]'),game=card&&games.find(item=>item.id===card.dataset.game);if(!game?.live||(!game.__showLineup&&!game.__showLiveInfo)||event.target.closest('button'))return;game.__showLineup=false;game.__showLiveInfo=false;event.preventDefault();event.stopPropagation();renderList()},true);
 document.getElementById('now-button').addEventListener('click',event=>{const liveCard=listShell.querySelector('.live-game');if(!liveCard||!document.body.classList.contains('view-list'))return;event.preventDefault();event.stopImmediatePropagation();liveCard.scrollIntoView({behavior:'smooth',block:'center'})},true);
@@ -1136,9 +1157,10 @@ const loadSpoilerFreeLineup=game=>{
   const finishDetails=()=>{
     // Nationality flags and missing positions are enhancements, not a reason
     // to hold the official lineup behind a loading message.
-    hydrateRosterFlags(game).catch(()=>{}).finally(()=>{if(game.__showLineup)rerenderAtGame(game.id)});
+    hydrateRosterFlags(game).catch(()=>{}).finally(()=>{if(game.__showLineup)paintScheduleLineupAtGame(game)});
+    hydrateRosterPositions(game);
     const providerDetails=game._lineupDetailsPromise;
-    if(providerDetails)Promise.resolve(providerDetails).catch(()=>{}).finally(()=>{if(game.__showLineup)rerenderAtGame(game.id)});
+    if(providerDetails)Promise.resolve(providerDetails).catch(()=>{}).finally(()=>{if(game.__showLineup)paintScheduleLineupAtGame(game)});
     return game;
   };
   if(hasSpoilerFreeLineup(game))return Promise.resolve(finishDetails());
@@ -1153,72 +1175,73 @@ const loadSpoilerFreeLineup=game=>{
 let lineupPrefetchSerial=0;
 const prefetchCardLineups=matches=>{
   const serial=++lineupPrefetchSerial,now=Date.now(),recent=matches
-    .filter(game=>game.completed&&game.time>=now-5*864e5&&!hasSpoilerFreeLineup(game))
+    .filter(game=>game.completed&&game.time>=now-21*864e5&&!hasSpoilerFreeLineup(game))
     .sort((left,right)=>Math.abs(left.time-now)-Math.abs(right.time-now));
   const upcoming=lineupCandidates(matches).filter(game=>!hasSpoilerFreeLineup(game));
-  const queue=[...recent,...upcoming].slice(0,activeLeague==='all'?6:8);
+  const queue=[...recent,...upcoming].slice(0,activeLeague==='all'?16:24);
   let cursor=0;
   const worker=()=>{
     if(serial!==lineupPrefetchSerial)return;
     const game=queue[cursor++];if(!game)return;
     loadSpoilerFreeLineup(game).catch(()=>{}).finally(worker);
   };
-  const begin=()=>Array.from({length:2},worker);
-  if('requestIdleCallback'in window)window.requestIdleCallback(begin,{timeout:1600});else window.setTimeout(begin,320);
+  const begin=()=>Array.from({length:3},worker);
+  window.setTimeout(begin,60);
 };
+function paintScheduleLineupAtGame(game){
+  const current=[...listShell.querySelectorAll('[data-game]')].find(node=>String(node.dataset.game)===String(game.id));
+  if(!current)return;
+  const control=current.querySelector('[data-schedule-lineup]');
+  control?.setAttribute('aria-expanded',String(!!game.__showLineup));
+  let section=current.querySelector('.schedule-lineup');
+  if(!game.__showLineup){section?.remove();return}
+  if(!section){section=document.createElement('section');section.className='schedule-lineup';section.setAttribute('aria-label','Spoiler-free lineup');current.querySelector('.list-content')?.append(section)}
+  section.innerHTML=game.__lineupLoading?'<p class="lineup-loading">LOADING OFFICIAL LINEUP…</p>':rosterMarkup(game);
+}
 const toggleScheduleLineup=(button,card)=>{
   const game=games.find(item=>String(item.id)===String(card?.dataset.game));
   if(!game)return;
+  const now=performance.now();
+  if(now-(game.__lineupToggleAt||0)<800)return;
+  game.__lineupToggleAt=now;
   game.__showLineup=!game.__showLineup;
   game.__lineupSpoilers=false;
   game.__showResults=false;
   game.__showSummary=false;
   game.__showLiveInfo=false;
-  if(!game.__showLineup){rerenderAtCard(card);return}
+  if(!game.__showLineup){paintScheduleLineupAtGame(game);return}
   game.__lineupLoading=!hasSpoilerFreeLineup(game);
-  rerenderAtCard(card);
-  loadSpoilerFreeLineup(game).finally(()=>{game.__lineupLoading=false;rerenderAtCard(card)});
+  paintScheduleLineupAtGame(game);
+  loadSpoilerFreeLineup(game).finally(()=>{game.__lineupLoading=false;paintScheduleLineupAtGame(game)});
 };
-const bindScheduleLineupButtons=()=>listShell.querySelectorAll('[data-schedule-lineup]:not([data-lineup-bound])').forEach(button=>{
-  button.dataset.lineupBound='true';
-  button.addEventListener('click',event=>{
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    toggleScheduleLineup(button,button.closest('[data-game]'));
-  });
-});
-new MutationObserver(bindScheduleLineupButtons).observe(listShell,{childList:true,subtree:true});
-bindScheduleLineupButtons();
 const toggleFutureStandings=(button,card)=>{
   const game=games.find(item=>String(item.id)===String(card?.dataset.game));
   if(!game||game.completed||game.live)return;
   const show=button.getAttribute('aria-pressed')!=='true';
   show?futureFormSpoilers.add(String(game.id)):futureFormSpoilers.delete(String(game.id));
   game.__showForm=show;
-  rerenderAtCard(card);
+  card.classList.toggle('form-spoilers',show);
+  button.setAttribute('aria-pressed',String(show));
+  paintStandingContextAtCard(card,game);
+  if(show&&!teamTable[teamTableKey(game.leagueId,game.home)]){
+    fetchLeagueStandings(EPLData.leagues[game.leagueId]).finally(()=>{
+      const current=[...listShell.querySelectorAll('[data-game]')].find(node=>String(node.dataset.game)===String(game.id));
+      if(current)paintStandingContextAtCard(current,game);
+    });
+  }
 };
-const bindFutureStandingsButtons=()=>listShell.querySelectorAll('button[data-form-spoilers]:not([data-form-bound])').forEach(button=>{
-  button.dataset.formBound='true';
-  button.addEventListener('click',event=>{
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    toggleFutureStandings(button,button.closest('[data-game]'));
-  });
-});
-new MutationObserver(bindFutureStandingsButtons).observe(listShell,{childList:true,subtree:true});
-bindFutureStandingsButtons();
 const paintMeterAtCard=(card,game)=>{
   const stamp=card?.querySelector(':scope > strong');
   if(!stamp)return;
-  const leagueStamp=stamp.querySelector('.stamp-league')?.outerHTML||'';
   const score=Number(game.__meterScore?.watchScore);
+  let control=stamp.querySelector('.spoil-meter-value');
+  if(!control){control=document.createElement('button');control.type='button';control.className='spoil-meter-value';control.dataset.watchToggle='';control.setAttribute('aria-label','Toggle Spoil Meter');stamp.prepend(control)}
   card.classList.toggle('score-calculating',!!game.__watchCalculating);
   if(game.__watchCalculating){
-    stamp.classList.remove('spoil-meter-badge','spoil-meter-trigger');
-    stamp.innerHTML=`<span class="score-pending" role="status" aria-label="Calculating Spoil Meter"><i class="score-spinner" aria-hidden="true"></i><em>···</em></span>${leagueStamp}`;
+    control.innerHTML='<span class="score-pending" role="status" aria-label="Calculating Spoil Meter"><i class="score-spinner" aria-hidden="true"></i><em>···</em></span>';
     return;
   }
-  stamp.innerHTML=`${game.__mwRevealed&&Number.isFinite(score)?Math.round(score):'?'}${leagueStamp}`;
+  control.textContent=game.__mwRevealed&&Number.isFinite(score)?String(Math.round(score)):'?';
 };
 const toggleCardMeter=(button,card)=>{
   const game=games.find(item=>String(item.id)===String(card?.dataset.game));
@@ -1271,21 +1294,6 @@ const toggleCardMeter=(button,card)=>{
   });
   game._meterRequest=request;
 };
-const bindCardMeterButtons=()=>listShell.querySelectorAll('.spoil-meter-value:not([data-meter-bound])').forEach(button=>{
-  button.dataset.meterBound='true';
-  button.addEventListener('click',event=>{
-    // The delegated capture handler above is the normal path. Some engines
-    // still deliver the click to this replaced button after that handler has
-    // redrawn its card; honour its cancelled event so the meter cannot be
-    // toggled straight back to the question mark.
-    if(event.defaultPrevented)return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    toggleCardMeter(button,button.closest('[data-game]'));
-  });
-});
-new MutationObserver(bindCardMeterButtons).observe(listShell,{childList:true,subtree:true});
-bindCardMeterButtons();
 listShell.addEventListener('click',event=>{
   const button=event.target.closest('[data-schedule-lineup]'),card=event.target.closest('[data-game]');
   if(!button||!card)return;

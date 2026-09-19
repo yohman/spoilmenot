@@ -2993,6 +2993,9 @@ html body #spoil-meter-modal img[src$="epl-official.png"]:not([data-no-outline])
   .sport-scorecard .baseball-scorecard-team{width:34px!important;padding-right:3px!important}
   .sport-scorecard .baseball-scorecard-team .sport-scorecard-identity>img{width:20px!important;height:20px!important;max-width:20px!important;max-height:20px!important;flex-basis:20px!important}
 }
+
+.fixture-page-control{display:block!important;width:min(270px,calc(100% - 28px))!important;margin:14px auto!important;padding:9px 12px!important;border:1px solid rgba(243,243,239,.13)!important;border-radius:7px!important;background:#20201e!important;color:#aaa9a4!important;font:700 8px/1 "DM Mono",monospace!important;letter-spacing:.09em!important;cursor:pointer!important}
+.fixture-page-control:hover{border-color:rgba(243,243,239,.34)!important;background:#292927!important;color:#ededE8!important}
 .sport-scorecard .baseball-decisions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px 16px!important;width:100%!important}
 .sport-scorecard .baseball-decision{display:grid!important;grid-template-columns:20px minmax(0,1fr)!important;align-items:start!important;gap:7px!important;min-width:0!important}
 .sport-scorecard .baseball-decision>b{padding-top:2px!important;color:#f1f1ed!important;font:700 9px/1 "DM Mono",monospace!important}

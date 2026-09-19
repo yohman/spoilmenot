@@ -2929,10 +2929,10 @@ html body #spoil-meter-modal img[src$="epl-official.png"]:not([data-no-outline])
   grid-row:1/span 2!important;
   width:41px!important;
   height:41px!important;
-  padding:5px!important;
+  padding:0!important;
   border:0!important;
-  border-radius:50%!important;
-  background:#2b2b29!important;
+  border-radius:0!important;
+  background:transparent!important;
   object-fit:contain!important;
 }
 #spoil-meter-modal .league-choice-grid img.league-choice-mark.league-choice-image[src$="epl-official.png"]{

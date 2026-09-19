@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-09-15T14:51:04.297Z",
+  "generatedAt": "2026-09-19T01:11:08.794Z",
   "highlights": {
     "mlb:823658": {
       "url": "https://www.youtube.com/watch?v=0-U2-CELuxo",
@@ -114,6 +114,24 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-09-15T00:00:00.000Z",
       "discoveredAt": "2026-09-15T14:51:04.297Z"
+    },
+    "mlb:824870": {
+      "url": "https://www.youtube.com/watch?v=ITcVpirYefY",
+      "title": "PHILLIES vs. BRAVES: Official Full Game Highlights (September 13) | 2026 MLB Season",
+      "durationSeconds": 971,
+      "source": "MLB",
+      "sourceTier": "official",
+      "publishedAt": "2026-09-13T00:00:00.000Z",
+      "discoveredAt": "2026-09-19T01:11:08.794Z"
+    },
+    "mlb:823170": {
+      "url": "https://www.youtube.com/watch?v=UKqM7fT42uk",
+      "title": "Arizona Cardinals vs. Los Angeles Chargers Game Highlights | NFL 2026 Season Week 1",
+      "durationSeconds": 863,
+      "source": "NFL",
+      "sourceTier": "official",
+      "publishedAt": "2026-09-13T00:00:00.000Z",
+      "discoveredAt": "2026-09-19T01:11:08.794Z"
     }
   }
 };

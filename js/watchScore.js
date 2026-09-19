@@ -4,7 +4,7 @@
  * provider values cannot overwhelm an upset, comeback, or late winner.
  */
 window.WatchScore = (() => {
-  const WEIGHTS = { action: 30, drama: 30, competitiveness: 25, surpriseContext: 15 };
+  const WEIGHTS = { action: 27, drama: 28, competitiveness: 20, surpriseContext: 25 };
   const clamp = (value, low = 0, high = 100) => Math.max(low, Math.min(high, value));
   const round = value => Math.round(clamp(value));
   const saturate = (value, knee) => 100 * (1 - Math.exp(-Math.max(0, value) / knee));
@@ -239,6 +239,37 @@ window.WatchScore = (() => {
     return value === null ? null : clamp(value);
   }
 
+  // A lopsided match is normally less compelling, but that logic reverses
+  // when the side being dismantled is a title-level favourite. Table position
+  // supplies the surprise; the winning margin shows whether it was a narrow
+  // accident or a genuinely memorable upset.
+  function upsetScore(game) {
+    const homeRank = Number(game.homeRank), awayRank = Number(game.awayRank);
+    const homeScore = Number(game.homeScore), awayScore = Number(game.awayScore);
+    if (![homeScore, awayScore].every(Number.isFinite) || homeScore === awayScore) return null;
+    const winner = homeScore > awayScore ? 'home' : 'away', winnerRank = winner === 'home' ? homeRank : awayRank;
+    const loserRank = winner === 'home' ? awayRank : homeRank, rankGap = winnerRank - loserRank;
+    const margin = Math.abs(homeScore - awayScore);
+    const decisive = margin >= 3 ? 7 : margin === 2 ? 4 : 0;
+    let tableScore = null;
+    if ([homeRank, awayRank].every(Number.isFinite) && rankGap >= 3) {
+      const eliteFavourite = loserRank <= 1 ? 7 : loserRank <= 3 ? 5 : loserRank <= 6 ? 2 : 0;
+      const gulf = saturate(rankGap, 7) * 0.18;
+      tableScore = 58 + eliteFavourite + gulf + decisive;
+    }
+    // Post-match tables can erase the pre-match gulf. ESPN's retained opening
+    // odds tell us which side was actually expected to win at kickoff.
+    const market = game.summary?.pickcenter?.[0], winnerOdds = market?.[`${winner}TeamOdds`], loserSide = winner === 'home' ? 'away' : 'home', loserOdds = market?.[`${loserSide}TeamOdds`];
+    let marketScore = null;
+    if (winnerOdds?.underdog === true && loserOdds?.favorite === true) {
+      const line = Math.abs(Number(loserOdds.moneyLine));
+      const favouriteStrength = Number.isFinite(line) ? clamp((line - 110) / 35, 0, 6) : 2;
+      marketScore = 72 + decisive + favouriteStrength;
+    }
+    const score = Math.max(tableScore || 0, marketScore || 0);
+    return score ? { score: clamp(score, 0, 88), winner, winnerRank, loserRank, rankGap, margin, marketUpset: marketScore !== null } : null;
+  }
+
   function combine(parts) {
     const active = parts.filter(part => Number.isFinite(part.value));
     const weight = active.reduce((sum, part) => sum + part.weight, 0);
@@ -250,7 +281,7 @@ window.WatchScore = (() => {
     if (!Number.isFinite(home) || !Number.isFinite(away)) return null;
     const stats = statistics(game), timeline = scoreTimeline(game);
     const drama = dramaScore(game, timeline), competitiveness = competitivenessScore(game, timeline, stats);
-    const context = contextScore(game), action = actionScore(game, stats), comebackDenial = comebackDenialBonus(game, timeline);
+    const context = contextScore(game), action = actionScore(game, stats), comebackDenial = comebackDenialBonus(game, timeline), upset = upsetScore(game);
     const spectacle = spectacleScore(game, stats, timeline);
     const baseScore = combine([
       { value: action, weight: WEIGHTS.action }, { value: drama.score, weight: WEIGHTS.drama },
@@ -258,13 +289,13 @@ window.WatchScore = (() => {
     ]);
     // A team overturning a two-goal deficit to win is a distinctive match arc.
     const narrativeScore = baseScore + (drama.comebackWinner ? 14 : 0) + comebackDenial.score;
-    const watchScore = round(Math.max(narrativeScore, spectacle.score));
+    const watchScore = round(Math.max(narrativeScore, spectacle.score, upset?.score || 0));
     return {
       watchScore, action: round(action), drama: round(drama.score), competitiveness: round(competitiveness),
       // Kept as a compatibility alias for older UI code.
       exceptional: round(competitiveness), surpriseContext: context === null ? null : round(context),
       available: ['action', 'drama', 'competitiveness', ...(context === null ? [] : ['surpriseContext'])],
-      diagnostics: { goals: timeline.length, leadChanges: drama.leadChanges, equalizers: drama.equalizers, comebackWinner: drama.comebackWinner, comebackDenial, spectacle, stats }
+      diagnostics: { goals: timeline.length, leadChanges: drama.leadChanges, equalizers: drama.equalizers, comebackWinner: drama.comebackWinner, comebackDenial, upset, spectacle, stats }
     };
   }
 
@@ -274,6 +305,7 @@ window.WatchScore = (() => {
     if (result?.diagnostics?.equalizers) reasons.push('An equalizer changed the match');
     if (result?.diagnostics?.comebackDenial?.completed && result.diagnostics.comebackDenial.underdog) reasons.push('Two-goal underdog comeback');
     if (result?.diagnostics?.comebackDenial?.denied) reasons.push(result.diagnostics.comebackDenial.underdog ? 'Underdog comeback denied late' : 'Two-goal comeback denied late');
+    if (result?.diagnostics?.upset) reasons.push(result.diagnostics.upset.margin >= 2 ? 'Decisive upset of a top-ranked side' : 'Major table upset');
     if (timeline.some(goal => goal.stoppage)) reasons.push('Goal in stoppage time');
     else if (timeline.some(goal => goal.minute >= 86)) reasons.push('Late decisive moment');
     if ((game.events || []).some(event => event.type === 'red')) reasons.push('Red-card turning point');
@@ -305,7 +337,8 @@ window.WatchScore = (() => {
       { ...game('Major underdog upset', 1, 0, [
         { type: 'red', minute: 74, teamId: 'a', text: 'Red card' },
         { type: 'penalty', minute: 79, teamId: 'h', text: 'Penalty saved' }, goal(83, 'h', 1, 0)
-      ], pressure({ shots: 18, shotsOnTarget: 8, saves: 8, corners: 7 }, { shots: 17, shotsOnTarget: 8, saves: 8, corners: 7 }), 72), homeRank: 19, awayRank: 1 }
+      ], pressure({ shots: 18, shotsOnTarget: 8, saves: 8, corners: 7 }, { shots: 17, shotsOnTarget: 8, saves: 8, corners: 7 }), 72), homeRank: 19, awayRank: 1 },
+      { ...game('Top-ranked favourite beaten 3–0', 3, 0, [goal(31, 'h', 1, 0), goal(45, 'h', 2, 0), goal(57, 'h', 3, 0)], pressure({ shots: 17, shotsOnTarget: 5, saves: 2 }, { shots: 11, shotsOnTarget: 2, saves: 2 })), homeRank: 8, awayRank: 1 }
     ];
     const rows = cases.map(sample => {
       const result = score(sample);

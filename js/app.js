@@ -255,6 +255,13 @@ function hydrateRosterPortraits(g){
  const pending=groups.filter(group=>group.players.some(entry=>!((entry.athlete||entry)._portraitUrl)));
  if(!pending.length)return Promise.resolve();
  g._portraitsLoading=true;
+ const savePortrait=(entry,candidate)=>{
+   const player=entry.athlete||entry,id=String(player.id||player.uid||player.displayName||''),url=candidate?.strCutout||candidate?.strThumb||candidate?.strRender||'';
+   if(!url)return false;
+   player._portraitUrl=url;
+   rosterPortraitCache[id]=url;
+   return true;
+ };
  const lookupTeam=async({team,players})=>{
    try{
      const search=await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(team)}`);
@@ -264,10 +271,25 @@ function hydrateRosterPortraits(g){
      const roster=await fetch(`https://www.thesportsdb.com/api/v1/json/3/lookup_all_players.php?id=${encodeURIComponent(club.idTeam)}`);
      if(!roster.ok)return;
      const byName=new Map(((await roster.json()).player||[]).map(candidate=>[normal(candidate.strPlayer),candidate]));
-     players.forEach(entry=>{
-       const player=entry.athlete||entry,id=String(player.id||player.uid||player.displayName||''),candidate=byName.get(normal(player.displayName||player.fullName)),url=candidate?.strCutout||candidate?.strThumb||candidate?.strRender||'';
-       if(url){player._portraitUrl=url;rosterPortraitCache[id]=url}
-     });
+     players.forEach(entry=>savePortrait(entry,byName.get(normal((entry.athlete||entry).displayName||(entry.athlete||entry).fullName))));
+     // A club roster is often incomplete or stale.  TheSportsDB also exposes
+     // an exact-player search, which materially improves coverage for recent
+     // transfers and academy players without delaying the first lineup paint.
+     const unresolved=players.filter(entry=>!((entry.athlete||entry)._portraitUrl));
+     let cursor=0;
+     const searchPlayer=async()=>{
+       while(cursor<unresolved.length){
+         const entry=unresolved[cursor++],player=entry.athlete||entry,name=player.displayName||player.fullName||'';
+         if(!name)continue;
+         try{
+           const response=await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${encodeURIComponent(name)}`);
+           if(!response.ok)continue;
+           const candidate=((await response.json()).player||[]).find(item=>normal(item.strPlayer)===normal(name));
+           savePortrait(entry,candidate);
+         }catch(_){}
+       }
+     };
+     await Promise.all(Array.from({length:Math.min(3,unresolved.length)},searchPlayer));
    }catch(error){}
  };
  g._portraitsPromise=Promise.all(pending.map(lookupTeam)).finally(()=>{
@@ -744,7 +766,7 @@ function soccerFormationMarkup(game){
     const x=formationColumns[rowLength]?.[rowIndex]??(10+(rowIndex/Math.max(1,rowLength-1))*80);
     const events=eventMode?playerEventMarkup(game,name):'';
     return `<div class="soccer-pitch-player lineup-player starter ${side}" style="--x:${x.toFixed(2)}%;--y:${vertical}%;--team-colour:${lineupEscape(teamColor)};--team-ink:${soccerTeamInk(teamColor)}">`+
-      `<div class="soccer-player-photo${portrait?'':' no-photo'}">${portrait?`<img class="soccer-player-headshot" src="${lineupEscape(portrait)}" alt="" decoding="async" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='grid'">`:''}<i aria-hidden="true">${lineupEscape(initials)}</i>${soccerFlagStamp(entry)}</div>`+
+      `<div class="soccer-player-photo${portrait?'':' no-photo'}">${portrait?`<img class="soccer-player-headshot" src="${lineupEscape(portrait)}" alt="" decoding="async" onerror="this.style.display='none';this.parentElement.classList.add('no-photo');if(this.nextElementSibling)this.nextElementSibling.style.display='grid'">`:''}<i aria-hidden="true">${lineupEscape(initials)}</i>${soccerFlagStamp(entry)}</div>`+
       `<span title="${lineupEscape(name)}">${number!=='—'?`<b class="soccer-player-number">${lineupEscape(number)}</b> `:''}${lineupEscape(shortName)}${countryName?`<i class="soccer-player-country">${lineupEscape(countryName)}</i>`:''}</span>${events}</div>`;
   };
   const sideMarkup=(group,side)=>{
@@ -777,6 +799,13 @@ function soccerFormationMarkup(game){
     benches.classList.add('soccer-bench-list');
     benches.querySelectorAll('h4').forEach(heading=>{if(/starting|xi/i.test(heading.textContent||''))heading.remove()});
     benches.querySelectorAll('.lineup-player.starter').forEach(player=>player.remove());
+    // The bench is where an incoming substitute is most legible.  Add the
+    // same spoiler marker there rather than leaving the substitution only on
+    // the player who is already on the pitch.
+    if(eventMode)benches.querySelectorAll('.lineup-player.sub').forEach(player=>{
+      const name=player.querySelector('span[title]')?.getAttribute('title');
+      if(name&&!player.querySelector('.player-events'))player.querySelector('span[title]')?.insertAdjacentHTML('afterend',playerEventMarkup(game,name));
+    });
     benches.querySelectorAll('section').forEach(section=>{if(!section.querySelector('.lineup-player'))section.remove()});
   }
   return `<div class="soccer-lineup-view"><div class="soccer-pitch${eventMode?' soccer-pitch-events':''}" role="group" aria-label="Starting formations">${sideMarkup(ordered[0],'home')}<div class="soccer-halfway-line" aria-hidden="true"></div><div class="soccer-centre-circle" aria-hidden="true"></div>${sideMarkup(ordered[1],'away')}</div>${benches?.outerHTML||''}</div>`;

@@ -11,7 +11,10 @@ window.EPLData = (() => {
   const MLB_BASE = 'https://statsapi.mlb.com/api/v1', MLB_LIVE = 'https://statsapi.mlb.com/api/v1.1';
   let activeLeague = 'epl';
   const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
-  const color = team => team?.color ? `#${team.color}` : '#77736a';
+  const color = (team, alternate = false) => {
+    const value = alternate ? team?.alternateColor : team?.color;
+    return value ? `#${value}` : alternate ? '' : '#77736a';
+  };
   const espnBase = league => `https://site.api.espn.com/apis/site/v2/sports/${league.sport}/${league.slug}`;
   const espnStandings = league => `https://site.api.espn.com/apis/v2/sports/${league.sport}/${league.slug}/standings`;
   const soccerBase = slug => `https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}`;
@@ -100,7 +103,7 @@ window.EPLData = (() => {
     const competition = event.competitions?.[0], teams = competition?.competitors || [], home = teams.find(team => team.homeAway === 'home'), away = teams.find(team => team.homeAway === 'away');
     if (!home || !away) return null;
     const completed = event.status?.type?.completed === true, live = isLiveStatus(event.status), scored = completed || live;
-    return { id: event.id, sport: league.sport, leagueId: league.id, league: league.name, leagueLogo: league.logo, time: new Date(event.date), home: clean(home.team.displayName), away: clean(away.team.displayName), homeId: String(home.team.id || ''), awayId: String(away.team.id || ''), homeAbbr: home.team.abbreviation, awayAbbr: away.team.abbreviation, homeLogo: home.team.logo || home.team.logos?.[0]?.href || '', awayLogo: away.team.logo || away.team.logos?.[0]?.href || '', homeColor: color(home.team), awayColor: color(away.team), homeScore: scored ? Number(home.score) : null, awayScore: scored ? Number(away.score) : null, completed, live, venue: clean(competition.venue?.fullName), status: event.status?.type?.detail || '', events: [], raw: event };
+    return { id: event.id, sport: league.sport, leagueId: league.id, league: league.name, leagueLogo: league.logo, time: new Date(event.date), home: clean(home.team.displayName), away: clean(away.team.displayName), homeId: String(home.team.id || ''), awayId: String(away.team.id || ''), homeAbbr: home.team.abbreviation, awayAbbr: away.team.abbreviation, homeLogo: home.team.logo || home.team.logos?.[0]?.href || '', awayLogo: away.team.logo || away.team.logos?.[0]?.href || '', homeColor: color(home.team), awayColor: color(away.team), homeAlternateColor: color(home.team, true), awayAlternateColor: color(away.team, true), homeScore: scored ? Number(home.score) : null, awayScore: scored ? Number(away.score) : null, completed, live, venue: clean(competition.venue?.fullName), status: event.status?.type?.detail || '', events: [], raw: event };
   }
 
   function normalizeMlb(game, league = LEAGUES.mlb) {

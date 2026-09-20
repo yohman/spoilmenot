@@ -206,7 +206,7 @@ new MutationObserver(()=>listShell.querySelectorAll('[data-game].past .tab-final
   score.className='final-scoreline';
   score.innerHTML=`<span class="final-club home"><img src="${game.homeLogo||''}" alt=""><b>${game.homeAbbr||game.home}</b></span><strong>${game.homeScore??'—'}–${game.awayScore??'—'}</strong><span class="final-club away"><b>${game.awayAbbr||game.away}</b><img src="${game.awayLogo||''}" alt=""></span>`;
 })).observe(listShell,{childList:true,subtree:true});
-const rosterFlagCache=JSON.parse(localStorage.getItem('must-watch-player-flags')||'{}'),countryCode={'The Netherlands':'nl',Netherlands:'nl',England:'gb',Scotland:'gb',Wales:'gb','Northern Ireland':'gb',Ireland:'ie',France:'fr',Spain:'es',Portugal:'pt',Brazil:'br',Argentina:'ar',Belgium:'be',Germany:'de',Italy:'it',Denmark:'dk',Sweden:'se',Norway:'no',Finland:'fi',Poland:'pl',Croatia:'hr',Serbia:'rs',Ukraine:'ua','Czech Republic':'cz',Slovakia:'sk',Hungary:'hu',Austria:'at',Switzerland:'ch',Turkey:'tr',Greece:'gr',Romania:'ro',Bulgaria:'bg',Slovenia:'si',Albania:'al',Morocco:'ma',Algeria:'dz',Tunisia:'tn',Egypt:'eg',Senegal:'sn',Ghana:'gh',Nigeria:'ng','Ivory Coast':'ci',Cameroon:'cm',Mali:'ml','South Africa':'za',Japan:'jp','South Korea':'kr',China:'cn',Uruguay:'uy',Colombia:'co',Chile:'cl',Ecuador:'ec',Paraguay:'py',Peru:'pe',Mexico:'mx',Jamaica:'jm',Canada:'ca','United States':'us',Australia:'au','New Zealand':'nz'};
+const rosterFlagCache=JSON.parse(localStorage.getItem('must-watch-player-flags')||'{}'),rosterPortraitCache={...JSON.parse(localStorage.getItem('must-watch-player-portraits')||'{}'),...JSON.parse(localStorage.getItem('must-watch-player-portraits-v2')||'{}')},countryCode={'The Netherlands':'nl',Netherlands:'nl',England:'gb',Scotland:'gb',Wales:'gb','Northern Ireland':'gb',Ireland:'ie',France:'fr',Spain:'es',Portugal:'pt',Brazil:'br',Argentina:'ar',Belgium:'be',Germany:'de',Italy:'it',Denmark:'dk',Sweden:'se',Norway:'no',Finland:'fi',Poland:'pl',Croatia:'hr',Serbia:'rs',Ukraine:'ua','Czech Republic':'cz',Slovakia:'sk',Hungary:'hu',Austria:'at',Switzerland:'ch',Turkey:'tr',Greece:'gr',Romania:'ro',Bulgaria:'bg',Slovenia:'si',Albania:'al',Morocco:'ma',Algeria:'dz',Tunisia:'tn',Egypt:'eg',Senegal:'sn',Ghana:'gh',Nigeria:'ng','Ivory Coast':'ci',Cameroon:'cm',Mali:'ml','South Africa':'za',Japan:'jp','South Korea':'kr',China:'cn',Uruguay:'uy',Colombia:'co',Chile:'cl',Ecuador:'ec',Paraguay:'py',Peru:'pe',Mexico:'mx',Jamaica:'jm',Canada:'ca','United States':'us',Australia:'au','New Zealand':'nz'};
 const fifaFlagCode={ENG:'gb',SCO:'gb',WAL:'gb',NIR:'gb',IRL:'ie',FRA:'fr',ESP:'es',POR:'pt',BRA:'br',ARG:'ar',BEL:'be',NED:'nl',GER:'de',ITA:'it',DEN:'dk',SWE:'se',NOR:'no',FIN:'fi',POL:'pl',CRO:'hr',SRB:'rs',UKR:'ua',CZE:'cz',SVK:'sk',HUN:'hu',AUT:'at',SUI:'ch',TUR:'tr',GRE:'gr',MAR:'ma',ALG:'dz',EGY:'eg',SEN:'sn',GHA:'gh',NGA:'ng',CIV:'ci',CMR:'cm',JPN:'jp',KOR:'kr',USA:'us',CAN:'ca',AUS:'au',NZL:'nz',URU:'uy',COL:'co',CHI:'cl',ECU:'ec',MEX:'mx'};
 const rosterEntries=roster=>[...new Map([roster.roster,roster.athletes,roster.entries,roster.players,roster.starters,roster.startingXI,roster.substitutes,roster.bench].filter(Array.isArray).flat().filter(Boolean).map((entry,index)=>{const player=entry.athlete||entry;return [String(player.id||player.uid||player.displayName||player.fullName||`unknown-${index}`),entry]})).values()];
 function hydrateRosterFlags(g){
@@ -233,6 +233,46 @@ function hydrateRosterFlags(g){
  });
  g._flagsPromise=Promise.all(tasks).finally(()=>{g._flagsReady=true;g._flagsLoading=false;g._flagsPromise=null;localStorage.setItem('must-watch-player-flags',JSON.stringify(rosterFlagCache));});
  return g._flagsPromise;
+}
+// ESPN's soccer roster endpoint often contains athlete IDs but no usable
+// portrait. Fetch each club's roster once instead of issuing a request for
+// every player: it avoids the public fallback service's request limit.
+function hydrateRosterPortraits(g){
+ if(g.sport!=='soccer'||g._portraitsLoading)return g._portraitsPromise||Promise.resolve();
+ const normal=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+ const groups=(g.rosters||[]).map(roster=>{
+   const team=roster.team?.displayName||roster.team?.name||roster.team?.abbreviation||'';
+   const players=rosterEntries(roster).filter(entry=>{
+     const player=entry.athlete||entry,image=player.headshot||entry.headshot||player.photo||entry.photo||player.image||entry.image,source=typeof image==='string'?image:image?.href||image?.url||'';
+     return !source;
+   });
+   return {team,players};
+ }).filter(group=>group.team&&group.players.length);
+ if(!groups.length)return Promise.resolve();
+ groups.forEach(group=>group.players.forEach(entry=>{const player=entry.athlete||entry,id=String(player.id||player.uid||player.displayName||'');if(typeof rosterPortraitCache[id]==='string')player._portraitUrl=rosterPortraitCache[id]}));
+ const pending=groups.filter(group=>group.players.some(entry=>!((entry.athlete||entry)._portraitUrl)));
+ if(!pending.length)return Promise.resolve();
+ g._portraitsLoading=true;
+ const lookupTeam=async({team,players})=>{
+   try{
+     const search=await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(team)}`);
+     if(!search.ok)return;
+     const teams=(await search.json()).teams||[],club=teams.find(candidate=>normal(candidate.strTeam)===normal(team))||teams[0];
+     if(!club?.idTeam)return;
+     const roster=await fetch(`https://www.thesportsdb.com/api/v1/json/3/lookup_all_players.php?id=${encodeURIComponent(club.idTeam)}`);
+     if(!roster.ok)return;
+     const byName=new Map(((await roster.json()).player||[]).map(candidate=>[normal(candidate.strPlayer),candidate]));
+     players.forEach(entry=>{
+       const player=entry.athlete||entry,id=String(player.id||player.uid||player.displayName||''),candidate=byName.get(normal(player.displayName||player.fullName)),url=candidate?.strCutout||candidate?.strThumb||candidate?.strRender||'';
+       if(url){player._portraitUrl=url;rosterPortraitCache[id]=url}
+     });
+   }catch(error){}
+ };
+ g._portraitsPromise=Promise.all(pending.map(lookupTeam)).finally(()=>{
+   g._portraitsLoading=false;g._portraitsPromise=null;
+   try{localStorage.setItem('must-watch-player-portraits-v2',JSON.stringify(rosterPortraitCache))}catch(error){}
+ });
+ return g._portraitsPromise;
 }
 const actualPlayerPosition=raw=>{
  const player=raw?.athlete||raw||{};
@@ -508,7 +548,7 @@ const playerEventMarkup=(game,name)=>{
       : [event.scorer,...(event.players||[])].some(player=>samePlayer(name,player))||String(event.text||'').toLocaleLowerCase().includes(String(name||'').toLocaleLowerCase());
     if(named&&['goal','yellow','red','injury'].includes(event.type))add(event.type,minute);
   });
-  const labels={goal:'⚽',yellow:'<b class="card-glyph yellow"></b>',red:'<b class="card-glyph red"></b>',injury:'✚','sub-in':'↑','sub-out':'↓'};
+  const labels={goal:'⚽',yellow:'<b class="card-glyph yellow"></b>',red:'<b class="card-glyph red"></b>',injury:'✚','sub-in':'→','sub-out':'←'};
   const titles={goal:'Goals',yellow:'Yellow cards',red:'Red cards',injury:'Injuries','sub-in':'Subbed on','sub-out':'Subbed off'};
   const items=[...grouped.values()].map(({type,minutes})=>{
     const count=minutes.length;
@@ -518,13 +558,15 @@ const playerEventMarkup=(game,name)=>{
       ? (minutes.length?` ${minutes.join('·')}`:'')
       : (count>1?` ×${count}`:(minutes[0]?` ${minutes[0]}`:''));
     const detail=minutes.length?`${titles[type]}: ${minutes.join(' · ')}`:titles[type];
-    return `<i class="player-event ${type}" title="${detail}">${labels[type]}${summary}</i>`;
+    return {type,markup:`<i class="player-event ${type}" title="${detail}">${labels[type]}${summary}</i>`};
   });
-  return items.length?`<span class="player-events" aria-label="Match events">${items.join('')}</span>`:'';
+  const corner=types=>items.filter(item=>types.includes(item.type)).map(item=>item.markup).join('');
+  const topLeft=corner(['sub-out','yellow','red','injury']),bottomLeft=corner(['sub-in']),bottomRight=corner(['goal']);
+  return items.length?`<span class="player-events" aria-label="Match events">${topLeft?`<span class="player-corner player-corner-top-left">${topLeft}</span>`:''}${bottomLeft?`<span class="player-corner player-corner-bottom-left">${bottomLeft}</span>`:''}${bottomRight?`<span class="player-corner player-corner-bottom-right">${bottomRight}</span>`:''}</span>`:'';
 };
 incidentTimeline=function(game){
   const incidentColour=teamId=>{
-    const raw=String(teamId)===String(game.homeId)?game.homeColor:String(teamId)===String(game.awayId)?game.awayColor:'';
+    const colours=statColoursFor(game),raw=String(teamId)===String(game.homeId)?colours.home:String(teamId)===String(game.awayId)?colours.away:'';
     const colour=String(raw||'').trim();
     return /^#[\da-f]{3,8}$/i.test(colour)?colour:'';
   };
@@ -615,6 +657,7 @@ const soccerHeadshot=entry=>{
   const player=entry?.athlete||entry||{},image=player.headshot||entry?.headshot||player.photo||entry?.photo||player.image||entry?.image||'';
   if(typeof image==='string'&&image)return image;
   if(image?.href)return image.href;
+  if(player._portraitUrl)return player._portraitUrl;
   // ESPN's roster player IDs map to this stable portrait endpoint.  The image
   // still has an initials fallback when a player does not have a portrait.
   // Some lineup feeds use a compound UID such as `s:600~a:12345`; its final
@@ -636,7 +679,7 @@ const soccerPosition=entry=>{
   return '';
 };
 const soccerTeamColor=(group,game,side)=>{
-  const raw=String(group?.roster?.team?.color||group?.roster?.team?.alternateColor||group?.roster?.color||(side==='home'?game.homeColor:game.awayColor)||'').replace(/^#/, '').trim();
+  const selected=statColoursFor(game),raw=String(side==='home'?selected.home:selected.away).replace(/^#/, '').trim();
   return /^[\da-f]{3}(?:[\da-f]{3})?(?:[\da-f]{2})?$/i.test(raw)?`#${raw}`:'#353533';
 };
 const soccerTeamInk=colour=>{
@@ -755,6 +798,27 @@ function boxScoreMarkup(game){const teams=game.summary?.boxscore?.teams||game.su
 boxScoreMarkup=function(game){const teams=game.summary?.boxscore?.teams||game.summary?.boxscore?.teamStats||[],home=teams.find(team=>String(team.team?.id||team.id||'')===String(game.homeId)),away=teams.find(team=>String(team.team?.id||team.id||'')===String(game.awayId)),value=(team,keys)=>{const stat=(team?.statistics||team?.stats||[]).find(item=>keys.includes(String(item.name||item.label||'').toLowerCase().replace(/[^a-z]/g,'')));return stat?.displayValue??stat?.value??''},number=value=>Number(String(value).replace(/[^\d.]/g,'')),mark=(value,other,color)=>`<b class="${number(value)>number(other)?'stat-lead':''}" ${number(value)>number(other)?`style="--team:${color}"`:''}>${value||'—'}</b>`,rows=[['SHOTS',['shots']],['ON TARGET',['shotsontarget','shotsongoal']],['CORNERS',['corners','cornerkicks']],['SAVES',['saves']],['TOUCHES IN BOX',['touchesinoppositionbox','touchesinoppositionarea','touchesinbox']]].map(([label,keys])=>({label,home:value(home,keys),away:value(away,keys)})).filter(row=>row.home!==''||row.away!==''),homePossession=value(home,['possession','possessionpct']),awayPossession=value(away,['possession','possessionpct']),possession=homePossession!==''||awayPossession!==''?`<div class="box-possession"><span>POSSESSION</span><div><i style="flex:${number(homePossession)||0};background:${game.homeColor}">${homePossession||'—'}</i><i style="flex:${number(awayPossession)||0};background:${game.awayColor}">${awayPossession||'—'}</i></div></div>`:'';return rows.length||possession?`<section class="box-score" aria-label="Match statistics">${rows.map(row=>`<div>${mark(row.home,row.away,game.homeColor)}<span>${row.label}</span>${mark(row.away,row.home,game.awayColor)}</div>`).join('')}${possession}</section>`:''};
 new MutationObserver(()=>listShell.querySelectorAll('[data-game]').forEach(card=>{const game=games.find(item=>item.id===card.dataset.game),incidents=card.querySelector('.list-incidents');if(game?.__showResults&&game.__resultTab==='legacy'&&game.sport!=='baseball'&&incidents&&!card.querySelector('.box-score')){const markup=boxScoreMarkup(game);if(markup)incidents.insertAdjacentHTML('beforebegin',markup)}})).observe(listShell,{childList:true,subtree:true});
 new MutationObserver(()=>{const title=info.querySelector('.result-title')?.textContent||'',game=games.find(item=>title.includes(item.homeAbbr||item.home)&&title.includes(item.awayAbbr||item.away)),incidents=info.querySelector('.incident-list');if(game&&game.sport!=='baseball'&&incidents&&!info.querySelector('.box-score')){const markup=boxScoreMarkup(game);if(markup)incidents.insertAdjacentHTML('beforebegin',markup)}}).observe(info,{childList:true,subtree:true});
+// ESPN sometimes supplies nearly identical primary colours. In that case the
+// stat comparison loses its two-team meaning, so prefer a badge-recognisable
+// secondary colour before falling back to the provider's alternate colour.
+const STAT_SECONDARY_COLOURS={'Ipswich Town':'#d71920'};
+const statHex=value=>{const hex=String(value||'').replace('#','');return /^[0-9a-f]{6}$/i.test(hex)?`#${hex}`:''};
+const statColourDistance=(left,right)=>{const a=statHex(left),b=statHex(right);if(!a||!b)return 255;const channels=value=>[1,3,5].map(index=>parseInt(value.slice(index,index+2),16));const [ar,ag,ab]=channels(a),[br,bg,bb]=channels(b);return Math.hypot(ar-br,ag-bg,ab-bb)};
+const statColoursFor=game=>{
+  const home=statHex(game.homeColor)||'#c7c7c1',away=statHex(game.awayColor)||'#666662';
+  if(statColourDistance(home,away)>=82)return {home,away};
+  const brandedChoices=[
+    {side:'home',color:statHex(STAT_SECONDARY_COLOURS[game.home])},
+    {side:'away',color:statHex(STAT_SECONDARY_COLOURS[game.away])}
+  ].filter(choice=>choice.color);
+  const choices=(brandedChoices.length?brandedChoices:[
+    {side:'home',color:statHex(game.homeAlternateColor)},
+    {side:'away',color:statHex(game.awayAlternateColor)}
+  ]).filter(choice=>choice.color);
+  const best=choices.map(choice=>({...choice,distance:statColourDistance(choice.color,choice.side==='home'?away:home)})).sort((a,b)=>b.distance-a.distance)[0];
+  if(!best||best.distance<82)return {home,away};
+  return best.side==='home'?{home:best.color,away}:{home,away:best.color};
+};
 boxScoreMarkup=function(game){
   const teams=game.summary?.boxscore?.teams||game.summary?.boxscore?.teamStats||[];
   const home=teams.find(team=>String(team.team?.id||team.id||'')===String(game.homeId))||teams.find(team=>team.homeAway==='home'||team.team?.homeAway==='home')||teams[0];
@@ -762,7 +826,7 @@ boxScoreMarkup=function(game){
   const value=(team,keys)=>{const stat=(team?.statistics||team?.stats||[]).find(item=>keys.includes(String(item.name||item.label||'').toLowerCase().replace(/[^a-z]/g,'')));return stat?.displayValue??stat?.value??''};
   const number=value=>Number(String(value).replace(/[^\d.]/g,''));
   const colour=(value,fallback)=>{const hex=String(value||'').replace('#','');return /^[0-9a-f]{6}$/i.test(hex)?`#${hex}`:fallback};
-  const homeColour=colour(game.homeColor,'#c7c7c1'),awayColour=colour(game.awayColor,'#666662');
+  const statColours=statColoursFor(game),homeColour=colour(statColours.home,'#c7c7c1'),awayColour=colour(statColours.away,'#666662');
   const ink=color=>{const hex=String(color||'').replace('#','');if(!/^[0-9a-f]{6}$/i.test(hex))return '#f3efe5';const [r,g,b]=[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16));return (.2126*r+.7152*g+.0722*b)/255>.6?'#11110f':'#f3efe5'};
   const mark=(value,other,color)=>`<b class="${number(value)>number(other)?'stat-lead':''}" ${number(value)>number(other)?`style="--team:${color}"`:''}>${value||'—'}</b>`;
   const metricRows=game.sport==='baseball'?
@@ -1149,6 +1213,7 @@ const formMarkup=game=>game.__teamForm?`<section class="match-form" aria-label="
 const resultWorkspaceMarkup=(game,{includeScorecard=true}={})=>{
   const tabs=['stats','moments','summary','table','form','lineup'];
   const tab=tabs.includes(game.__resultTab)?game.__resultTab:'stats';
+  if(tab==='lineup')game.__lineupSpoilers=true;
   const scorecard=includeScorecard?(game.sport==='baseball'?baseballScorecard(game):game.sport==='football'?footballScorecard(game):game.sport==='soccer'?soccerResultCard(game):''):'';
   const stats=boxScoreMarkup(game)||'<p class="spoiler-empty">Official match statistics are not available for this game.</p>';
   const content=tab==='stats'?stats:tab==='moments'?`<div class="incident-list list-incidents">${incidentTimeline(game)}</div>`:tab==='summary'?matchSummaryMarkup(game):tab==='table'?leagueTableMarkup(game):tab==='form'?formMarkup(game):`<section class="spoiler-lineup spoiler-lineup-events" aria-label="Lineups with match events">${rosterMarkup(game)}</section>`;
@@ -1171,6 +1236,20 @@ const renderMatchPage=game=>{
   applyStatBadgeContrast(matchPage);
   requestAnimationFrame(()=>window.scrollTo(0,scrollY));
 };
+// The cached match route opens before its detailed lineup request finishes.
+// Keep that first paint instant, then refresh the focused Lineup tab once its
+// events, flags, and portrait fallbacks are all available.
+const hydrateMatchLineup=game=>{
+  if(game.sport!=='soccer')return Promise.resolve(game);
+  if(game._matchLineupHydration)return game._matchLineupHydration;
+  const request=EPLData.enrich(game,{refresh:true,lineup:true})
+    .then(()=>Promise.all([hydrateRosterFlags(game),hydrateRosterPortraits(game)]))
+    .then(()=>game)
+    .catch(()=>game)
+    .finally(()=>{if(game._matchLineupHydration===request)game._matchLineupHydration=null});
+  game._matchLineupHydration=request;
+  return request;
+};
 const closeCachedMatchPage=()=>{
   document.documentElement.classList.remove('view-match');
   document.body.classList.remove('view-match');
@@ -1190,7 +1269,7 @@ const openCachedMatchPage=(game,card)=>{
   renderMatchPage(game);
   // The schedule remains mounted underneath the focused route. Refresh only
   // the selected game so return is instant while its richer detail arrives.
-  EPLData.enrich(game,{refresh:true,lineup:true}).catch(()=>game).finally(()=>renderMatchPage(game));
+  hydrateMatchLineup(game).finally(()=>renderMatchPage(game));
 };
 window.addEventListener('popstate',()=>{
   if(!new URL(location.href).searchParams.get('match'))closeCachedMatchPage();
@@ -1211,7 +1290,7 @@ matchPage.addEventListener('click',event=>{
   const tab=button.dataset.resultTab;
   if(!['stats','moments','summary','table','form','lineup'].includes(tab))return;
   event.preventDefault();game.__resultTab=tab;
-  if(tab==='lineup'){game.__lineupSpoilers=true;renderMatchPage(game);return}
+  if(tab==='lineup'){game.__lineupSpoilers=true;renderMatchPage(game);hydrateMatchLineup(game).finally(()=>renderMatchPage(game));return}
   if(tab==='table'&&!leagueStandings[game.leagueId]){game.__leagueTableLoading=true;renderMatchPage(game);fetchLeagueStandings(EPLData.leagues[game.leagueId]).finally(()=>{game.__leagueTableLoading=false;renderMatchPage(game)});return}
   if(tab==='form'&&!game.__teamForm){renderMatchPage(game);loadTeamForms(game).finally(()=>renderMatchPage(game));return}
   renderMatchPage(game);
@@ -1245,6 +1324,7 @@ const loadSpoilerFreeLineup=game=>{
     // to hold the official lineup behind a loading message.
     paintScheduleLineupAtGame(game);
     hydrateRosterFlags(game).catch(()=>{}).finally(()=>paintScheduleLineupAtGame(game,{refreshContent:true}));
+    hydrateRosterPortraits(game).catch(()=>{}).finally(()=>paintScheduleLineupAtGame(game,{refreshContent:true}));
     hydrateRosterPositions(game);
     const providerDetails=game._lineupDetailsPromise;
     if(providerDetails)Promise.resolve(providerDetails).catch(()=>{}).finally(()=>paintScheduleLineupAtGame(game,{refreshContent:true}));
@@ -1495,4 +1575,4 @@ syncMeterRevealControl();
 const enrichForReveal=async completed=>{let cursor=0;const worker=async()=>{while(cursor<completed.length){const game=completed[cursor++];if(!game._enriched)await EPLData.enrich(game).catch(()=>game)}};await Promise.all(Array.from({length:3},worker))};
 meterRevealControl.onclick=async event=>{event.preventDefault();event.stopImmediatePropagation();const completed=games.filter(game=>game.completed),allRevealed=completed.length>0&&completed.every(game=>game.__mwRevealed);if(allRevealed){completed.forEach(game=>{game.__mwRevealed=false;game.displayScore=50});plot?.render();renderList();syncMeterRevealControl();return}meterRevealControl.disabled=true;await enrichForReveal(completed);completed.forEach(game=>{const score=game.scoreResult||(['baseball','football'].includes(game.sport)?null:WatchScore.score(game));if(score){game.scoreResult=score;plot?.reveal(game,score)}});renderList();meterRevealControl.disabled=false;syncMeterRevealControl()};
 new MutationObserver(syncMeterRevealControl).observe(listShell,{childList:true,subtree:true});
-async function boot(){showLoader(matchRouteId?'PREPARING FULL MATCH SPOILER':'SYNCING LEAGUES & FIXTURES',1000);try{EPLData.setLeague(activeLeague);const all=prepareGames(await EPLData.load(activeLeague));if(matchRouteId){const game=games.find(item=>String(item.id)===String(matchRouteId));if(!game)throw Error('This match is not available in the current season feed.');document.documentElement.classList.add('view-match');document.body.classList.add('view-match');plotShell.hidden=true;listShell.hidden=true;await EPLData.enrich(game,{refresh:true,lineup:true});if(!game.scoreResult)game.scoreResult=WatchScore.score(game);game.__resultTab='stats';renderMatchPage(game);await hideLoader();hydrateRosterFlags(game).then(()=>renderMatchPage(game));return}renderLeagueSwitcher();renderRibbon(all);renderList();deferBackground(()=>loadTeamTable(activeLeague));document.body.classList.add('view-list');plotShell.hidden=true;listShell.hidden=false;await hideLoader();prefetchCompleted(games);prefetchCardLineups(games);requestAnimationFrame(()=>{const restored=restoreListRoutePosition();if(!restored)document.getElementById('list-now')?.scrollIntoView({block:'center'});decorateCards();fitTeamNames(listShell)});search.oninput=()=>renderTeams(all);search.onfocus=()=>renderTeams(all)}catch(error){await hideLoader();const box=document.getElementById('error');box.textContent=`LIVE DATA UNAVAILABLE — ${error.message}`;box.hidden=false}}boot()})();
+async function boot(){showLoader(matchRouteId?'PREPARING FULL MATCH SPOILER':'SYNCING LEAGUES & FIXTURES',1000);try{EPLData.setLeague(activeLeague);const all=prepareGames(await EPLData.load(activeLeague));if(matchRouteId){const game=games.find(item=>String(item.id)===String(matchRouteId));if(!game)throw Error('This match is not available in the current season feed.');document.documentElement.classList.add('view-match');document.body.classList.add('view-match');plotShell.hidden=true;listShell.hidden=true;await EPLData.enrich(game,{refresh:true,lineup:true});if(!game.scoreResult)game.scoreResult=WatchScore.score(game);game.__resultTab='stats';renderMatchPage(game);await hideLoader();Promise.all([hydrateRosterFlags(game),hydrateRosterPortraits(game)]).then(()=>renderMatchPage(game));return}renderLeagueSwitcher();renderRibbon(all);renderList();deferBackground(()=>loadTeamTable(activeLeague));document.body.classList.add('view-list');plotShell.hidden=true;listShell.hidden=false;await hideLoader();prefetchCompleted(games);prefetchCardLineups(games);requestAnimationFrame(()=>{const restored=restoreListRoutePosition();if(!restored)document.getElementById('list-now')?.scrollIntoView({block:'center'});decorateCards();fitTeamNames(listShell)});search.oninput=()=>renderTeams(all);search.onfocus=()=>renderTeams(all)}catch(error){await hideLoader();const box=document.getElementById('error');box.textContent=`LIVE DATA UNAVAILABLE — ${error.message}`;box.hidden=false}}boot()})();

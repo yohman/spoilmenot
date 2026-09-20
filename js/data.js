@@ -5,9 +5,17 @@ window.EPLData = (() => {
     laliga: { id: 'laliga', sport: 'soccer', slug: 'esp.1', name: 'La Liga', shortName: 'LA LIGA', logo: 'assets/leagues/laliga-official.png' },
     ucl: { id: 'ucl', sport: 'soccer', slug: 'uefa.champions', name: 'UEFA Champions League', shortName: 'CHAMPIONS LEAGUE', logo: 'assets/leagues/ucl-official.png' },
     carabao: { id: 'carabao', sport: 'soccer', slug: 'eng.league_cup', name: 'Carabao Cup', shortName: 'CARABAO CUP', logo: 'assets/leagues/carabao-cup-official.png' },
+    international: { id: 'international', sport: 'soccer', virtual: true, name: 'International', shortName: 'INTERNATIONAL', logo: leagueBadge('INT') },
     mlb: { id: 'mlb', sport: 'baseball', slug: 'mlb', name: 'Major League Baseball', shortName: 'MLB', logo: 'assets/leagues/mlb-official.png', pastCap: 54, futureCap: 110 },
     nfl: { id: 'nfl', sport: 'football', slug: 'nfl', name: 'National Football League', shortName: 'NFL', logo: 'assets/leagues/nfl-official.png' }
   };
+  // International is an app-level collection. Each game retains this actual
+  // ESPN slug so match details, rosters, and standings never hit a fictional
+  // "international" endpoint.
+  const INTERNATIONAL_SOURCES = [
+    { slug: 'uefa.nations', competition: 'nations', label: 'NATIONS LEAGUE' },
+    { slug: 'fifa.friendly', competition: 'friendly', label: 'FRIENDLY' }
+  ];
   const MLB_BASE = 'https://statsapi.mlb.com/api/v1', MLB_LIVE = 'https://statsapi.mlb.com/api/v1.1';
   let activeLeague = 'epl';
   const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
@@ -99,11 +107,11 @@ window.EPLData = (() => {
     return games;
   };
 
-  function normalize(event, league = LEAGUES[activeLeague]) {
+  function normalize(event, league = LEAGUES[activeLeague], source = null) {
     const competition = event.competitions?.[0], teams = competition?.competitors || [], home = teams.find(team => team.homeAway === 'home'), away = teams.find(team => team.homeAway === 'away');
     if (!home || !away) return null;
     const completed = event.status?.type?.completed === true, live = isLiveStatus(event.status), scored = completed || live;
-    return { id: event.id, sport: league.sport, leagueId: league.id, league: league.name, leagueLogo: league.logo, time: new Date(event.date), home: clean(home.team.displayName), away: clean(away.team.displayName), homeId: String(home.team.id || ''), awayId: String(away.team.id || ''), homeAbbr: home.team.abbreviation, awayAbbr: away.team.abbreviation, homeLogo: home.team.logo || home.team.logos?.[0]?.href || '', awayLogo: away.team.logo || away.team.logos?.[0]?.href || '', homeColor: color(home.team), awayColor: color(away.team), homeAlternateColor: color(home.team, true), awayAlternateColor: color(away.team, true), homeScore: scored ? Number(home.score) : null, awayScore: scored ? Number(away.score) : null, completed, live, venue: clean(competition.venue?.fullName), status: event.status?.type?.detail || '', events: [], raw: event };
+    return { id: event.id, sport: league.sport, leagueId: league.id, league: league.name, leagueLogo: league.logo, espnLeague: source?.slug || league.slug, feedGroup: source ? 'international' : league.id, competition: source?.competition || '', competitionLabel: source?.label || '', time: new Date(event.date), home: clean(home.team.displayName), away: clean(away.team.displayName), homeId: String(home.team.id || ''), awayId: String(away.team.id || ''), homeAbbr: home.team.abbreviation, awayAbbr: away.team.abbreviation, homeLogo: home.team.logo || home.team.logos?.[0]?.href || '', awayLogo: away.team.logo || away.team.logos?.[0]?.href || '', homeColor: color(home.team), awayColor: color(away.team), homeAlternateColor: color(home.team, true), awayAlternateColor: color(away.team, true), homeScore: scored ? Number(home.score) : null, awayScore: scored ? Number(away.score) : null, completed, live, venue: clean(competition.venue?.fullName), status: event.status?.type?.detail || '', events: [], raw: event };
   }
 
   function normalizeMlb(game, league = LEAGUES.mlb) {
@@ -158,6 +166,21 @@ window.EPLData = (() => {
 
   async function loadSoccer(id) {
     const league = LEAGUES[id];
+    if (league.virtual) {
+      const sources = await Promise.all(INTERNATIONAL_SOURCES.map(async source => {
+        const provider = { ...league, slug: source.slug, name: source.label };
+        const [{ events: fixtureEvents }, standings] = await Promise.all([fetchSeasonSoccerFixtures(provider), fetch(espnStandings(provider)).catch(() => null)]);
+        const games = fixtureEvents.map(event => normalize(event, league, source)).filter(Boolean);
+        const ranks = {}; try { const table = standings?.ok ? await standings.json() : null; (table?.children || []).flatMap(group => group.standings?.entries || []).forEach(entry => { const rank = entry.stats?.find(item => ['rank','playoffSeed'].includes(item.name))?.value; if (Number.isFinite(rank)) ranks[clean(entry.team?.displayName)] = rank; }); } catch (_) {}
+        // Friendlies have no table stakes. Nations League keeps any table
+        // context ESPN supplies, while both retain the normal match drama logic.
+        if (source.competition === 'nations') addSoccerContext(games, ranks);
+        return games;
+      }));
+      const merged = [...new Map(sources.flat().map(game => [String(game.id), game])).values()].sort((a, b) => a.time - b.time);
+      if (!merged.length) throw Error('International fixtures are unavailable for this period.');
+      return merged;
+    }
     const [{ events: fixtureEvents }, standings] = await Promise.all([fetchSeasonSoccerFixtures(league), fetch(espnStandings(league)).catch(() => null)]);
     const roundLookup = id === 'epl' ? eplRoundLookup(fixtureEvents) : new Map();
     const games = fixtureEvents.map(event => {
@@ -352,7 +375,7 @@ window.EPLData = (() => {
   async function enrichSoccer(game, { refresh = false } = {}) {
     if (game._enriched && !refresh) return game;
     try {
-      const league = LEAGUES[game.leagueId || activeLeague], response = await fetch(`${espnBase(league)}/summary?event=${game.id}`); if (!response.ok) return game;
+      const league = LEAGUES[game.leagueId || activeLeague], provider = game.espnLeague ? { ...league, slug: game.espnLeague } : league, response = await fetch(`${espnBase(provider)}/summary?event=${game.id}`); if (!response.ok) return game;
       const summary = await response.json(), plays = summary.scoringPlays || summary.keyEvents || summary.plays || [], competition = summary.header?.competitions?.[0], status = competition?.status || summary.header?.status;
       if (status) { game.status = status.type?.detail || status.displayClock || game.status; game.completed = status.type?.completed === true; game.live = isLiveStatus(status); }
       (competition?.competitors || []).forEach(team => { if (team.homeAway === 'home' && team.score != null) game.homeScore = Number(team.score); if (team.homeAway === 'away' && team.score != null) game.awayScore = Number(team.score); });
@@ -395,6 +418,16 @@ window.EPLData = (() => {
       const league = LEAGUES[id]; if (!league) return;
       try {
         if (league.sport === 'baseball') { const fresh = new Map((await loadMlb()).map(game => [String(game.id), game])); games.filter(game => game.leagueId === id).forEach(game => { const update = fresh.get(String(game.id)); if (update) Object.assign(game, { live: update.live, completed: update.completed, status: update.status, homeScore: update.homeScore, awayScore: update.awayScore, probableHomePitcher: update.probableHomePitcher, probableAwayPitcher: update.probableAwayPitcher }); }); return; }
+        if (league.virtual) {
+          const refreshed = await Promise.all(INTERNATIONAL_SOURCES.map(async source => {
+            const provider = { ...league, slug: source.slug, name: source.label };
+            const { events } = await fetchSoccerFixtures(provider, soccerRefreshDates());
+            return events.map(event => normalize(event, league, source)).filter(Boolean);
+          }));
+          const fresh = new Map(refreshed.flat().map(game => [String(game.id), game]));
+          games.filter(game => game.leagueId === id).forEach(game => { const update = fresh.get(String(game.id)); if (update) Object.assign(game, { live: update.live, completed: update.completed, status: update.status, homeScore: update.homeScore, awayScore: update.awayScore }); });
+          return;
+        }
         const { events } = await fetchSoccerFixtures(league, soccerRefreshDates());
         const fresh = new Map(events.map(event => normalize(event, league)).filter(Boolean).map(game => [String(game.id), game])); games.filter(game => game.leagueId === id).forEach(game => { const update = fresh.get(String(game.id)); if (update) Object.assign(game, { live: update.live, completed: update.completed, status: update.status, homeScore: update.homeScore, awayScore: update.awayScore }); });
       } catch (_) {}

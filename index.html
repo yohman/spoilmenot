@@ -7,7 +7,7 @@
   <title>Spoil Me Not — Gameplot</title>
   <link rel="preconnect" href="https://site.api.espn.com">
   <link rel="icon" type="image/svg+xml" href="assets/spoil-me-not-icon.svg?v=20260919-full-frame-1">
-  <link rel="stylesheet" href="style.css?v=20260920-lineup-marker-labels-1">
+  <link rel="stylesheet" href="style.css?v=20260920-international-1">
 </head>
 <body>
   <main id="app">
@@ -22,7 +22,7 @@
       <div class="masthead-actions"><button id="spoil-meter-help" class="spoil-meter-help" type="button" aria-label="How the Spoil Meter works" aria-controls="spoil-meter-guide" aria-expanded="false"><span aria-hidden="true">?</span><b>ABOUT</b></button><button id="now-button" class="now-button" aria-label="Go to now"><span aria-hidden="true">↗</span><b>GO TO NOW</b></button></div>
     </header>
     <section id="team-selector" class="team-selector" aria-label="Choose teams" hidden>
-      <div class="team-selector-head"><span class="selector-heading"><b>TEAMS</b><small>CHOOSE THE CLUBS YOU FOLLOW</small></span><div><button type="button" data-select-all>ALL</button><button type="button" data-close-selector>DONE</button></div></div>
+      <div class="team-selector-head"><span class="selector-heading"><b>TEAMS</b><small>CHOOSE THE TEAMS YOU FOLLOW</small></span><div><button type="button" data-select-all>ALL</button><button type="button" data-close-selector>DONE</button></div></div>
       <div id="team-gallery" class="team-gallery"></div>
     </section>
     <section id="league-selector" class="league-selector" aria-label="Choose league" hidden>
@@ -45,6 +45,7 @@
       <div class="hint">DRAG TO EXPLORE <span>·</span> SCROLL TO ZOOM</div>
       <div id="error" class="error" hidden></div>
     </section>
+    <nav id="international-filter" class="international-filter" aria-label="Filter international competitions" hidden></nav>
     <section id="list-shell" class="list-shell" hidden aria-label="Chronological fixture list"></section>
     <section id="match-page" class="match-page" hidden aria-live="polite"></section>
   </main>
@@ -74,6 +75,7 @@
         <button type="button" data-choose-league="laliga"><img class="league-choice-mark league-choice-image" src="assets/leagues/laliga-official.png" alt=""><b>LA LIGA</b><span>La Liga</span></button>
         <button type="button" data-choose-league="ucl"><img class="league-choice-mark league-choice-image" src="assets/leagues/ucl-official.png" alt=""><b>UCL</b><span>Champions League</span></button>
         <button type="button" data-choose-league="carabao"><img class="league-choice-mark league-choice-image" src="assets/leagues/carabao-cup-official.png" alt=""><b>CARABAO</b><span>Carabao Cup</span></button>
+        <button type="button" data-choose-league="international"><b>INT</b><span>International</span></button>
         <button type="button" data-choose-league="mlb"><img class="league-choice-mark league-choice-image" src="assets/leagues/mlb-official.png" alt=""><b>MLB</b><span>Major League Baseball</span></button>
         <button type="button" data-choose-league="nfl"><img class="league-choice-mark league-choice-image" src="assets/leagues/nfl-official.png" alt=""><b>NFL</b><span>National Football League</span></button>
       </div>
@@ -106,9 +108,9 @@
   <script src="assets/highlights.js"></script>
   <script src="js/watchScore.js?v=20260920-upset-balance-2"></script>
   <script src="js/anticipation.js"></script>
-  <script src="js/data.js?v=20260920-restored-lineup-events-1"></script>
+  <script src="js/data.js?v=20260920-international-1"></script>
   <script src="js/gameplot.js?v=20260918-meter-reveal-1"></script>
-  <script src="js/app.js?v=20260920-lineup-marker-labels-1"></script>
+  <script src="js/app.js?v=20260920-international-1"></script>
   <script src="js/brand.js?v=20260918-direct-meter-1"></script>
 </body>
 </html>

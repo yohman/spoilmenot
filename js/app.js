@@ -697,6 +697,18 @@ rosterMarkup=function(game){
 };
 const rosterMarkupWithSportTerms=rosterMarkup;
 const lineupEscape=value=>String(value??'').replace(/[&<>'"]/g,character=>({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[character]));
+// Player details are deliberately registered as a lineup is rendered and only
+// fetched when a person is tapped.  This keeps the spoiler-free roster quick.
+const playerCardEntries=new Map(),playerCardRequests=new Map();
+const playerCardId=entry=>{const player=entry?.athlete||entry||{},raw=String(player.id||player.uid||entry?.id||'');return raw.match(/(?:^|[~:])a:(\d+)/)?.[1]||raw.match(/(\d+)$/)?.[1]||raw||String(player.displayName||player.fullName||'unknown').toLowerCase()};
+const playerCardPhoto=entry=>{const player=entry?.athlete||entry||{},image=player.headshot||entry?.headshot||player.photo||entry?.photo||player.image||entry?.image||'';return typeof image==='string'?image:(image?.href||player._portraitUrl||'')};
+const registerPlayerCard=(game,entry,teamColour='')=>{
+  const player=entry?.athlete||entry||{},id=playerCardId(entry),key=`${game.id}:${id}`;
+  const roster=(game.rosters||[]).find(group=>rosterEntries(group).some(candidate=>playerCardId(candidate)===id));
+  const teamName=roster?.team?.displayName||roster?.team?.name||roster?.team?.abbreviation||'';
+  playerCardEntries.set(key,{game,entry,player,teamColour,teamName});
+  return key;
+};
 const soccerHeadshot=entry=>{
   const player=entry?.athlete||entry||{},image=player.headshot||entry?.headshot||player.photo||entry?.photo||player.image||entry?.image||'';
   if(typeof image==='string'&&image)return image;
@@ -818,7 +830,7 @@ function soccerFormationMarkup(game){
     const x=formationColumns[rowLength]?.[rowIndex]??(10+(rowIndex/Math.max(1,rowLength-1))*80);
     const events=eventMode?playerEventMarkup(game,name):'';
     const edgeClass=x<=12?' edge-left':x>=88?' edge-right':'';
-    return `<div class="soccer-pitch-player lineup-player starter ${side}${edgeClass}" style="--x:${x.toFixed(2)}%;--y:${vertical}%;--team-colour:${lineupEscape(teamColor)};--team-ink:${soccerTeamInk(teamColor)}">`+
+    return `<div class="soccer-pitch-player lineup-player starter ${side}${edgeClass}" role="button" tabindex="0" data-player-card="${lineupEscape(registerPlayerCard(game,entry,teamColor))}" style="--x:${x.toFixed(2)}%;--y:${vertical}%;--team-colour:${lineupEscape(teamColor)};--team-ink:${soccerTeamInk(teamColor)}">`+
       `<div class="soccer-player-photo${portrait?'':' no-photo'}">${portrait?`<img class="soccer-player-headshot" src="${lineupEscape(portrait)}" alt="" decoding="async" onerror="this.style.display='none';this.parentElement.classList.add('no-photo');if(this.nextElementSibling)this.nextElementSibling.style.display='grid'">`:''}<i aria-hidden="true">${lineupEscape(initials)}</i>${soccerFlagStamp(entry)}</div>`+
       `<span title="${lineupEscape(name)}">${number!=='—'?`<b class="soccer-player-number">${lineupEscape(number)}</b> `:''}${lineupEscape(shortName)}${countryName?`<i class="soccer-player-country">${lineupEscape(countryName)}</i>`:''}</span>${events}</div>`;
   };
@@ -859,6 +871,12 @@ function soccerFormationMarkup(game){
       if(name&&!player.querySelector('.player-events'))player.querySelector('span[title]')?.insertAdjacentHTML('afterend',playerEventMarkup(game,name));
     });
     benches.querySelectorAll('section').forEach(section=>{if(!section.querySelector('.lineup-player'))section.remove()});
+    const allEntries=(game.rosters||[]).flatMap(roster=>rosterEntries(roster));
+    benches.querySelectorAll('.lineup-player').forEach(node=>{
+      const name=node.querySelector('span[title]')?.getAttribute('title')||'';
+      const entry=allEntries.find(item=>String((item?.athlete||item||{}).displayName||(item?.athlete||item||{}).fullName||'').toLowerCase()===name.toLowerCase());
+      if(entry){node.dataset.playerCard=registerPlayerCard(game,entry);node.setAttribute('role','button');node.tabIndex=0;}
+    });
   }
   return `<div class="soccer-lineup-view"><div class="soccer-pitch${eventMode?' soccer-pitch-events':''}" role="group" aria-label="Starting formations">${sideMarkup(ordered[0],'home')}<div class="soccer-halfway-line" aria-hidden="true"></div><div class="soccer-centre-circle" aria-hidden="true"></div>${sideMarkup(ordered[1],'away')}</div>${benches?.outerHTML||''}</div>`;
 }
@@ -868,7 +886,7 @@ rosterMarkup=function(game){
   const key=entry=>{const player=entry?.athlete||entry||{};return String(player.id||player.uid||player.displayName||player.fullName||'')};
   const player=(entry,order='')=>{
     const raw=entry?.athlete||entry||{},number=entry?.jersey||raw.jersey||raw.jerseyNumber||'—',position=entry?.position?.abbreviation||raw.position?.abbreviation||entry?.position?.code||raw.position?.code||'—',countryValue=raw.country||entry?.country||raw.flag||entry?.flag||{},country=typeof countryValue==='string'?countryValue:countryValue.displayName||countryValue.name||countryValue.alt||'',flag=raw.flag?.href||entry?.flag?.href||'',name=raw.displayName||raw.fullName||'Unknown player';
-    return `<div class="lineup-player baseball-player"><em>${order||number}</em>${flag?`<img class="lineup-flag" src="${flag}" alt="${country||'Country flag'}">`:'<i class="lineup-flag empty" aria-hidden="true"></i>'}<span title="${name}">${name}${country?`<i class="lineup-origin">${country}</i>`:''}</span><small>${position}</small></div>`;
+    return `<div class="lineup-player baseball-player" role="button" tabindex="0" data-player-card="${lineupEscape(registerPlayerCard(game,entry))}"><em>${order||number}</em>${flag?`<img class="lineup-flag" src="${flag}" alt="${country||'Country flag'}">`:'<i class="lineup-flag empty" aria-hidden="true"></i>'}<span title="${name}">${name}${country?`<i class="lineup-origin">${country}</i>`:''}</span><small>${position}</small></div>`;
   };
   const groups=(game.rosters||[]).map(roster=>{
     const all=rosterEntries(roster),pitcher=roster.startingPitcher||all.find(entry=>{const raw=entry?.athlete||entry||{};return (entry?.position?.abbreviation||raw.position?.abbreviation)==='P'&&entry?.substitute!==true}),starterKeys=new Set((roster.starters||[]).map(key)),batters=(roster.starters||[]).filter(entry=>key(entry)!==key(pitcher)).sort((left,right)=>(Number(left?.battingOrder)||99)-(Number(right?.battingOrder)||99)),fallbackBatters=all.filter(entry=>key(entry)!==key(pitcher)&&((entry?.position?.abbreviation||(entry?.athlete||entry)?.position?.abbreviation)!=='P')).slice(0,9),order=(batters.length?batters:fallbackBatters).slice(0,9),used=new Set([key(pitcher),...order.map(key)]),bench=(roster.substitutes||all.filter(entry=>!starterKeys.has(key(entry)))).filter(entry=>!used.has(key(entry))),name=roster.team?.displayName||roster.team?.name||roster.team?.abbreviation||'TEAM',logo=roster.team?.logo||roster.team?.logos?.[0]?.href||(roster.team?.abbreviation===game.homeAbbr?game.homeLogo:roster.team?.abbreviation===game.awayAbbr?game.awayLogo:'');
@@ -877,6 +895,54 @@ rosterMarkup=function(game){
   if(!groups.length)return '<p class="lineup-empty">Official lineup data is not available for this game.</p>';
   return `<div class="lineups baseball-lineups">${groups.map(group=>`<section><b>${group.logo?`<img src="${group.logo}" alt="">`:''}${group.name}</b>${group.pitcher?`<h4>STARTING PITCHER</h4>${player(group.pitcher,'P')}`:''}${group.order.length?`<h4>BATTING ORDER</h4>${group.order.map((entry,index)=>player(entry,index+1)).join('')}`:''}${group.bench.length?`<h4>BENCH</h4>${group.bench.map(entry=>player(entry)).join('')}`:''}</section>`).join('')}</div>`;
 };
+const playerCardModal=document.getElementById('player-card-modal'),playerCardContent=playerCardModal?.querySelector('[data-player-card-content]');
+const playerCardInitials=name=>String(name||'?').split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join('').toUpperCase()||'?';
+const playerCardPosition=entry=>{const player=entry?.athlete||entry||{},value=entry?.position||player.position||entry?.primaryPosition||player.primaryPosition||'';return typeof value==='string'?value:(value.abbreviation||value.shortName||value.displayName||value.name||'PLAYER')};
+const playerCardNumber=entry=>{const player=entry?.athlete||entry||{};return entry?.jersey||player.jersey||player.jerseyNumber||''};
+const playerCardRows=(rows,empty='Season statistics are not yet available from the provider.')=>rows?.length?`<div class="player-card-stats">${rows.map(([label,value])=>`<div><span>${lineupEscape(label)}</span><b>${lineupEscape(value)}</b></div>`).join('')}</div>`:`<p class="player-card-empty">${empty}</p>`;
+const playerCardShell=(item,body,loading=false)=>{
+  const {game,entry,player,teamColour,teamName}=item,name=player.displayName||player.fullName||'Unknown player',number=playerCardNumber(entry),position=playerCardPosition(entry),photo=playerCardPhoto(entry)||(game.sport==='soccer'?soccerHeadshot(entry):''),tone=teamColour||(teamName===game.home||teamName===game.homeAbbr?game.homeColor:game.awayColor)||'#d6574f';
+  return `<header class="player-card-hero" style="--player-card-tone:${lineupEscape(tone)}"><div class="player-card-portrait${photo?'':' no-photo'}">${photo?`<img src="${lineupEscape(photo)}" alt="" onerror="this.remove();this.parentElement.classList.add('no-photo')">`:''}<b>${lineupEscape(playerCardInitials(name))}</b></div><div><p>${lineupEscape(game.league||game.sport||'PLAYER PROFILE')}</p><h2 id="player-card-name">${lineupEscape(name)}</h2><span>${number?`#${lineupEscape(number)} · `:''}${lineupEscape(position)}${teamName?` · ${lineupEscape(teamName)}`:''}</span></div></header><section class="player-card-season"><header><b>${new Date().getFullYear()} SEASON</b>${loading?'<i>LOADING</i>':''}</header>${body}</section>`;
+};
+const numberStat=value=>value===undefined||value===null||value===''?'—':String(value);
+const baseballSeasonRows=payload=>{
+  const groups=payload?.stats||[],pitching=groups.find(group=>String(group.group?.displayName||group.group?.name||'').toLowerCase().includes('pitch'))?.splits?.[0]?.stat,batting=groups.find(group=>String(group.group?.displayName||group.group?.name||'').toLowerCase().includes('hit'))?.splits?.[0]?.stat;
+  const stat=pitching?.inningsPitched||pitching?.era?pitching:batting;
+  if(!stat)return [];
+  return stat===pitching?[['W–L',`${numberStat(stat.wins)}–${numberStat(stat.losses)}`],['ERA',numberStat(stat.era)],['IP',numberStat(stat.inningsPitched)],['SO',numberStat(stat.strikeOuts)],['SAVES',numberStat(stat.saves)]]:[['AVG',numberStat(stat.avg)],['HR',numberStat(stat.homeRuns)],['RBI',numberStat(stat.rbi)],['OPS',numberStat(stat.ops)],['SB',numberStat(stat.stolenBases)]];
+};
+const soccerSeasonRows=payload=>{
+  const flat=[];const visit=value=>{if(!value)return;if(Array.isArray(value))return value.forEach(visit);if(typeof value==='object'){if(value.name&&(value.value!==undefined||value.displayValue!==undefined))flat.push(value);Object.values(value).forEach(child=>{if(child&&typeof child==='object')visit(child)})}};visit(payload?.stats||payload?.athlete?.statistics||payload?.statistics||payload);
+  const find=terms=>{const row=flat.find(item=>terms.some(term=>String(item.name||item.label||item.abbreviation||'').toLowerCase().replace(/[^a-z]/g,'').includes(term)));return row?.displayValue??row?.value};
+  return [['APPEARANCES',find(['appearances','gamesplayed'])],['GOALS',find(['goals'])],['ASSISTS',find(['assists'])],['MINUTES',find(['minutesplayed','minutes'])],['YELLOW',find(['yellowcards'])],['RED',find(['redcards'])]].filter(([,value])=>value!==undefined&&value!==null&&value!=='');
+};
+const playerCardStats=async item=>{
+  const id=playerCardId(item.entry),key=`${item.game.sport}:${id}`;
+  if(playerCardRequests.has(key))return playerCardRequests.get(key);
+  const request=(async()=>{
+    if(!id||!/^\d+$/.test(id))return [];
+    try{
+      if(item.game.sport==='baseball'){
+        const response=await fetch(`https://statsapi.mlb.com/api/v1/people/${encodeURIComponent(id)}/stats?stats=season&season=${new Date().getFullYear()}&group=hitting,pitching`);
+        return response.ok?baseballSeasonRows(await response.json()):[];
+      }
+      const slug=EPLData?.leagues?.[item.game.leagueId]?.slug||item.game.espnLeague||'';
+      if(!slug)return [];
+      const response=await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${encodeURIComponent(slug)}/athletes/${encodeURIComponent(id)}/stats`);
+      return response.ok?soccerSeasonRows(await response.json()):[];
+    }catch(_){return []}
+  })();
+  playerCardRequests.set(key,request);return request;
+};
+const closePlayerCard=()=>{if(playerCardModal)playerCardModal.hidden=true};
+const openPlayerCard=async key=>{
+  const item=playerCardEntries.get(key);if(!item||!playerCardModal||!playerCardContent)return;
+  playerCardContent.innerHTML=playerCardShell(item,playerCardRows([],''),true);playerCardModal.hidden=false;
+  const rows=await playerCardStats(item);
+  if(!playerCardModal.hidden&&playerCardEntries.get(key)===item)playerCardContent.innerHTML=playerCardShell(item,playerCardRows(rows),false);
+};
+document.addEventListener('click',event=>{const trigger=event.target.closest('[data-player-card]');if(trigger){event.preventDefault();event.stopPropagation();openPlayerCard(trigger.dataset.playerCard);return}if(event.target.closest('[data-player-card-close]'))closePlayerCard()},true);
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!playerCardModal?.hidden){closePlayerCard();return}const trigger=event.target.closest?.('[data-player-card]');if(trigger&&(event.key==='Enter'||event.key===' ')){event.preventDefault();openPlayerCard(trigger.dataset.playerCard)}},true);
 function boxScoreMarkup(game){const teams=game.summary?.boxscore?.teams||game.summary?.boxscore?.teamStats||[],home=teams.find(team=>String(team.team?.id||team.id||'')===String(game.homeId)),away=teams.find(team=>String(team.team?.id||team.id||'')===String(game.awayId)),value=(team,keys)=>{const stat=(team?.statistics||team?.stats||[]).find(item=>keys.includes(String(item.name||item.label||'').toLowerCase().replace(/[^a-z]/g,'')));return stat?.displayValue??stat?.value??''},rows=[['SHOTS',['shots']],['ON TARGET',['shotsontarget','shotsongoal']],['CORNERS',['corners','cornerkicks']],['SAVES',['saves']],['POSSESSION',['possession','possessionpct']]].map(([label,keys])=>({label,home:value(home,keys),away:value(away,keys)})).filter(row=>row.home!==''||row.away!=='');return rows.length?`<section class="box-score" aria-label="Match statistics"><h3>MATCH STATS</h3>${rows.map(row=>`<div><b>${row.home||'—'}</b><span>${row.label}</span><b>${row.away||'—'}</b></div>`).join('')}</section>`:''}
 boxScoreMarkup=function(game){const teams=game.summary?.boxscore?.teams||game.summary?.boxscore?.teamStats||[],home=teams.find(team=>String(team.team?.id||team.id||'')===String(game.homeId)),away=teams.find(team=>String(team.team?.id||team.id||'')===String(game.awayId)),value=(team,keys)=>{const stat=(team?.statistics||team?.stats||[]).find(item=>keys.includes(String(item.name||item.label||'').toLowerCase().replace(/[^a-z]/g,'')));return stat?.displayValue??stat?.value??''},number=value=>Number(String(value).replace(/[^\d.]/g,'')),mark=(value,other,color)=>`<b class="${number(value)>number(other)?'stat-lead':''}" ${number(value)>number(other)?`style="--team:${color}"`:''}>${value||'—'}</b>`,rows=[['SHOTS',['shots']],['ON TARGET',['shotsontarget','shotsongoal']],['CORNERS',['corners','cornerkicks']],['SAVES',['saves']],['TOUCHES IN BOX',['touchesinoppositionbox','touchesinoppositionarea','touchesinbox']]].map(([label,keys])=>({label,home:value(home,keys),away:value(away,keys)})).filter(row=>row.home!==''||row.away!==''),homePossession=value(home,['possession','possessionpct']),awayPossession=value(away,['possession','possessionpct']),possession=homePossession!==''||awayPossession!==''?`<div class="box-possession"><span>POSSESSION</span><div><i style="flex:${number(homePossession)||0};background:${game.homeColor}">${homePossession||'—'}</i><i style="flex:${number(awayPossession)||0};background:${game.awayColor}">${awayPossession||'—'}</i></div></div>`:'';return rows.length||possession?`<section class="box-score" aria-label="Match statistics">${rows.map(row=>`<div>${mark(row.home,row.away,game.homeColor)}<span>${row.label}</span>${mark(row.away,row.home,game.awayColor)}</div>`).join('')}${possession}</section>`:''};
 new MutationObserver(()=>listShell.querySelectorAll('[data-game]').forEach(card=>{const game=games.find(item=>item.id===card.dataset.game),incidents=card.querySelector('.list-incidents');if(game?.__showResults&&game.__resultTab==='legacy'&&game.sport!=='baseball'&&incidents&&!card.querySelector('.box-score')){const markup=boxScoreMarkup(game);if(markup)incidents.insertAdjacentHTML('beforebegin',markup)}})).observe(listShell,{childList:true,subtree:true});

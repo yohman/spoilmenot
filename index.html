@@ -48,6 +48,13 @@
     <nav id="international-filter" class="international-filter" aria-label="Filter international competitions" hidden></nav>
     <section id="list-shell" class="list-shell" hidden aria-label="Chronological fixture list"></section>
     <section id="match-page" class="match-page" hidden aria-live="polite"></section>
+    <section id="player-card-modal" class="player-card-modal" role="dialog" aria-modal="true" aria-labelledby="player-card-name" hidden>
+      <button type="button" class="player-card-backdrop" data-player-card-close aria-label="Close player details"></button>
+      <article class="player-card-dialog">
+        <button type="button" class="player-card-close" data-player-card-close aria-label="Close player details">×</button>
+        <div data-player-card-content></div>
+      </article>
+    </section>
   </main>
   <div id="loading" class="loading" role="status" aria-live="polite">
     <div class="app-loader-mark" aria-hidden="true">
@@ -110,7 +117,7 @@
   <script src="js/anticipation.js"></script>
   <script src="js/data.js?v=20260921-current-squads-1"></script>
   <script src="js/gameplot.js?v=20260918-meter-reveal-1"></script>
-  <script src="js/app.js?v=20260921-match-nav-meter-1"></script>
+  <script src="js/app.js?v=20260921-player-card-1"></script>
   <script src="js/brand.js?v=20260921-startup-selector-1"></script>
 </body>
 </html>

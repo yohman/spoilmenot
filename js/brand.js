@@ -53,15 +53,35 @@
     });
   };
   const refresh = (root = document.body) => { rebrandText(root); applySpoilMeter(root); promoteResultDetails(root); };
-  const modal = document.getElementById('spoil-meter-modal'), modalVersionKey = 'league-choice-introduced-v1';
+  const modal = document.getElementById('spoil-meter-modal'), modalVersionKey = 'league-choice-introduced-v2';
+  const leagueIds = ['epl','laliga','ucl','carabao','international','mlb','nfl'];
+  const storedLeagues = () => { try { const value = JSON.parse(localStorage.getItem('spoil-me-not-visible-leagues') || '[]'); return Array.isArray(value) ? value.filter(id => leagueIds.includes(id)) : []; } catch (_) { return []; } };
+  const selection = new Set(storedLeagues().length ? storedLeagues() : [localStorage.getItem('spoil-me-not-last-league') || 'epl'].filter(id => leagueIds.includes(id)));
+  const paintStartupChoices = () => modal?.querySelectorAll('[data-choose-league]').forEach(button => {
+    const active = selection.has(button.dataset.chooseLeague);
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+    const note = button.querySelector('small');
+    if (note) note.textContent = active ? 'IN YOUR FEED' : 'OPEN LEAGUE';
+  });
   const dismiss = () => { modal?.setAttribute('hidden', ''); sessionStorage.setItem(modalVersionKey, 'true'); };
-  modal?.querySelector('[data-dismiss-spoil-meter]')?.addEventListener('click', dismiss);
+  modal?.querySelector('[data-dismiss-spoil-meter]')?.addEventListener('click', () => {
+    if (!selection.size) return;
+    const ids = [...selection];
+    localStorage.setItem('spoil-me-not-visible-leagues', JSON.stringify(ids));
+    localStorage.setItem('spoil-me-not-last-league', ids.length === 1 ? ids[0] : 'all');
+    window.dispatchEvent(new CustomEvent('spoil-me-not:choose-leagues', { detail:{ ids } }));
+    dismiss();
+  });
+  modal?.querySelector('[data-startup-select-all]')?.addEventListener('click', () => { leagueIds.forEach(id => selection.add(id)); paintStartupChoices(); });
   modal?.addEventListener('click', event => {
     const choice = event.target.closest('[data-choose-league]');
     if (!choice) return;
-    window.dispatchEvent(new CustomEvent('spoil-me-not:choose-league', { detail:{ id:choice.dataset.chooseLeague } }));
-    dismiss();
+    const id = choice.dataset.chooseLeague;
+    if (selection.has(id) && selection.size > 1) selection.delete(id); else selection.add(id);
+    paintStartupChoices();
   });
+  paintStartupChoices();
   if (new URLSearchParams(location.search).has('match')) modal?.setAttribute('hidden', '');
   else if (sessionStorage.getItem(modalVersionKey) === 'true') dismiss();
   const guide = document.getElementById('spoil-meter-guide'), guideTrigger = document.getElementById('spoil-meter-help');

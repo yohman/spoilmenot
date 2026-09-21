@@ -16,6 +16,20 @@ window.EPLData = (() => {
     { slug: 'uefa.nations', competition: 'nations', label: 'NATIONS LEAGUE' },
     { slug: 'fifa.friendly', competition: 'friendly', label: 'FRIENDLY' }
   ];
+  // ESPN's team roster endpoint is a useful fallback, but national federations
+  // routinely announce a fresher camp call-up before a fixture.  Keep those
+  // confirmed lists small, dated, and scoped to their actual window; they win
+  // over the evergreen provider roster only while they are current.
+  const CURRENT_NATIONAL_SQUADS = {
+    colombia: {
+      names: ['Colombia'],
+      announced: '2026-09-17',
+      validThrough: '2026-10-07T12:00:00Z',
+      source: 'https://www.fcf.com.co/2026/09/17/convocatoria-de-la-seleccion-colombia-de-mayores-amistosos-internacionales-de-septiembre-octubre-2026/',
+      sourceLabel: 'FCF CALL-UP · SEP 17',
+      players: ['Aldair Quintana','Álvaro Angulo','Álvaro Montero','Camilo Durán','Carlos Andrés Gómez','Daniel Arcila','Daniel Muñoz','Dávinson Sánchez','Édier Ocampo','Gustavo Puerta','Jaminton Campaz','Jhon Arias','Jhon Lucumí','Jhon Solís','Juan Manuel Rengifo','Kevin Andrade','Kevin Castaño','Kevin Mier','Kevin Viveros','Luis Suárez','Matías Orozco','Óscar Perea','Richard Ríos','Royer Caicedo','Samuel Velásquez','Yáser Asprilla']
+    }
+  };
   const MLB_BASE = 'https://statsapi.mlb.com/api/v1', MLB_LIVE = 'https://statsapi.mlb.com/api/v1.1';
   let activeLeague = 'epl';
   const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
@@ -212,6 +226,15 @@ window.EPLData = (() => {
   }
   const loadOne = id => LEAGUES[id].sport === 'baseball' ? loadMlb() : loadSoccer(id);
   async function load(id = activeLeague) {
+    if (Array.isArray(id)) {
+      const selected = [...new Set(id.filter(value => LEAGUES[value]))];
+      if (!selected.length) throw Error('Choose at least one league.');
+      activeLeague = selected.length === 1 ? selected[0] : 'all';
+      const results = await Promise.allSettled(selected.map(loadOne));
+      const combined = results.filter(result => result.status === 'fulfilled').flatMap(result => result.value).sort((a, b) => a.time - b.time);
+      if (!combined.length) throw Error('No selected league feeds are available right now.');
+      return applyHighlights(combined);
+    }
     if (id === 'all') {
       activeLeague = 'all';
       const results = await Promise.allSettled(Object.keys(LEAGUES).map(loadOne));
@@ -434,5 +457,10 @@ window.EPLData = (() => {
     })); return games;
   }
   const enrich = (game, options) => game.sport === 'baseball' ? enrichMlb(game, options) : enrichSoccer(game, options);
-  return { leagues: LEAGUES, get activeLeague() { return activeLeague; }, setLeague: id => { if (id !== 'all' && !LEAGUES[id]) throw Error('Unknown league.'); activeLeague = id; }, load, enrich, refresh, normalize, normalizeMlb };
+  const currentNationalSquad = (game, team) => {
+    if (game?.leagueId !== 'international' || !team) return null;
+    const now = Date.now(), fixtureTime = Number(game.time) || now;
+    return Object.values(CURRENT_NATIONAL_SQUADS).find(squad => squad.names.some(name => clean(name).toLowerCase() === clean(team.displayName || team.name || team).toLowerCase()) && fixtureTime <= Date.parse(squad.validThrough) && now <= Date.parse(squad.validThrough)) || null;
+  };
+  return { leagues: LEAGUES, get activeLeague() { return activeLeague; }, setLeague: id => { if (id !== 'all' && !LEAGUES[id]) throw Error('Unknown league.'); activeLeague = id; }, load, enrich, refresh, normalize, normalizeMlb, currentNationalSquad };
 })();

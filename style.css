@@ -2041,9 +2041,9 @@ body.view-match #team-hover-label,
 body.view-match #team-preview,
 body.view-match .plot-shell,
 body.view-match #list-shell{display:none!important}
-body.view-match #match-page{display:block!important;min-height:100vh;padding:24px max(18px,calc((100vw - 1000px)/2)) 64px;background:#11110f}
+body.view-match #match-page{display:block!important;min-height:100vh;padding:82px max(18px,calc((100vw - 1000px)/2)) 64px;background:#11110f}
 .match-page-card{width:min(100%,960px);margin:0 auto;padding:18px;border:1px solid rgba(243,243,239,.16);background:#1b1b19;box-shadow:0 18px 42px rgba(0,0,0,.18)}
-.match-page-top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-18px -18px 0;padding:18px 18px 16px;border-bottom:1px solid rgba(243,243,239,.11);background:rgba(27,27,25,.96);backdrop-filter:blur(10px)}
+.match-page-top{position:fixed;top:0;left:max(18px,calc((100vw - 1000px)/2));right:max(18px,calc((100vw - 1000px)/2));z-index:200;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0;padding:16px 18px;border:1px solid rgba(243,243,239,.16);border-top:0;background:rgba(27,27,25,.97);box-shadow:0 7px 18px rgba(0,0,0,.24);backdrop-filter:blur(10px)}
 .match-page-top a{color:#d7d7d2;text-decoration:none;font:700 9px/1 "DM Mono",monospace;letter-spacing:.12em}
 .match-page-top a:hover{color:#fff}
 .match-page-nav-meta{display:flex;align-items:center;gap:9px;min-width:0}.match-page-league{display:inline-flex;align-items:center;gap:7px;min-width:0;color:#9e9d96;font:700 8px/1 "DM Mono",monospace;letter-spacing:.12em;white-space:nowrap}.match-page-meter{display:grid;place-items:center;width:35px;height:35px;flex:0 0 35px;border:1px solid var(--match-meter-edge,#e8e8e4);border-radius:50%;background:var(--match-meter-tone,#222220);color:var(--match-meter-ink,#f3f3f1);box-shadow:0 1px 0 rgba(0,0,0,.38);text-align:center}.match-page-meter b{font:600 15px/.9 Fraunces,Georgia,serif;letter-spacing:-.04em}.match-page-meter i{margin-top:-2px;font:600 4px/1 "DM Mono",monospace;font-style:normal;letter-spacing:.05em;white-space:nowrap}.match-page-meter[data-meter-band="4"]{--match-meter-tone:#e13f45;--match-meter-edge:#ffb5a2;--match-meter-ink:#fffaf4}.match-page-meter[data-meter-band="3"]{--match-meter-tone:#ea7436;--match-meter-edge:#ffc27d;--match-meter-ink:#fffaf1}.match-page-meter[data-meter-band="2"]{--match-meter-tone:#c79b39;--match-meter-edge:#e6c46b;--match-meter-ink:#fffbed}.match-page-meter[data-meter-band="1"]{--match-meter-tone:#59666e;--match-meter-edge:#84969d;--match-meter-ink:#f1f5f4}.match-page-meter[data-meter-band="0"]{--match-meter-tone:#34383a;--match-meter-edge:#626a6b;--match-meter-ink:#d8dddc}
@@ -2069,9 +2069,9 @@ body.view-match #match-page{display:block!important;min-height:100vh;padding:24p
 .match-page-lineup{margin:0 0 24px;padding:17px;border-top:1px solid rgba(243,243,239,.12);border-bottom:1px solid rgba(243,243,239,.12)}
 .match-page-card .spoiler-workspace{margin-top:0!important}
 @media(max-width:650px){
-  body.view-match #match-page{padding:10px 8px 34px}
+  body.view-match #match-page{padding:70px 8px 34px}
   .match-page-card{padding:12px 9px;border-color:rgba(243,243,239,.13)}
-  .match-page-top{margin:-12px -9px 0;padding:12px 12px 13px}
+  .match-page-top{left:8px;right:8px;padding:12px}
   .match-page-meter{width:31px;height:31px;flex-basis:31px}.match-page-meter b{font-size:13px}.match-page-league{font-size:7px}.match-page-nav-meta{gap:6px}
   .match-page-hero{gap:8px;padding:23px 1px 18px}
   .match-page-team img{width:38px;height:38px}

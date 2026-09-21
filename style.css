@@ -823,7 +823,7 @@
 .soccer-pitch:before,.soccer-pitch:after{content:"";position:absolute;left:50%;z-index:-1;transform:translateX(-50%);border:1px solid rgba(243,243,241,.12);pointer-events:none}
 .soccer-pitch:before{top:-1px;width:46%;height:12%;border-top:0;border-radius:0}
 .soccer-pitch:after{bottom:-1px;width:46%;height:12%;border-bottom:0;border-radius:0}
-.soccer-pitch.soccer-pitch-events{min-height:1320px}
+.soccer-pitch.soccer-pitch-events{min-height:900px}
 .soccer-halfway-line{position:absolute;z-index:-1;top:50%;right:0;left:0;height:1px;background:rgba(243,243,241,.13);transform:translateY(-50%)}
 .soccer-centre-circle{position:absolute;z-index:-1;top:50%;left:50%;width:72px;height:72px;border:1px solid rgba(243,243,241,.13);border-radius:50%;transform:translate(-50%,-50%)}
 .soccer-centre-circle:after{content:"";position:absolute;top:50%;left:50%;width:4px;height:4px;border-radius:50%;background:rgba(243,243,241,.2);transform:translate(-50%,-50%)}
@@ -853,10 +853,21 @@
   font:700 9px/1 "DM Mono",monospace!important;letter-spacing:.02em!important;
   box-shadow:0 1px 2px rgba(0,0,0,.35)!important;text-shadow:0 0 5px rgba(122,185,147,.24)!important;
 }
+
+/* Event pills use their own semantic colour system. A red card is not a
+   substitute-out marker: its border and the card itself stay red; yellow is
+   equally literal. On the pitch edge, reverse the outbound rail so no label
+   is clipped by the field boundary. */
+.soccer-pitch-player .player-event.sub-out{border-color:#ef6b4f!important;color:#ff8b73!important}
+.soccer-pitch-player .player-event.red{border-color:#e94b45!important;color:#ff746d!important}
+.soccer-pitch-player .player-event.yellow{border-color:#e9bd32!important;color:#f3cc4d!important}
+.soccer-pitch-player .player-event.red .card-glyph{background:#e94b45!important;color:#fff!important}
+.soccer-pitch-player .player-event.yellow .card-glyph{background:#e9bd32!important;color:#171714!important}
+.soccer-pitch-player.edge-left .player-corner-top-left{right:auto!important;left:calc(50% + 12px)!important;align-items:flex-start!important}
 .international-squad-view{width:100%;margin-top:4px}.international-squad-note{margin:0 0 11px!important;padding:8px 9px!important;border-left:2px solid #9f9f99!important;background:rgba(243,243,239,.045)!important;color:#b9b9b3!important;font:700 8px/1.35 "DM Mono",monospace!important;letter-spacing:.08em!important}.international-squad-view .lineups{margin-top:0!important}.international-squad-button{border-color:#9f9f99!important}.international-squad-button[aria-expanded="true"]{background:#e9e9e4!important;color:#151515!important}
 .soccer-bench-list{margin-top:14px!important}.soccer-bench-list section{padding-top:10px!important}
 @media(min-width:651px){.soccer-pitch{min-height:900px}.soccer-pitch-player{--player-disc:46px;width:70px!important}.soccer-pitch-player>span[title]{max-width:76px!important;font-size:10px!important}}
-@media(max-width:650px){.soccer-pitch{min-height:840px}.soccer-pitch-player{--player-disc:37px;width:54px!important}.soccer-pitch-player>span[title]{max-width:60px!important;font-size:8px!important}.soccer-pitch-team{font-size:9px}.soccer-pitch-team small{font-size:7px}.soccer-centre-circle{width:62px;height:62px}}
+@media(max-width:650px){.soccer-pitch,.soccer-pitch.soccer-pitch-events{min-height:840px}.soccer-pitch-player{--player-disc:37px;width:54px!important}.soccer-pitch-player>span[title]{max-width:60px!important;font-size:8px!important}.soccer-pitch-team{font-size:9px}.soccer-pitch-team small{font-size:7px}.soccer-centre-circle{width:62px;height:62px}}
 
 /* The formation wrapper is the expanded lineup payload on every breakpoint. */
 @media(min-width:651px){
@@ -2032,10 +2043,10 @@ body.view-match .plot-shell,
 body.view-match #list-shell{display:none!important}
 body.view-match #match-page{display:block!important;min-height:100vh;padding:24px max(18px,calc((100vw - 1000px)/2)) 64px;background:#11110f}
 .match-page-card{width:min(100%,960px);margin:0 auto;padding:18px;border:1px solid rgba(243,243,239,.16);background:#1b1b19;box-shadow:0 18px 42px rgba(0,0,0,.18)}
-.match-page-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:16px;border-bottom:1px solid rgba(243,243,239,.11)}
+.match-page-top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-18px -18px 0;padding:18px 18px 16px;border-bottom:1px solid rgba(243,243,239,.11);background:rgba(27,27,25,.96);backdrop-filter:blur(10px)}
 .match-page-top a{color:#d7d7d2;text-decoration:none;font:700 9px/1 "DM Mono",monospace;letter-spacing:.12em}
 .match-page-top a:hover{color:#fff}
-.match-page-top>span{display:inline-flex;align-items:center;gap:7px;color:#9e9d96;font:700 8px/1 "DM Mono",monospace;letter-spacing:.12em}
+.match-page-nav-meta{display:flex;align-items:center;gap:9px;min-width:0}.match-page-league{display:inline-flex;align-items:center;gap:7px;min-width:0;color:#9e9d96;font:700 8px/1 "DM Mono",monospace;letter-spacing:.12em;white-space:nowrap}.match-page-meter{display:grid;place-items:center;width:35px;height:35px;flex:0 0 35px;border:1px solid var(--match-meter-edge,#e8e8e4);border-radius:50%;background:var(--match-meter-tone,#222220);color:var(--match-meter-ink,#f3f3f1);box-shadow:0 1px 0 rgba(0,0,0,.38);text-align:center}.match-page-meter b{font:600 15px/.9 Fraunces,Georgia,serif;letter-spacing:-.04em}.match-page-meter i{margin-top:-2px;font:600 4px/1 "DM Mono",monospace;font-style:normal;letter-spacing:.05em;white-space:nowrap}.match-page-meter[data-meter-band="4"]{--match-meter-tone:#e13f45;--match-meter-edge:#ffb5a2;--match-meter-ink:#fffaf4}.match-page-meter[data-meter-band="3"]{--match-meter-tone:#ea7436;--match-meter-edge:#ffc27d;--match-meter-ink:#fffaf1}.match-page-meter[data-meter-band="2"]{--match-meter-tone:#c79b39;--match-meter-edge:#e6c46b;--match-meter-ink:#fffbed}.match-page-meter[data-meter-band="1"]{--match-meter-tone:#59666e;--match-meter-edge:#84969d;--match-meter-ink:#f1f5f4}.match-page-meter[data-meter-band="0"]{--match-meter-tone:#34383a;--match-meter-edge:#626a6b;--match-meter-ink:#d8dddc}
 .match-page-top img{width:20px;height:20px;object-fit:contain}
 .match-page-hero{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:18px;padding:28px 10px 21px}
 .match-page-team{display:grid;justify-items:center;gap:9px;min-width:0;text-align:center}
@@ -2060,7 +2071,8 @@ body.view-match #match-page{display:block!important;min-height:100vh;padding:24p
 @media(max-width:650px){
   body.view-match #match-page{padding:10px 8px 34px}
   .match-page-card{padding:12px 9px;border-color:rgba(243,243,239,.13)}
-  .match-page-top{padding:3px 3px 13px}
+  .match-page-top{margin:-12px -9px 0;padding:12px 12px 13px}
+  .match-page-meter{width:31px;height:31px;flex-basis:31px}.match-page-meter b{font-size:13px}.match-page-league{font-size:7px}.match-page-nav-meta{gap:6px}
   .match-page-hero{gap:8px;padding:23px 1px 18px}
   .match-page-team img{width:38px;height:38px}
   .match-page-team b{font-size:16px;white-space:normal}

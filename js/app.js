@@ -817,7 +817,8 @@ function soccerFormationMarkup(game){
     const formationColumns={1:[50],2:[36.667,63.333],3:[23.333,50,76.667],4:[10,36.667,63.333,90],5:[10,30,50,70,90]};
     const x=formationColumns[rowLength]?.[rowIndex]??(10+(rowIndex/Math.max(1,rowLength-1))*80);
     const events=eventMode?playerEventMarkup(game,name):'';
-    return `<div class="soccer-pitch-player lineup-player starter ${side}" style="--x:${x.toFixed(2)}%;--y:${vertical}%;--team-colour:${lineupEscape(teamColor)};--team-ink:${soccerTeamInk(teamColor)}">`+
+    const edgeClass=x<=12?' edge-left':x>=88?' edge-right':'';
+    return `<div class="soccer-pitch-player lineup-player starter ${side}${edgeClass}" style="--x:${x.toFixed(2)}%;--y:${vertical}%;--team-colour:${lineupEscape(teamColor)};--team-ink:${soccerTeamInk(teamColor)}">`+
       `<div class="soccer-player-photo${portrait?'':' no-photo'}">${portrait?`<img class="soccer-player-headshot" src="${lineupEscape(portrait)}" alt="" decoding="async" onerror="this.style.display='none';this.parentElement.classList.add('no-photo');if(this.nextElementSibling)this.nextElementSibling.style.display='grid'">`:''}<i aria-hidden="true">${lineupEscape(initials)}</i>${soccerFlagStamp(entry)}</div>`+
       `<span title="${lineupEscape(name)}">${number!=='—'?`<b class="soccer-player-number">${lineupEscape(number)}</b> `:''}${lineupEscape(shortName)}${countryName?`<i class="soccer-player-country">${lineupEscape(countryName)}</i>`:''}</span>${events}</div>`;
   };
@@ -825,20 +826,21 @@ function soccerFormationMarkup(game){
     const teamColor=soccerTeamColor(group,game,side);
     const goalkeeper=group.rows.gk[0];
     const rows=group.formationRows||[];
-    const rowPosition=index=>{
-      // A fixed row rhythm keeps formations comparable: a 4-4-2 must not
-      // spread its three outfield lines farther apart than a 4-2-3-1 simply
-      // because it has one fewer line. The spare space belongs at halfway,
-      // not inside either team’s formation.
-      const homeStart=eventMode?14:16,awayStart=eventMode?78:79,rowStep=eventMode?8.5:9;
-      return side==='home'?homeStart+index*rowStep:awayStart-index*rowStep;
+    const rowPosition=(index,total)=>{
+      // Treat the goalkeeper, each outfield line, and halfway as a single
+      // rhythm. Three outfield rows (4-4-2) get four equal spaces; four rows
+      // (4-2-3-1) get five slightly tighter spaces. That keeps labels clear
+      // without creating dead zones near either goal or the centre line.
+      const step=total>=4?9:11,homeKeeper=6,awayKeeper=94;
+      const offset=step*(index+1);
+      return side==='home'?homeKeeper+offset:awayKeeper-offset;
     };
     // Keep the home keeper in the goalmouth.  The outfield rows, rather than
     // the keeper, move upward to remove dead space below the keeper's label.
-    const goalkeeperY=side==='home'?6:(eventMode?89:88);
+    const goalkeeperY=side==='home'?6:94;
     const players=[
       ...(goalkeeper?[playerMarkup(goalkeeper,side,goalkeeperY,0,1,teamColor)]:[]),
-      ...rows.flatMap((row,rowIndex)=>row.map((entry,index)=>playerMarkup(entry,side,rowPosition(rowIndex),index,row.length,teamColor)))
+      ...rows.flatMap((row,rowIndex)=>row.map((entry,index)=>playerMarkup(entry,side,rowPosition(rowIndex,rows.length),index,row.length,teamColor)))
     ].join('');
     return `<header class="soccer-pitch-team ${side}">${group.logo?`<img src="${lineupEscape(group.logo)}" alt="">`:''}<span>${lineupEscape(group.name)}</span><small>${lineupEscape(group.formation)}</small></header>${players}`;
   };
@@ -1310,11 +1312,18 @@ const matchPageTeamContext=(game,side)=>{
   const standing=Number.isFinite(row.rank)?`${ordinal(row.rank)} IN ${tableLeagueLabel(game)}`:'';
   return `<small class="match-page-team-context">${record?`<b>${lineupEscape(record)}</b>`:''}${standing?`<i>${lineupEscape(standing)}</i>`:''}</small>`;
 };
+const matchPageMeter=game=>{
+  const result=game.__meterScore||game.scoreResult||WatchScore.score(game),score=Math.round(Number(result?.watchScore));
+  if(!Number.isFinite(score))return '';
+  const band=score>=80?4:score>=65?3:score>=45?2:score>=25?1:0;
+  const label=score>=80?'MUST WATCH':score>=65?'WORTH IT':score>=45?'YOUR CALL':score>=25?'SAVE YOUR 90':"DON'T BOTHER";
+  return `<span class="match-page-meter" data-meter-band="${band}" aria-label="Spoil Meter: ${lineupEscape(label)}, ${score} out of 100"><b>${score}</b><i>${lineupEscape(label)}</i></span>`;
+};
 const matchPageMarkup=game=>{
   const safe=value=>lineupEscape(value),score=game.homeScore===null||game.homeScore===undefined?'—':`${game.homeScore}–${game.awayScore??'—'}`;
   const date=game.time.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'}),time=game.time.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
   const scorers=game.sport==='soccer'?`<div class="match-page-scorers">${soccerGoalLists(game)}</div>`:'';
-  return `<article class="match-page-card" data-game="${safe(game.id)}"><header class="match-page-top"><a href="${safe(scheduleHref(game))}" data-match-back>← ALL MATCHES</a><span>${game.leagueLogo?`<img src="${safe(game.leagueLogo)}" alt="">`:''}${safe(game.league||'MATCH')}</span></header><section class="match-page-hero"><div class="match-page-team home">${game.homeLogo?`<img src="${safe(game.homeLogo)}" alt="">`:''}<b>${safe(game.home)}</b>${matchPageTeamContext(game,'home')}</div><div class="match-page-final"><strong>${score}</strong><small>FULL TIME</small><time>${safe(date)} · ${safe(time)}</time></div><div class="match-page-team away">${game.awayLogo?`<img src="${safe(game.awayLogo)}" alt="">`:''}<b>${safe(game.away)}</b>${matchPageTeamContext(game,'away')}</div></section>${scorers}<div class="match-page-actions">${highlightMarkup(game)}</div>${resultWorkspaceMarkup(game,{includeScorecard:['baseball','football'].includes(game.sport)})}</article>`;
+  return `<article class="match-page-card" data-game="${safe(game.id)}"><header class="match-page-top"><a href="${safe(scheduleHref(game))}" data-match-back>← ALL MATCHES</a><div class="match-page-nav-meta">${matchPageMeter(game)}<span class="match-page-league">${game.leagueLogo?`<img src="${safe(game.leagueLogo)}" alt="">`:''}${safe(game.league||'MATCH')}</span></div></header><section class="match-page-hero"><div class="match-page-team home">${game.homeLogo?`<img src="${safe(game.homeLogo)}" alt="">`:''}<b>${safe(game.home)}</b>${matchPageTeamContext(game,'home')}</div><div class="match-page-final"><strong>${score}</strong><small>FULL TIME</small><time>${safe(date)} · ${safe(time)}</time></div><div class="match-page-team away">${game.awayLogo?`<img src="${safe(game.awayLogo)}" alt="">`:''}<b>${safe(game.away)}</b>${matchPageTeamContext(game,'away')}</div></section>${scorers}<div class="match-page-actions">${highlightMarkup(game)}</div>${resultWorkspaceMarkup(game,{includeScorecard:['baseball','football'].includes(game.sport)})}</article>`;
 };
 const renderMatchPage=game=>{
   // Tab and lineup changes replace only this focused page. Preserve the reader's

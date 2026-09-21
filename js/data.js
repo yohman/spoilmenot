@@ -327,7 +327,7 @@ window.EPLData = (() => {
         // sorting key; treating the leadoff hitter's 0 as "missing" sent them
         // to the end of the rendered order.
         const battingIndex = Number.isInteger(listedIndex) ? listedIndex + 1 : inferredIndex;
-        return { athlete: { id: item.person?.id, displayName: item.person?.fullName, fullName: item.person?.fullName, jersey: item.jerseyNumber, position: { abbreviation: item.position?.abbreviation || item.position?.code || '' }, birthDate: item.person?.birthDate }, jersey: item.jerseyNumber, position: { abbreviation: item.position?.abbreviation || item.position?.code || '' }, starter: Number.isInteger(battingIndex), substitute: bench.has(id) || bullpen.has(id), battingOrder: battingIndex, pitching: item.stats?.pitching || {} };
+        return { athlete: { id: item.person?.id, displayName: item.person?.fullName, fullName: item.person?.fullName, jersey: item.jerseyNumber, position: { abbreviation: item.position?.abbreviation || item.position?.code || '' }, birthDate: item.person?.birthDate }, jersey: item.jerseyNumber, position: { abbreviation: item.position?.abbreviation || item.position?.code || '' }, starter: Number.isInteger(battingIndex), substitute: bench.has(id) || bullpen.has(id), battingOrder: battingIndex, pitching: item.stats?.pitching || {}, seasonStats: item.seasonStats || {} };
       });
       const source = side === 'home'
         ? { id: game.homeId, displayName: game.home, abbreviation: game.homeAbbr, logo: game.homeLogo }

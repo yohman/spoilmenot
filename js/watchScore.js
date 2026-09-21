@@ -18,6 +18,7 @@ window.WatchScore = (() => {
     shotsOnTarget: ['shotsontarget', 'shotsongoal', 'shotsontargettotal'],
     saves: ['saves', 'goalkeepersaves'],
     corners: ['corners', 'cornerkicks', 'totalcorners'],
+    fouls: ['fouls', 'foulscommitted', 'totalfouls'],
     boxTouches: ['touchesinoppositionbox', 'touchesinoppositionarea', 'touchesinthebox', 'touchesinbox']
   };
   const statKey = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -270,6 +271,31 @@ window.WatchScore = (() => {
     return score ? { score: clamp(score, 0, 88), winner, winnerRank, loserRank, rankGap, margin, marketUpset: marketScore !== null } : null;
   }
 
+  // Some fixtures carry their own stakes before a ball is kicked. Keep this
+  // deliberately curated rather than guessing from city names: it prevents a
+  // generic local fixture from being presented as a derby. The additional
+  // points only apply when the fixture also has title-level table stakes or a
+  // genuine flashpoint, so rivalry alone cannot turn a quiet match into a
+  // "must see" recommendation.
+  const RIVALRY_PAIRS = [
+    ['atletico madrid', 'real madrid'], ['barcelona', 'real madrid'],
+    ['arsenal', 'tottenham hotspur'], ['liverpool', 'everton'],
+    ['manchester city', 'manchester united'], ['ac milan', 'inter milan'],
+    ['roma', 'lazio'], ['bayern munich', 'borussia dortmund']
+  ];
+  const teamKey = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const rivalryScore = (game, stats) => {
+    if (game.sport && game.sport !== 'soccer') return { score: 0, derby: false, titleStakes: false, flashpoint: false };
+    const home = teamKey(game.home), away = teamKey(game.away);
+    const derby = RIVALRY_PAIRS.some(([left, right]) => (home === teamKey(left) && away === teamKey(right)) || (home === teamKey(right) && away === teamKey(left)));
+    if (!derby) return { score: 0, derby: false, titleStakes: false, flashpoint: false };
+    const homeRank = Number(game.homeRank), awayRank = Number(game.awayRank);
+    const titleStakes = Number.isFinite(homeRank) && Number.isFinite(awayRank) && Math.max(homeRank, awayRank) <= 6;
+    const events = game.events || [];
+    const flashpoint = events.some(event => event.type === 'red' || event.type === 'penalty') || ((stats.home.fouls || 0) + (stats.away.fouls || 0) >= 24);
+    return { score: 6 + (titleStakes ? 3 : 0) + (flashpoint ? 2 : 0), derby, titleStakes, flashpoint };
+  };
+
   function combine(parts) {
     const active = parts.filter(part => Number.isFinite(part.value));
     const weight = active.reduce((sum, part) => sum + part.weight, 0);
@@ -281,21 +307,21 @@ window.WatchScore = (() => {
     if (!Number.isFinite(home) || !Number.isFinite(away)) return null;
     const stats = statistics(game), timeline = scoreTimeline(game);
     const drama = dramaScore(game, timeline), competitiveness = competitivenessScore(game, timeline, stats);
-    const context = contextScore(game), action = actionScore(game, stats), comebackDenial = comebackDenialBonus(game, timeline), upset = upsetScore(game);
+    const context = contextScore(game), action = actionScore(game, stats), comebackDenial = comebackDenialBonus(game, timeline), upset = upsetScore(game), rivalry = rivalryScore(game, stats);
     const spectacle = spectacleScore(game, stats, timeline);
     const baseScore = combine([
       { value: action, weight: WEIGHTS.action }, { value: drama.score, weight: WEIGHTS.drama },
       { value: competitiveness, weight: WEIGHTS.competitiveness }, { value: context, weight: WEIGHTS.surpriseContext }
     ]);
     // A team overturning a two-goal deficit to win is a distinctive match arc.
-    const narrativeScore = baseScore + (drama.comebackWinner ? 14 : 0) + comebackDenial.score;
+    const narrativeScore = baseScore + (drama.comebackWinner ? 14 : 0) + comebackDenial.score + rivalry.score;
     const watchScore = round(Math.max(narrativeScore, spectacle.score, upset?.score || 0));
     return {
       watchScore, action: round(action), drama: round(drama.score), competitiveness: round(competitiveness),
       // Kept as a compatibility alias for older UI code.
       exceptional: round(competitiveness), surpriseContext: context === null ? null : round(context),
       available: ['action', 'drama', 'competitiveness', ...(context === null ? [] : ['surpriseContext'])],
-      diagnostics: { goals: timeline.length, leadChanges: drama.leadChanges, equalizers: drama.equalizers, comebackWinner: drama.comebackWinner, comebackDenial, upset, spectacle, stats }
+      diagnostics: { goals: timeline.length, leadChanges: drama.leadChanges, equalizers: drama.equalizers, comebackWinner: drama.comebackWinner, comebackDenial, upset, rivalry, spectacle, stats }
     };
   }
 
@@ -306,6 +332,7 @@ window.WatchScore = (() => {
     if (result?.diagnostics?.comebackDenial?.completed && result.diagnostics.comebackDenial.underdog) reasons.push('Two-goal underdog comeback');
     if (result?.diagnostics?.comebackDenial?.denied) reasons.push(result.diagnostics.comebackDenial.underdog ? 'Underdog comeback denied late' : 'Two-goal comeback denied late');
     if (result?.diagnostics?.upset) reasons.push(result.diagnostics.upset.margin >= 2 ? 'Decisive upset of a top-ranked side' : 'Major table upset');
+    if (result?.diagnostics?.rivalry?.derby) reasons.push(result.diagnostics.rivalry.flashpoint ? 'High-stakes derby with a flashpoint' : 'High-stakes derby');
     if (timeline.some(goal => goal.stoppage)) reasons.push('Goal in stoppage time');
     else if (timeline.some(goal => goal.minute >= 86)) reasons.push('Late decisive moment');
     if ((game.events || []).some(event => event.type === 'red')) reasons.push('Red-card turning point');

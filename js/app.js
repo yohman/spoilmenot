@@ -825,22 +825,20 @@ function soccerFormationMarkup(game){
     const teamColor=soccerTeamColor(group,game,side);
     const goalkeeper=group.rows.gk[0];
     const rows=group.formationRows||[];
-    const rowPosition=(index,total)=>{
-      const start=eventMode?(total>3?14:13):(total>3?16:17),end=eventMode?38:41;
-      const homePosition=total<2?(start+end)/2:start+((end-start)*index/(total-1));
-      if(side==='home')return homePosition;
-      // The away side needs the same name-to-next-row clearance as the home
-      // side.  Keep its deepest line clear of the goalkeeper and reserve the
-      // centre third so the two XIs never run into one another.
-      const awayDefence=eventMode?78:79,awayAttack=52;
-      return total<2?(awayDefence+awayAttack)/2:awayDefence+((awayAttack-awayDefence)*index/(total-1));
+    const rowPosition=index=>{
+      // A fixed row rhythm keeps formations comparable: a 4-4-2 must not
+      // spread its three outfield lines farther apart than a 4-2-3-1 simply
+      // because it has one fewer line. The spare space belongs at halfway,
+      // not inside either team’s formation.
+      const homeStart=eventMode?14:16,awayStart=eventMode?78:79,rowStep=eventMode?8.5:9;
+      return side==='home'?homeStart+index*rowStep:awayStart-index*rowStep;
     };
     // Keep the home keeper in the goalmouth.  The outfield rows, rather than
     // the keeper, move upward to remove dead space below the keeper's label.
     const goalkeeperY=side==='home'?6:(eventMode?89:88);
     const players=[
       ...(goalkeeper?[playerMarkup(goalkeeper,side,goalkeeperY,0,1,teamColor)]:[]),
-      ...rows.flatMap((row,rowIndex)=>row.map((entry,index)=>playerMarkup(entry,side,rowPosition(rowIndex,rows.length),index,row.length,teamColor)))
+      ...rows.flatMap((row,rowIndex)=>row.map((entry,index)=>playerMarkup(entry,side,rowPosition(rowIndex),index,row.length,teamColor)))
     ].join('');
     return `<header class="soccer-pitch-team ${side}">${group.logo?`<img src="${lineupEscape(group.logo)}" alt="">`:''}<span>${lineupEscape(group.name)}</span><small>${lineupEscape(group.formation)}</small></header>${players}`;
   };
@@ -1304,11 +1302,19 @@ const resultWorkspaceMarkup=(game,{includeScorecard=true}={})=>{
   return `<section class="spoiler-workspace" aria-label="Spoiler match details">${scorecard}<div class="spoiler-tabs" style="--spoiler-tab-count:${tabs.length}" role="tablist" aria-label="Spoiler details">${tabs.map(button).join('')}</div><div class="spoiler-panel" role="tabpanel">${content}</div></section>`;
 };
 const scheduleHref=game=>{const url=new URL(location.href);url.searchParams.set('league',activeLeague);if(activeLeagueIds.size>1)url.searchParams.set('leagues',[...activeLeagueIds].join(','));else url.searchParams.delete('leagues');if(activeLeague==='international')url.searchParams.set('international',internationalCompetition);url.searchParams.delete('match');return url.toString()};
+const matchPageTeamContext=(game,side)=>{
+  const name=side==='home'?game.home:game.away,row=teamTable[teamTableKey(game.leagueId,name)];
+  if(!row)return '<small class="match-page-team-context is-loading">STANDINGS LOADING</small>';
+  const values=game.sport==='soccer'?[row.wins,row.draws,row.losses]:game.sport==='football'?[row.wins,row.losses,row.draws]:[row.wins,row.losses];
+  const record=values.every(Number.isFinite)?values.join('–'):'';
+  const standing=Number.isFinite(row.rank)?`${ordinal(row.rank)} IN ${tableLeagueLabel(game)}`:'';
+  return `<small class="match-page-team-context">${record?`<b>${lineupEscape(record)}</b>`:''}${standing?`<i>${lineupEscape(standing)}</i>`:''}</small>`;
+};
 const matchPageMarkup=game=>{
   const safe=value=>lineupEscape(value),score=game.homeScore===null||game.homeScore===undefined?'—':`${game.homeScore}–${game.awayScore??'—'}`;
   const date=game.time.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'}),time=game.time.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
   const scorers=game.sport==='soccer'?`<div class="match-page-scorers">${soccerGoalLists(game)}</div>`:'';
-  return `<article class="match-page-card" data-game="${safe(game.id)}"><header class="match-page-top"><a href="${safe(scheduleHref(game))}" data-match-back>← ALL MATCHES</a><span>${game.leagueLogo?`<img src="${safe(game.leagueLogo)}" alt="">`:''}${safe(game.league||'MATCH')}</span></header><section class="match-page-hero"><div class="match-page-team home">${game.homeLogo?`<img src="${safe(game.homeLogo)}" alt="">`:''}<b>${safe(game.home)}</b></div><div class="match-page-final"><strong>${score}</strong><small>FULL TIME</small><time>${safe(date)} · ${safe(time)}</time></div><div class="match-page-team away">${game.awayLogo?`<img src="${safe(game.awayLogo)}" alt="">`:''}<b>${safe(game.away)}</b></div></section>${scorers}<div class="match-page-actions">${highlightMarkup(game)}</div>${resultWorkspaceMarkup(game,{includeScorecard:['baseball','football'].includes(game.sport)})}</article>`;
+  return `<article class="match-page-card" data-game="${safe(game.id)}"><header class="match-page-top"><a href="${safe(scheduleHref(game))}" data-match-back>← ALL MATCHES</a><span>${game.leagueLogo?`<img src="${safe(game.leagueLogo)}" alt="">`:''}${safe(game.league||'MATCH')}</span></header><section class="match-page-hero"><div class="match-page-team home">${game.homeLogo?`<img src="${safe(game.homeLogo)}" alt="">`:''}<b>${safe(game.home)}</b>${matchPageTeamContext(game,'home')}</div><div class="match-page-final"><strong>${score}</strong><small>FULL TIME</small><time>${safe(date)} · ${safe(time)}</time></div><div class="match-page-team away">${game.awayLogo?`<img src="${safe(game.awayLogo)}" alt="">`:''}<b>${safe(game.away)}</b>${matchPageTeamContext(game,'away')}</div></section>${scorers}<div class="match-page-actions">${highlightMarkup(game)}</div>${resultWorkspaceMarkup(game,{includeScorecard:['baseball','football'].includes(game.sport)})}</article>`;
 };
 const renderMatchPage=game=>{
   // Tab and lineup changes replace only this focused page. Preserve the reader's
@@ -1350,6 +1356,7 @@ const openCachedMatchPage=(game,card)=>{
   listShell.hidden=true;
   game.__resultTab='stats';
   renderMatchPage(game);
+  fetchLeagueStandings(EPLData.leagues[game.leagueId],game.espnLeague).finally(()=>renderMatchPage(game));
   // The schedule remains mounted underneath the focused route. Refresh only
   // the selected game so return is instant while its richer detail arrives.
   hydrateMatchLineup(game).finally(()=>renderMatchPage(game));
@@ -1746,4 +1753,4 @@ syncMeterRevealControl();
 const enrichForReveal=async completed=>{let cursor=0;const worker=async()=>{while(cursor<completed.length){const game=completed[cursor++];if(!game._enriched)await EPLData.enrich(game).catch(()=>game)}};await Promise.all(Array.from({length:3},worker))};
 meterRevealControl.onclick=async event=>{event.preventDefault();event.stopImmediatePropagation();const completed=games.filter(game=>game.completed),allRevealed=completed.length>0&&completed.every(game=>game.__mwRevealed);if(allRevealed){completed.forEach(game=>{game.__mwRevealed=false;game.displayScore=50});plot?.render();renderList();syncMeterRevealControl();return}meterRevealControl.disabled=true;await enrichForReveal(completed);completed.forEach(game=>{const score=game.scoreResult||(['baseball','football'].includes(game.sport)?null:WatchScore.score(game));if(score){game.scoreResult=score;plot?.reveal(game,score)}});renderList();meterRevealControl.disabled=false;syncMeterRevealControl()};
 new MutationObserver(syncMeterRevealControl).observe(listShell,{childList:true,subtree:true});
-async function boot(){const serial=++leagueLoadSerial;showLoader(matchRouteId?'PREPARING FULL MATCH SPOILER':'SYNCING LEAGUES & FIXTURES',1000);try{EPLData.setLeague(activeLeague);const all=prepareGames(await EPLData.load([...activeLeagueIds]));if(serial!==leagueLoadSerial)return;if(matchRouteId){const game=games.find(item=>String(item.id)===String(matchRouteId));if(!game)throw Error('This match is not available in the current season feed.');document.documentElement.classList.add('view-match');document.body.classList.add('view-match');plotShell.hidden=true;listShell.hidden=true;await EPLData.enrich(game,{refresh:true,lineup:true});if(!game.scoreResult)game.scoreResult=WatchScore.score(game);game.__resultTab='stats';renderMatchPage(game);await hideLoader();Promise.all([hydrateRosterFlags(game),hydrateRosterPortraits(game)]).then(()=>renderMatchPage(game));return}renderLeagueSwitcher();renderRibbon(all);renderList();deferBackground(()=>loadTeamTable(activeLeague));document.body.classList.add('view-list');plotShell.hidden=true;listShell.hidden=false;await hideLoader();prefetchCompleted(games);prefetchCardLineups(games);requestAnimationFrame(()=>{const restored=restoreListRoutePosition();if(!restored)document.getElementById('list-now')?.scrollIntoView({block:'center'});decorateCards();fitTeamNames(listShell)});search.oninput=()=>renderTeams(all);search.onfocus=()=>renderTeams(all)}catch(error){if(serial!==leagueLoadSerial)return;await hideLoader();const box=document.getElementById('error');box.textContent=`LIVE DATA UNAVAILABLE — ${error.message}`;box.hidden=false}}boot()})();
+async function boot(){const serial=++leagueLoadSerial;showLoader(matchRouteId?'PREPARING FULL MATCH SPOILER':'SYNCING LEAGUES & FIXTURES',1000);try{EPLData.setLeague(activeLeague);const all=prepareGames(await EPLData.load([...activeLeagueIds]));if(serial!==leagueLoadSerial)return;if(matchRouteId){const game=games.find(item=>String(item.id)===String(matchRouteId));if(!game)throw Error('This match is not available in the current season feed.');document.documentElement.classList.add('view-match');document.body.classList.add('view-match');plotShell.hidden=true;listShell.hidden=true;await EPLData.enrich(game,{refresh:true,lineup:true});if(!game.scoreResult)game.scoreResult=WatchScore.score(game);game.__resultTab='stats';renderMatchPage(game);fetchLeagueStandings(EPLData.leagues[game.leagueId],game.espnLeague).finally(()=>renderMatchPage(game));await hideLoader();Promise.all([hydrateRosterFlags(game),hydrateRosterPortraits(game)]).then(()=>renderMatchPage(game));return}renderLeagueSwitcher();renderRibbon(all);renderList();deferBackground(()=>loadTeamTable(activeLeague));document.body.classList.add('view-list');plotShell.hidden=true;listShell.hidden=false;await hideLoader();prefetchCompleted(games);prefetchCardLineups(games);requestAnimationFrame(()=>{const restored=restoreListRoutePosition();if(!restored)document.getElementById('list-now')?.scrollIntoView({block:'center'});decorateCards();fitTeamNames(listShell)});search.oninput=()=>renderTeams(all);search.onfocus=()=>renderTeams(all)}catch(error){if(serial!==leagueLoadSerial)return;await hideLoader();const box=document.getElementById('error');box.textContent=`LIVE DATA UNAVAILABLE — ${error.message}`;box.hidden=false}}boot()})();

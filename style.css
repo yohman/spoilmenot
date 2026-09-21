@@ -2041,6 +2041,7 @@ body.view-match #match-page{display:block!important;min-height:100vh;padding:24p
 .match-page-team{display:grid;justify-items:center;gap:9px;min-width:0;text-align:center}
 .match-page-team img{width:50px;height:50px;object-fit:contain;filter:drop-shadow(0 0 1px rgba(243,243,239,.9))}
 .match-page-team b{max-width:100%;overflow:hidden;color:#f1f1ed;font:600 clamp(16px,2.2vw,24px)/1.02 Fraunces,Georgia,serif;text-overflow:ellipsis;white-space:nowrap}
+.match-page-team-context{display:grid;gap:2px;min-height:20px;color:#a9a8a1;font:700 7px/1.15 "DM Mono",monospace;letter-spacing:.08em}.match-page-team-context b{color:#d6d5cf;font:inherit}.match-page-team-context i{color:#8f8e88;font:inherit;font-style:normal}.match-page-team-context.is-loading{color:#77766f;font-size:6px}
 .match-page-final{display:grid;justify-items:center;gap:5px;text-align:center}
 .match-page-final strong{color:#f2f1ed;font:600 clamp(42px,7vw,68px)/.9 Fraunces,Georgia,serif;letter-spacing:-.075em;white-space:nowrap}
 .match-page-final small{color:#9e9d96;font:700 8px/1 "DM Mono",monospace;letter-spacing:.15em}

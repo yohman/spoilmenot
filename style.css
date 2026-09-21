@@ -3095,6 +3095,17 @@ html body #spoil-meter-modal img[src$="epl-official.png"]:not([data-no-outline])
    let the whole portrait fit rather than magnifying the upper face. */
 .player-card-portrait img[src*="mlbstatic"]{width:auto!important;height:100%!important;max-width:100%!important;object-fit:contain!important;object-position:center center!important}
 
+/* A card portrait needs breathing room at both ends. The provider images are
+   often cropped tightly already, so never press the hair or kit against the
+   card edge; this also keeps the card controls inside a phone viewport. */
+.player-card-portrait{box-sizing:border-box;padding:12px 10px 10px!important}.player-card-portrait img{box-sizing:border-box!important;width:auto!important;height:100%!important;max-width:100%!important;object-fit:contain!important;object-position:center center!important}
+@media(max-width:520px){.player-card-hero{grid-template-rows:238px auto!important}.player-card-portrait{height:238px!important;padding:10px 8px 8px!important}.player-card-formation{top:126px!important}.player-card-season{padding-bottom:10px!important}}
+
+.player-card-country{display:flex!important;align-items:center;gap:5px;margin-top:4px!important;color:#b6b6b1!important;font:700 8px/1 "DM Mono",monospace!important;letter-spacing:.07em!important}.player-card-country .soccer-player-flag{position:static!important;width:15px!important;height:11px!important;flex:0 0 auto!important}
+/* Moments are read in columns: event glyph, player, score, then prose. Keep
+   the signals literal and centred, including a two-line goal / score marker. */
+.incident .event-mark{display:grid!important;justify-items:center!important;align-items:start!important;padding-top:1px!important;text-align:center!important}.incident .event-mark .card-glyph.yellow{background:#e9bd32!important;color:#171714!important}.incident .event-mark .card-glyph.red{background:#e94b45!important;color:#fff!important}.incident.yellow .event-mark,.incident.red .event-mark{color:inherit!important}.incident .soccer-goal-score{display:grid!important;justify-items:center!important;gap:3px!important;min-width:26px!important}.incident .soccer-goal-score small{display:block!important;margin:0!important;color:#e9e9e4!important;font:700 8px/1 "DM Mono",monospace!important;text-align:center!important}
+
 .fixture-page-control{display:block!important;width:min(270px,calc(100% - 28px))!important;margin:14px auto!important;padding:9px 12px!important;border:1px solid rgba(243,243,239,.13)!important;border-radius:7px!important;background:#20201e!important;color:#aaa9a4!important;font:700 8px/1 "DM Mono",monospace!important;letter-spacing:.09em!important;cursor:pointer!important}
 .fixture-page-control:hover{border-color:rgba(243,243,239,.34)!important;background:#292927!important;color:#ededE8!important}
 .sport-scorecard .baseball-decisions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px 16px!important;width:100%!important}

@@ -620,7 +620,7 @@ incidentTimeline=function(game){
   };
   const playerPortrait=event=>{
     const name=event.scorer||event.players?.[0]||'',entry=(game.rosters||[]).flatMap(roster=>rosterEntries(roster)).find(candidate=>samePlayer((candidate?.athlete||candidate||{}).displayName||(candidate?.athlete||candidate||{}).fullName,name));
-    if(!entry)return '<span class="incident-player-photo empty" aria-hidden="true">•</span>';
+    if(!entry)return `<span class="incident-player-photo empty" aria-label="${lineupEscape(name||'Player')}">${lineupEscape(playerCardInitials(name||'?'))}</span>`;
     const person=entry.athlete||entry,photo=playerCardPhoto(entry)||(game.sport==='soccer'?soccerHeadshot(entry):game.sport==='baseball'&&/^\d+$/.test(playerCardId(entry))?`https://img.mlbstatic.com/mlb-photos/image/upload/w_120,q_auto:best/v1/people/${playerCardId(entry)}/headshot/67/current`:'');
     const key=registerPlayerCard(game,entry);
     return `<button type="button" class="incident-player-photo${photo?'':' empty'}" data-player-card="${lineupEscape(key)}" aria-label="View ${lineupEscape(person.displayName||person.fullName||'player')} details">${photo?`<img src="${lineupEscape(photo)}" alt="">`:lineupEscape(playerCardInitials(person.displayName||person.fullName||'?'))}</button>`;
@@ -917,6 +917,10 @@ const playerCardModal=document.getElementById('player-card-modal'),playerCardCon
 const playerCardInitials=name=>String(name||'?').split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join('').toUpperCase()||'?';
 const playerCardPosition=entry=>{const player=entry?.athlete||entry||{},value=entry?.position||player.position||entry?.primaryPosition||player.primaryPosition||'';return typeof value==='string'?value:(value.abbreviation||value.shortName||value.displayName||value.name||'PLAYER')};
 const playerCardNumber=entry=>{const player=entry?.athlete||entry||{};return entry?.jersey||player.jersey||player.jerseyNumber||''};
+const playerCardCountry=entry=>{
+  const player=entry?.athlete||entry||{},country=player.country||entry?.country||player.nationality||entry?.nationality||player.citizenship||entry?.citizenship||player.flag||entry?.flag||{},name=typeof country==='string'?country:country.displayName||country.name||country.alt||country.fullName||country.abbreviation||country.code||'';
+  return name?`<small class="player-card-country">${soccerFlagStamp(entry)}${lineupEscape(name)}</small>`:'';
+};
 const playerCardRows=(rows,empty='Season statistics are not yet available from the provider.')=>rows?.length?`<div class="player-card-stats">${rows.map(([label,value])=>`<div><span>${lineupEscape(label)}</span><b>${lineupEscape(value)}</b></div>`).join('')}</div>`:`<p class="player-card-empty">${empty}</p>`;
 const playerStatLabel=value=>String(value||'').replace(/([a-z])([A-Z])/g,'$1 $2').replace(/_/g,' ').replace(/\b\w/g,letter=>letter.toUpperCase());
 const playerGameRows=item=>{
@@ -942,7 +946,7 @@ const playerCardFormation=item=>{
 };
 const playerCardShell=(item,body,loading=false)=>{
   const {game,entry,player,teamColour,teamName}=item,name=player.displayName||player.fullName||'Unknown player',number=playerCardNumber(entry),position=playerCardPosition(entry),id=playerCardId(entry),photo=playerCardPhoto(entry)||(game.sport==='soccer'?soccerHeadshot(entry):game.sport==='baseball'&&/^\d+$/.test(id)?`https://img.mlbstatic.com/mlb-photos/image/upload/w_400,q_auto:best/v1/people/${id}/headshot/67/current`:''),tone=teamColour||(teamName===game.home||teamName===game.homeAbbr?game.homeColor:game.awayColor)||'#d6574f';
-  return `<div class="player-card-face" style="--player-card-tone:${lineupEscape(tone)}"><header class="player-card-hero"><div class="player-card-portrait${photo?'':' no-photo'}">${photo?`<img src="${lineupEscape(photo)}" alt="" onerror="this.remove();this.parentElement.classList.add('no-photo')">`:''}<b>${lineupEscape(playerCardInitials(name))}</b></div><div><p>${lineupEscape(game.league||game.sport||'PLAYER PROFILE')}</p><h2 id="player-card-name">${lineupEscape(name)}</h2><span>${number?`#${lineupEscape(number)} · `:''}${lineupEscape(position)}${teamName?` · ${lineupEscape(teamName)}`:''}</span></div></header>${playerCardFormation(item)}<section class="player-card-season"><header><b>${new Date(game.time||Date.now()).getFullYear()} SEASON</b>${loading?'<i>LOADING</i>':''}</header>${body}</section></div>${playerCardDeck(`${game.id}:${playerCardId(entry)}`)}`;
+  return `<div class="player-card-face" style="--player-card-tone:${lineupEscape(tone)}"><header class="player-card-hero"><div class="player-card-portrait${photo?'':' no-photo'}">${photo?`<img src="${lineupEscape(photo)}" alt="" onerror="this.remove();this.parentElement.classList.add('no-photo')">`:''}<b>${lineupEscape(playerCardInitials(name))}</b></div><div><p>${lineupEscape(game.league||game.sport||'PLAYER PROFILE')}</p><h2 id="player-card-name">${lineupEscape(name)}</h2><span>${number?`#${lineupEscape(number)} · `:''}${lineupEscape(position)}${teamName?` · ${lineupEscape(teamName)}`:''}</span>${playerCardCountry(entry)}</div></header>${playerCardFormation(item)}<section class="player-card-season"><header><b>${new Date(game.time||Date.now()).getFullYear()} SEASON</b>${loading?'<i>LOADING</i>':''}</header>${body}</section></div>${playerCardDeck(`${game.id}:${playerCardId(entry)}`)}`;
 };
 const numberStat=value=>value===undefined||value===null||value===''?'—':String(value);
 const baseballSeasonRows=payload=>{

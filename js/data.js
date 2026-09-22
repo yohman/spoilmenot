@@ -16,6 +16,22 @@ window.EPLData = (() => {
     { slug: 'uefa.nations', competition: 'nations', label: 'NATIONS LEAGUE' },
     { slug: 'fifa.friendly', competition: 'friendly', label: 'FRIENDLY' }
   ];
+  // Keep the international view useful instead of presenting every friendly in
+  // the provider's global feed. This is deliberately a small, maintainable
+  // snapshot of the leading FIFA nations, with Japan always included. Major
+  // tournament and qualifying fixtures bypass this filter below.
+  const INTERNATIONAL_FEATURED_TEAMS = new Set([
+    'Argentina','France','Spain','England','Brazil','Portugal','Netherlands',
+    'Belgium','Germany','Croatia','Italy','Morocco','Uruguay','Colombia',
+    'Japan','Senegal','Iran','United States','USA','Mexico','Switzerland',
+    'Denmark','Austria','South Korea','Korea Republic','Ecuador','Australia',
+    'Turkey','Türkiye','Ukraine','Norway','Serbia','Egypt','Algeria'
+  ].map(value => value.toLowerCase()));
+  const internationalFeatured = game => {
+    const name = value => clean(value).toLowerCase();
+    const majorContext = /world cup|euro|copa|gold cup|afcon|asian cup|nations league|qualif|knockout|quarter.?final|semi.?final|final/i.test(`${game.competitionLabel || ''} ${game.league || ''} ${game.status || ''}`);
+    return majorContext || INTERNATIONAL_FEATURED_TEAMS.has(name(game.home)) || INTERNATIONAL_FEATURED_TEAMS.has(name(game.away));
+  };
   // ESPN's team roster endpoint is a useful fallback, but national federations
   // routinely announce a fresher camp call-up before a fixture.  Keep those
   // confirmed lists small, dated, and scoped to their actual window; they win
@@ -28,6 +44,17 @@ window.EPLData = (() => {
       source: 'https://www.fcf.com.co/2026/09/17/convocatoria-de-la-seleccion-colombia-de-mayores-amistosos-internacionales-de-septiembre-octubre-2026/',
       sourceLabel: 'FCF CALL-UP · SEP 17',
       players: ['Aldair Quintana','Álvaro Angulo','Álvaro Montero','Camilo Durán','Carlos Andrés Gómez','Daniel Arcila','Daniel Muñoz','Dávinson Sánchez','Édier Ocampo','Gustavo Puerta','Jaminton Campaz','Jhon Arias','Jhon Lucumí','Jhon Solís','Juan Manuel Rengifo','Kevin Andrade','Kevin Castaño','Kevin Mier','Kevin Viveros','Luis Suárez','Matías Orozco','Óscar Perea','Richard Ríos','Royer Caicedo','Samuel Velásquez','Yáser Asprilla']
+    },
+    // This is a correction to ESPN's evergreen England roster, rather than a
+    // claim that the federation published a complete fresh call-up here. The
+    // UI therefore says "Squad updated", not "Squad announced".
+    england: {
+      names: ['England'],
+      updated: '2026-09-21',
+      validThrough: '2026-10-07T12:00:00Z',
+      sourceLabel: 'FA SQUAD UPDATE · SEP 21',
+      remove: ['Cole Palmer'],
+      add: ['James Garner','Morgan Gibbs-White']
     }
   };
   const MLB_BASE = 'https://statsapi.mlb.com/api/v1', MLB_LIVE = 'https://statsapi.mlb.com/api/v1.1';
@@ -192,8 +219,9 @@ window.EPLData = (() => {
         return games;
       }));
       const merged = [...new Map(sources.flat().map(game => [String(game.id), game])).values()].sort((a, b) => a.time - b.time);
-      if (!merged.length) throw Error('International fixtures are unavailable for this period.');
-      return merged;
+      const featured = merged.filter(internationalFeatured);
+      if (!featured.length) throw Error('International fixtures are unavailable for this period.');
+      return featured;
     }
     const [{ events: fixtureEvents }, standings] = await Promise.all([fetchSeasonSoccerFixtures(league), fetch(espnStandings(league)).catch(() => null)]);
     const roundLookup = id === 'epl' ? eplRoundLookup(fixtureEvents) : new Map();

@@ -623,7 +623,8 @@ incidentTimeline=function(game){
     if(!entry)return `<span class="incident-player-photo empty" aria-label="${lineupEscape(name||'Player')}">${lineupEscape(playerCardInitials(name||'?'))}</span>`;
     const person=entry.athlete||entry,photo=playerCardPhoto(entry)||(game.sport==='soccer'?soccerHeadshot(entry):game.sport==='baseball'&&/^\d+$/.test(playerCardId(entry))?`https://img.mlbstatic.com/mlb-photos/image/upload/w_120,q_auto:best/v1/people/${playerCardId(entry)}/headshot/67/current`:'');
     const key=registerPlayerCard(game,entry);
-    return `<button type="button" class="incident-player-photo${photo?'':' empty'}" data-player-card="${lineupEscape(key)}" aria-label="View ${lineupEscape(person.displayName||person.fullName||'player')} details">${photo?`<img src="${lineupEscape(photo)}" alt="">`:lineupEscape(playerCardInitials(person.displayName||person.fullName||'?'))}</button>`;
+    const avatar=lineupEscape(playerCardInitials(person.displayName||person.fullName||'?'));
+    return `<button type="button" class="incident-player-photo${photo?'':' empty'}" data-player-card="${lineupEscape(key)}" aria-label="View ${lineupEscape(person.displayName||person.fullName||'player')} details">${photo?`<img src="${lineupEscape(photo)}" alt="" onerror="this.remove();this.parentElement.classList.add('empty');this.parentElement.append(document.createTextNode('${avatar}'))">`:avatar}</button>`;
   };
   if(game.sport==='baseball'){
     const scoring=(game.events||[]).filter(event=>event.type==='run');
@@ -751,10 +752,14 @@ const soccerPositionDetail=entry=>{
 const soccerLineOrder=(players,side)=>{
   const rank=entry=>{
     const code=soccerPositionDetail(entry);
-    if(/(?:RB|RWB|\bDR\b|RIGHTBACK|RIGHTWINGBACK|\bRW\b|\bRM\b)/.test(code))return 0;
-    if(/(?:RCB|CDR|DCR|RIGHTCENT|RCM|CMR|RIGHTMID)/.test(code))return 1;
-    if(/(?:LCB|CDL|DCL|LEFTCENT|LCM|CML|LEFTMID)/.test(code))return 3;
-    if(/(?:LB|LWB|\bDL\b|LEFTBACK|LEFTWINGBACK|\bLW\b|\bLM\b)/.test(code))return 4;
+    // Position codes are read from each team's own perspective. The home XI
+    // faces down the pitch, so its right-sided roles appear first; the away
+    // XI is reversed below. Handle midfield and forward variants exactly as
+    // the back line, including CM-R/CM-L and AM-R/AM-L.
+    if(/(?:RCB|CDR|DCR|RCDM|RDM|RCM|CMR|RAM|AMR|RIGHTCENT|RIGHTMID|RIGHTATT)/.test(code))return 1;
+    if(/(?:LCB|CDL|DCL|LCDM|LDM|LCM|CML|LAM|AML|LEFTCENT|LEFTMID|LEFTATT)/.test(code))return 3;
+    if(/(?:RB|RWB|DR|RIGHTBACK|RIGHTWINGBACK|RW|RM|RF|RS|RIGHTWING|RIGHTFORWARD)/.test(code))return 0;
+    if(/(?:LB|LWB|DL|LEFTBACK|LEFTWINGBACK|LW|LM|LF|LS|LEFTWING|LEFTFORWARD)/.test(code))return 4;
     return 2;
   };
   return players.map((entry,index)=>({entry,index,rank:rank(entry)})).sort((a,b)=>side==='home'?(a.rank-b.rank||a.index-b.index):(b.rank-a.rank||a.index-b.index)).map(item=>item.entry);
@@ -849,7 +854,7 @@ function soccerFormationMarkup(game){
     const events=eventMode?playerEventMarkup(game,name):'';
     const edgeClass=x<=12?' edge-left':x>=88?' edge-right':'';
     return `<div class="soccer-pitch-player lineup-player starter ${side}${edgeClass}" role="button" tabindex="0" data-player-card="${lineupEscape(registerPlayerCard(game,entry,teamColor,{x,y:vertical,side}))}" style="--x:${x.toFixed(2)}%;--y:${vertical}%;--team-colour:${lineupEscape(teamColor)};--team-ink:${soccerTeamInk(teamColor)}">`+
-      `<div class="soccer-player-photo${portrait?'':' no-photo'}">${portrait?`<img class="soccer-player-headshot" src="${lineupEscape(portrait)}" alt="" decoding="async" onerror="this.style.display='none';this.parentElement.classList.add('no-photo');if(this.nextElementSibling)this.nextElementSibling.style.display='grid'">`:''}<i aria-hidden="true">${lineupEscape(initials)}</i>${soccerFlagStamp(entry)}</div>`+
+      `<div class="soccer-player-photo${portrait?'':' no-photo'}">${portrait?`<img class="soccer-player-headshot" src="${lineupEscape(portrait)}" alt="" decoding="async" onerror="this.remove();this.parentElement.classList.add('no-photo')">`:''}<i aria-hidden="true">${lineupEscape(initials)}</i>${soccerFlagStamp(entry)}</div>`+
       `<span title="${lineupEscape(name)}">${number!=='—'?`<b class="soccer-player-number">${lineupEscape(number)}</b> `:''}${lineupEscape(shortName)}${countryName?`<i class="soccer-player-country">${lineupEscape(countryName)}</i>`:''}</span>${events}</div>`;
   };
   const sideMarkup=(group,side)=>{
@@ -921,6 +926,11 @@ const playerCardCountry=entry=>{
   const player=entry?.athlete||entry||{},country=player.country||entry?.country||player.nationality||entry?.nationality||player.citizenship||entry?.citizenship||player.flag||entry?.flag||{},name=typeof country==='string'?country:country.displayName||country.name||country.alt||country.fullName||country.abbreviation||country.code||'';
   return name?`<small class="player-card-country">${soccerFlagStamp(entry)}${lineupEscape(name)}</small>`:'';
 };
+const playerCardInternationalMeta=entry=>{
+  const player=entry?.athlete||entry||{},club=internationalClub(entry),age=player.age||entry?.age||'',dob=player.dateOfBirth||player.birthDate||entry?.dateOfBirth||entry?.birthDate||'',career=internationalCareer(entry);
+  const bio=[club?`CLUB · ${club}`:'',age?`AGE ${age}`:'',dob?`DOB ${dob}`:'',career].filter(Boolean);
+  return bio.length?`<small class="player-card-international-meta">${lineupEscape(bio.join(' · '))}</small>`:'';
+};
 const playerCardRows=(rows,empty='Season statistics are not yet available from the provider.')=>rows?.length?`<div class="player-card-stats">${rows.map(([label,value])=>`<div><span>${lineupEscape(label)}</span><b>${lineupEscape(value)}</b></div>`).join('')}</div>`:`<p class="player-card-empty">${empty}</p>`;
 const playerStatLabel=value=>String(value||'').replace(/([a-z])([A-Z])/g,'$1 $2').replace(/_/g,' ').replace(/\b\w/g,letter=>letter.toUpperCase());
 const playerGameRows=item=>{
@@ -946,7 +956,8 @@ const playerCardFormation=item=>{
 };
 const playerCardShell=(item,body,loading=false)=>{
   const {game,entry,player,teamColour,teamName}=item,name=player.displayName||player.fullName||'Unknown player',number=playerCardNumber(entry),position=playerCardPosition(entry),id=playerCardId(entry),photo=playerCardPhoto(entry)||(game.sport==='soccer'?soccerHeadshot(entry):game.sport==='baseball'&&/^\d+$/.test(id)?`https://img.mlbstatic.com/mlb-photos/image/upload/w_400,q_auto:best/v1/people/${id}/headshot/67/current`:''),tone=teamColour||(teamName===game.home||teamName===game.homeAbbr?game.homeColor:game.awayColor)||'#d6574f';
-  return `<div class="player-card-face" style="--player-card-tone:${lineupEscape(tone)}"><header class="player-card-hero"><div class="player-card-portrait${photo?'':' no-photo'}">${photo?`<img src="${lineupEscape(photo)}" alt="" onerror="this.remove();this.parentElement.classList.add('no-photo')">`:''}<b>${lineupEscape(playerCardInitials(name))}</b></div><div><p>${lineupEscape(game.league||game.sport||'PLAYER PROFILE')}</p><h2 id="player-card-name">${lineupEscape(name)}</h2><span>${number?`#${lineupEscape(number)} · `:''}${lineupEscape(position)}${teamName?` · ${lineupEscape(teamName)}`:''}</span>${playerCardCountry(entry)}</div></header>${playerCardFormation(item)}<section class="player-card-season"><header><b>${new Date(game.time||Date.now()).getFullYear()} SEASON</b>${loading?'<i>LOADING</i>':''}</header>${body}</section></div>${playerCardDeck(`${game.id}:${playerCardId(entry)}`)}`;
+  const international=game.leagueId==='international';
+  return `<div class="player-card-face" style="--player-card-tone:${lineupEscape(tone)}"><header class="player-card-hero"><div class="player-card-portrait${photo?'':' no-photo'}">${photo?`<img src="${lineupEscape(photo)}" alt="" onerror="this.remove();this.parentElement.classList.add('no-photo')">`:''}<b>${lineupEscape(playerCardInitials(name))}</b></div><div><p>${lineupEscape(game.league||game.sport||'PLAYER PROFILE')}</p><h2 id="player-card-name">${lineupEscape(name)}</h2><span>${number?`#${lineupEscape(number)} · `:''}${lineupEscape(position)}${teamName?` · ${lineupEscape(teamName)}`:''}</span>${international?playerCardInternationalMeta(entry):playerCardCountry(entry)}</div></header>${playerCardFormation(item)}<section class="player-card-season"><header><b>${new Date(game.time||Date.now()).getFullYear()} SEASON</b>${loading?'<i>LOADING</i>':''}</header>${body}</section></div>${playerCardDeck(`${game.id}:${playerCardId(entry)}`)}`;
 };
 const numberStat=value=>value===undefined||value===null||value===''?'—':String(value);
 const baseballSeasonRows=payload=>{
@@ -1531,12 +1542,26 @@ listRow=function(game){
 };
 const hasSpoilerFreeLineup=game=>Array.isArray(game?.rosters)&&game.rosters.some(roster=>rosterEntries(roster).length);
 const hasInternationalSquads=game=>Array.isArray(game?._internationalSquads)&&game._internationalSquads.some(roster=>rosterEntries(roster).length);
+const internationalClub=entry=>{
+  const player=entry?.athlete||entry||{},club=player.club||entry?.club||player.team||entry?.team||{};
+  return typeof club==='string'?club:club.displayName||club.name||club.shortDisplayName||club.abbreviation||'';
+};
+const internationalCareer=entry=>{
+  const player=entry?.athlete||entry||{},caps=player.internationalCaps??player.caps??player.appearancesInternational??'',goals=player.internationalGoals??player.goalsInternational??'';
+  return [caps!==''?`${caps} CAPS`:'',goals!==''?`${goals} GOALS`:''].filter(Boolean).join(' · ');
+};
+const internationalPlayerMarkup=(game,roster,entry)=>{
+  const player=entry?.athlete||entry||{},name=player.displayName||player.fullName||'Unknown player',number=playerCardNumber(entry),position=playerCardPosition(entry),club=internationalClub(entry),career=internationalCareer(entry),photo=soccerHeadshot(entry),initials=playerCardInitials(name),key=registerPlayerCard(game,entry,'',null);
+  return `<button type="button" class="international-player-card" data-player-card="${lineupEscape(key)}" aria-label="View ${lineupEscape(name)} details"><span class="international-player-photo${photo?'':' no-photo'}">${photo?`<img src="${lineupEscape(photo)}" alt="" decoding="async" onerror="this.remove();this.parentElement.classList.add('no-photo')">`:''}<b>${lineupEscape(initials)}</b></span><span class="international-player-copy"><strong>${number?`<i>#${lineupEscape(number)}</i> `:''}${lineupEscape(name)}</strong>${club?`<em>${lineupEscape(club)}</em>`:''}<small>${lineupEscape(position)}${career?` · ${lineupEscape(career)}`:''}</small></span></button>`;
+};
 const internationalSquadMarkup=game=>{
   if(!hasInternationalSquads(game))return '<p class="lineup-empty">An up-to-date national-team squad is not available for this fixture.</p>';
-  const squadGame={...game,rosters:game._internationalSquads};
-  const source=game._internationalSquadSources?.find(Boolean);
-  const note=source?`<a href="${lineupEscape(source.url)}" target="_blank" rel="noreferrer">${lineupEscape(source.label)} · CURRENT CALL-UP</a>`:'CURRENT NATIONAL-TEAM SQUAD · NOT A CONFIRMED MATCHDAY XI';
-  return `<div class="international-squad-view"><p class="international-squad-note">${note}</p>${rosterMarkupWithSportTerms(squadGame)}</div>`;
+  const sources=game._internationalSquadSources||[];
+  const notes=sources.map(source=>{
+    const label=[source.kind,source.date,source.label].filter(Boolean).join(' · ')||'PROVIDER ROSTER';
+    return source.url?`<a href="${lineupEscape(source.url)}" target="_blank" rel="noreferrer">${lineupEscape(label)}</a>`:lineupEscape(label);
+  }).join(' &nbsp; / &nbsp; ');
+  return `<div class="international-squad-view"><p class="international-squad-note">${notes||'PROVIDER ROSTER · NOT A CONFIRMED MATCHDAY XI'}</p><div class="international-squad-teams">${game._internationalSquads.map(roster=>{const team=roster.team||{},name=team.displayName||team.name||team.abbreviation||'SQUAD',logo=team.logo||team.logos?.[0]?.href||'',players=rosterEntries(roster);return `<section><h4>${logo?`<img src="${lineupEscape(logo)}" alt="">`:''}${lineupEscape(name)}</h4><div class="international-player-grid">${players.map(entry=>internationalPlayerMarkup(game,roster,entry)).join('')}</div></section>`}).join('')}</div></div>`;
 };
 const loadInternationalSquads=game=>{
   if(game.leagueId!=='international'||game.completed||game.live)return Promise.resolve(game);
@@ -1549,13 +1574,19 @@ const loadInternationalSquads=game=>{
   ].filter(side=>side.id&&league);
   const request=Promise.all(sides.map(async side=>{
     const official=EPLData.currentNationalSquad?.(game,side);
-    if(official){
-      game._internationalSquadSources=[...(game._internationalSquadSources||[]),{url:official.source,label:official.sourceLabel}];
-      return {team:{id:side.id,displayName:side.name,abbreviation:side.abbreviation,logo:side.logo},roster:official.players.map(displayName=>({athlete:{displayName,fullName:displayName,country:{displayName:side.name}}}))};
-    }
     const response=await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${encodeURIComponent(league)}/teams/${encodeURIComponent(side.id)}/roster`);
     if(!response.ok)return null;
-    const payload=await response.json(),athletes=payload.athletes||[];
+    const payload=await response.json(),providerAthletes=payload.athletes||[],sameName=(left,right)=>playerKey(left)===playerKey(right);
+    let athletes=providerAthletes.slice();
+    if(official?.players?.length){
+      athletes=official.players.map(displayName=>providerAthletes.find(player=>sameName(player.displayName||player.fullName,displayName))||{displayName,fullName:displayName,country:{displayName:side.name}});
+    }else if(official){
+      const removed=new Set((official.remove||[]).map(playerKey));
+      athletes=athletes.filter(player=>!removed.has(playerKey(player.displayName||player.fullName)));
+      (official.add||[]).forEach(displayName=>{if(!athletes.some(player=>sameName(player.displayName||player.fullName,displayName)))athletes.push({displayName,fullName:displayName,country:{displayName:side.name}})});
+    }
+    const source=official?{url:official.source||'',label:official.sourceLabel||'FEDERATION UPDATE',kind:official.announced?'SQUAD ANNOUNCED':'SQUAD UPDATED',date:official.announced||official.updated}:{label:'ESPN ROSTER',kind:'ROSTER RETRIEVED',date:new Date().toISOString().slice(0,10)};
+    game._internationalSquadSources=[...(game._internationalSquadSources||[]),source];
     return athletes.length?{team:{id:side.id,displayName:side.name,abbreviation:side.abbreviation,logo:side.logo},roster:athletes.map(athlete=>({athlete}))}:null;
   })).then(rosters=>{game._internationalSquads=rosters.filter(Boolean);return game}).catch(()=>game).finally(()=>{if(game._internationalSquadRequest===request)game._internationalSquadRequest=null});
   game._internationalSquadRequest=request;

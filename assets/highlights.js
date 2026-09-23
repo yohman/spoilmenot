@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-09-19T01:11:08.794Z",
+  "generatedAt": "2026-09-23T00:17:20.222Z",
   "highlights": {
     "mlb:823658": {
       "url": "https://www.youtube.com/watch?v=0-U2-CELuxo",
@@ -132,6 +132,15 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-09-13T00:00:00.000Z",
       "discoveredAt": "2026-09-19T01:11:08.794Z"
+    },
+    "mlb:824303": {
+      "url": "https://www.youtube.com/watch?v=g0ubD6cO0pU",
+      "title": "Mariners vs. Rockies Full Game Highlights (9/18/26)",
+      "durationSeconds": 839,
+      "source": "Seattle Mariners",
+      "sourceTier": "verified",
+      "publishedAt": "2026-09-19T00:00:00.000Z",
+      "discoveredAt": "2026-09-23T00:17:20.222Z"
     }
   }
 };

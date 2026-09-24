@@ -267,6 +267,26 @@ function hydrateRosterPortraits(g){
    if(club){player._clubName=club;rosterClubCache[id]=club}
    return true;
  };
+ const hydrateInternationalProfiles=async entries=>{
+   let cursor=0;
+   const worker=async()=>{
+     while(cursor<entries.length){
+       const entry=entries[cursor++],player=entry.athlete||entry,id=String(player.id||'');
+       if(!id||player._clubName)continue;
+       try{
+         // ESPN's athlete record is a stable source for a player's current
+         // professional team, unlike the national-roster response. It also
+         // covers players absent from TheSportsDB's free search index.
+         const response=await fetch(`https://site.web.api.espn.com/apis/common/v3/sports/soccer/eng.1/athletes/${encodeURIComponent(id)}`);
+         if(!response.ok)continue;
+         const athlete=(await response.json()).athlete||{},club=String(athlete.team?.displayName||athlete.team?.shortDisplayName||athlete.team?.name||'').trim(),portrait=athlete.headshot?.href||athlete.headshot||'';
+         if(club){player._clubName=club;rosterClubCache[id]=club}
+         if(portrait&&!player._portraitUrl){player._portraitUrl=portrait;rosterPortraitCache[id]=portrait}
+       }catch(_){}
+     }
+   };
+   await Promise.all(Array.from({length:Math.min(6,entries.length)},worker));
+ };
  const searchPlayers=async entries=>{
    let cursor=0;
    const searchPlayer=async()=>{
@@ -304,7 +324,16 @@ function hydrateRosterPortraits(g){
      await searchPlayers(unresolved);
    }catch(error){}
  };
- g._portraitsPromise=Promise.all(pending.map(lookupTeam)).finally(()=>{
+ const resolve=async()=>{
+   if(international){
+     await hydrateInternationalProfiles(groups.flatMap(group=>group.players));
+     const unresolved=groups.map(group=>({team:group.team,players:group.players.filter(entry=>!((entry.athlete||entry)._portraitUrl)||(international&&!((entry.athlete||entry)._clubName)))})).filter(group=>group.players.length);
+     await Promise.all(unresolved.map(lookupTeam));
+     return;
+   }
+   await Promise.all(pending.map(lookupTeam));
+ };
+ g._portraitsPromise=resolve().finally(()=>{
    g._portraitsLoading=false;g._portraitsPromise=null;
    try{localStorage.setItem('must-watch-player-portraits-v2',JSON.stringify(rosterPortraitCache));localStorage.setItem('must-watch-player-clubs',JSON.stringify(rosterClubCache))}catch(error){}
  });
@@ -570,7 +599,7 @@ rosterMarkup=function(game){
     const country=person.country||raw?.country||person.nationality||raw?.nationality||person.citizenship||raw?.citizenship||person.flag||raw?.flag||{};
     const rawCountry=typeof country==='string'?country:country.alt||country.displayName||country.name||country.fullName||country.abbreviation||country.code||'';
     const [displayCountry,flagCode]=countryMeta[String(rawCountry).toUpperCase()]||[rawCountry,''];
-    const age=ageFor(person),bio=[displayCountry,age?`${age}`:''].filter(Boolean).join(' · ');
+    const age=ageFor(person),club=game.leagueId==='international'?internationalClub(raw):'',bio=(game.leagueId==='international'?[club,age?`${age}`:'']:[displayCountry,age?`${age}`:'']).filter(Boolean).join(' · ');
     if(bio)row.querySelector('span[title]')?.insertAdjacentHTML('beforeend',`<i class="lineup-origin">${bio}</i>`);
     const flag=row.querySelector('.lineup-flag');if(flag&&flagCode){flag.src=`https://flagcdn.com/24x18/${flagCode}.png`;flag.alt=displayCountry;}
     row.querySelector('.player-tooltip')?.remove();

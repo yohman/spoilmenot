@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-09-24T03:16:51.750Z",
+  "generatedAt": "2026-09-24T13:44:34.328Z",
   "highlights": {
     "mlb:823658": {
       "url": "https://www.youtube.com/watch?v=0-U2-CELuxo",
@@ -159,6 +159,15 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-09-19T00:00:00.000Z",
       "discoveredAt": "2026-09-24T03:16:51.750Z"
+    },
+    "mlb:822845": {
+      "url": "https://www.youtube.com/watch?v=edIhI4EIC1M",
+      "title": "RED SOX vs. RANGERS: Official Full Game Highlights (September 17) | 2026 MLB Season",
+      "durationSeconds": 707,
+      "source": "MLB",
+      "sourceTier": "official",
+      "publishedAt": "2026-09-18T00:00:00.000Z",
+      "discoveredAt": "2026-09-24T13:44:34.328Z"
     }
   }
 };

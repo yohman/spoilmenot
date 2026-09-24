@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-09-23T00:17:20.222Z",
+  "generatedAt": "2026-09-24T03:16:51.750Z",
   "highlights": {
     "mlb:823658": {
       "url": "https://www.youtube.com/watch?v=0-U2-CELuxo",
@@ -141,6 +141,24 @@ window.SpoilHighlights = {
       "sourceTier": "verified",
       "publishedAt": "2026-09-19T00:00:00.000Z",
       "discoveredAt": "2026-09-23T00:17:20.222Z"
+    },
+    "mlb:824785": {
+      "url": "https://www.youtube.com/watch?v=fhR5bTBWZw0",
+      "title": "BLUE JAYS vs. ORIOLES: Official Full Game 1 Highlights (September 23) | 2026 MLB Season",
+      "durationSeconds": 773,
+      "source": "MLB",
+      "sourceTier": "official",
+      "publishedAt": "2026-09-23T00:00:00.000Z",
+      "discoveredAt": "2026-09-24T03:16:51.750Z"
+    },
+    "mlb:824383": {
+      "url": "https://www.youtube.com/watch?v=WwZksX__bJA",
+      "title": "ATHLETICS vs. GUARDIANS: Official Full Game Highlights (September 18) | 2026 MLB Season",
+      "durationSeconds": 687,
+      "source": "MLB",
+      "sourceTier": "official",
+      "publishedAt": "2026-09-19T00:00:00.000Z",
+      "discoveredAt": "2026-09-24T03:16:51.750Z"
     }
   }
 };

@@ -496,7 +496,7 @@ const highlightMarkup=game=>{
   if(!game.completed)return '';
   const youtube=/^https:\/\/www\.youtube\.com\/watch\?v=/.test(highlight?.url||''),officialSearch={mlb:'MLB',nfl:'NFL',epl:'DAZN U-NEXT',laliga:'DAZN U-NEXT',ucl:'DAZN U-NEXT',carabao:'DAZN U-NEXT'}[game.leagueId]||game.league;
   const icon=youtube?`<svg viewBox="0 0 24 17" aria-hidden="true"><path d="M23.5 3.2A3 3 0 0 0 21.4 1C19.5.5 12 .5 12 .5S4.5.5 2.6 1A3 3 0 0 0 .5 3.2 31.4 31.4 0 0 0 0 8.5c0 1.8.2 3.6.5 5.3A3 3 0 0 0 2.6 16c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.2c.3-1.7.5-3.5.5-5.3s-.2-3.6-.5-5.3Z"/><path class="youtube-play" d="m9.7 12.1 6.2-3.6-6.2-3.6v7.2Z"/></svg>`:`<i class="highlight-provider" aria-hidden="true">${highlight?.source||'▶'}</i>`;
-  if(highlight?.url&&duration)return `<a class="highlight-link" data-highlight href="${highlight.url}" target="_blank" rel="noopener noreferrer" aria-label="Watch official highlights, ${duration}">${icon}<span>HIGHLIGHTS</span><small>${duration}</small></a>`;
+  if(highlight?.url)return `<a class="highlight-link" data-highlight href="${highlight.url}" target="_blank" rel="noopener noreferrer" aria-label="Watch official highlights${duration?`, ${duration}`:''}">${icon}<span>HIGHLIGHTS</span>${duration?`<small>${duration}</small>`:''}</a>`;
   const query=encodeURIComponent(`${officialSearch} ${game.away} vs ${game.home} highlights`);
   return `<a class="highlight-link highlight-search" data-highlight href="https://www.youtube.com/results?search_query=${query}" target="_blank" rel="noopener noreferrer" aria-label="Find official highlights for ${game.away} versus ${game.home} on YouTube"><svg viewBox="0 0 24 17" aria-hidden="true"><path d="M23.5 3.2A3 3 0 0 0 21.4 1C19.5.5 12 .5 12 .5S4.5.5 2.6 1A3 3 0 0 0 .5 3.2 31.4 31.4 0 0 0 0 8.5c0 1.8.2 3.6.5 5.3A3 3 0 0 0 2.6 16c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.2c.3-1.7.5-3.5.5-5.3s-.2-3.6-.5-5.3Z"/><path class="youtube-play" d="m9.7 12.1 6.2-3.6-6.2-3.6v7.2Z"/></svg><span>FIND HIGHLIGHTS</span></a>`;
 };
@@ -1588,7 +1588,8 @@ listRow=function(game){
   const formShown=!!game.__showForm||futureFormSpoilers.has(String(game.id));
   const formToggle=!game.completed&&!game.live&&game.competition!=='friendly'?`<button class="form-spoiler-toggle" type="button" data-form-spoilers aria-pressed="${formShown}" aria-label="Show standings">SHOW STANDINGS</button>`:'';
   const liveInfoAction=game.live?`<button class="schedule-card-info" type="button" data-live-info aria-expanded="${!!game.__showLiveInfo}">MATCH INFO</button>`:'';
-  const actions=[formToggle,liveInfoAction,lineupAction,squadAction].filter(Boolean).join('');
+  const highlightsAction=game.completed?highlightMarkup(game):'';
+  const actions=[formToggle,liveInfoAction,lineupAction,squadAction,highlightsAction].filter(Boolean).join('');
   const kickoff=`<div class="card-kickoff"><b>${game.live?'IN PROGRESS':timeAway(game)}</b><small class="match-datetime">${cardDateMarkup(game.time)}</small>${matchday}${actions?`<div class="card-kickoff-actions">${actions}</div>`:''}</div>`;
   return `<article class="list-game ${state} ${game.completed?'match-page-link':''} ${game.sport==='football'?'football-game':''} ${formShown?'form-spoilers':''} ${calculating?'score-calculating':''}" data-game="${game.id}"><strong aria-hidden="${game.completed?'false':'true'}">${stamp}${leagueStamp}</strong><div class="list-content"><div class="list-teams">${team('home',game.home,game.homeLogo)}${kickoff}${team('away',game.away,game.awayLogo)}</div>${preview}${details}</div><div class="list-meta"></div></article>`;
 };

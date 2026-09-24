@@ -2381,6 +2381,27 @@ body.view-match #match-page{display:block!important;min-height:100vh;padding:82p
   width:100%!important;
   margin-top:4px!important;
 }
+.card-kickoff .highlight-link{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  min-height:20px!important;
+  padding:0 6px!important;
+  border:0!important;
+  border-radius:2px!important;
+  background:rgba(243,243,241,.07)!important;
+  color:#aaa9a3!important;
+  font:700 7px/1 "DM Mono",monospace!important;
+  letter-spacing:.07em!important;
+  text-decoration:none!important;
+  white-space:nowrap!important;
+}
+.card-kickoff .highlight-link::after{content:"VIDEO"}
+.card-kickoff .highlight-link span,.card-kickoff .highlight-link small{display:none!important}
+.card-kickoff .highlight-link svg{width:12px!important;height:9px!important;fill:#c9534e!important}
+.card-kickoff .highlight-link .youtube-play{fill:#f3f3ef!important}
+.card-kickoff .highlight-link:hover,.card-kickoff .highlight-link:focus-visible{background:rgba(243,243,241,.16)!important;color:#f3f3ef!important}
 .card-kickoff .schedule-card-info,
 .card-kickoff .form-spoiler-toggle{
   display:inline-flex!important;
@@ -2468,6 +2489,7 @@ body.view-match #match-page{display:block!important;min-height:100vh;padding:82p
 }
 @media(max-width:650px){
   .card-kickoff-actions{gap:3px!important;margin-top:3px!important}
+  .card-kickoff .highlight-link{min-height:18px!important;padding:0 5px!important;font-size:6px!important}
   .card-kickoff .schedule-card-info,
   .card-kickoff .form-spoiler-toggle{min-height:18px!important;padding:0 5px!important;font-size:5.8px!important;letter-spacing:.055em!important}
   .team-selector-head{top:-14px!important;margin:-14px -14px 11px!important;padding:14px 14px 11px!important}

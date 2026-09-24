@@ -370,6 +370,13 @@ window.EPLData = (() => {
         || null;
       return { team: source, roster, starters: roster.filter(player => player.starter).sort((a, b) => a.battingOrder - b.battingOrder), substitutes: roster.filter(player => player.substitute), startingPitcher };
     });
+    // Once the game is under way the probable-pitcher field can disappear
+    // from the schedule response. Preserve the actual starter from the live
+    // box score so the card remains factual throughout the game.
+    const homeRoster = game.rosters.find(roster => String(roster.team?.id) === String(game.homeId));
+    const awayRoster = game.rosters.find(roster => String(roster.team?.id) === String(game.awayId));
+    game.startingHomePitcher = homeRoster?.startingPitcher?.athlete || game.probableHomePitcher || null;
+    game.startingAwayPitcher = awayRoster?.startingPitcher?.athlete || game.probableAwayPitcher || null;
     game.lineupAvailable = entries.length === 2 && entries.every(([, team]) => (team.battingOrder || []).length === 9);
   }
   async function enrichMlb(game, { refresh = false, lineup = false } = {}) {

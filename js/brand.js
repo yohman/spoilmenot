@@ -74,6 +74,7 @@
     dismiss();
   });
   modal?.querySelector('[data-startup-select-all]')?.addEventListener('click', () => { leagueIds.forEach(id => selection.add(id)); paintStartupChoices(); });
+  modal?.querySelector('[data-startup-clear-leagues]')?.addEventListener('click', () => { selection.clear(); paintStartupChoices(); });
   modal?.addEventListener('click', event => {
     const choice = event.target.closest('[data-choose-league]');
     if (!choice) return;

@@ -7,7 +7,7 @@
   <title>Spoil Me Not — Gameplot</title>
   <link rel="preconnect" href="https://site.api.espn.com">
   <link rel="icon" type="image/svg+xml" href="assets/spoil-me-not-icon.svg?v=20260919-full-frame-1">
-  <link rel="stylesheet" href="style.css?v=20260922-international-squads-1">
+  <link rel="stylesheet" href="style.css?v=20260923-live-mlb-1">
 </head>
 <body>
   <main id="app">
@@ -26,7 +26,7 @@
       <div id="team-gallery" class="team-gallery"></div>
     </section>
     <section id="league-selector" class="league-selector" aria-label="Choose league" hidden>
-      <div class="team-selector-head"><span class="selector-heading"><b>LEAGUES</b><small>SET YOUR FIXTURE FEED</small></span><div><button type="button" data-select-all-leagues>ALL</button><button type="button" data-close-leagues>DONE</button></div></div>
+      <div class="team-selector-head"><span class="selector-heading"><b>LEAGUES</b><small>SET YOUR FIXTURE FEED</small></span><div><button type="button" data-select-all-leagues>ALL</button><button type="button" data-clear-leagues>CLEAR</button><button type="button" data-close-leagues>DONE</button></div></div>
       <div id="league-gallery" class="league-gallery"></div>
     </section>
     <div class="view-toggle" aria-label="View mode"><button data-view="map">MAP</button><button data-view="list" class="active">LIST</button></div>
@@ -74,7 +74,7 @@
     <div class="spoil-meter-dialog opening-league-selector">
       <header class="team-selector-head">
         <span class="selector-heading"><b>LEAGUES</b><small>SET YOUR FIXTURE FEED</small></span>
-        <div><button type="button" data-startup-select-all>ALL</button><button type="button" data-dismiss-spoil-meter>DONE</button></div>
+        <div><button type="button" data-startup-select-all>ALL</button><button type="button" data-startup-clear-leagues>CLEAR</button><button type="button" data-dismiss-spoil-meter>DONE</button></div>
       </header>
       <p class="opening-league-copy">Choose one or more leagues to follow.</p>
       <div class="league-gallery opening-league-gallery" data-startup-leagues>
@@ -117,7 +117,7 @@
   <script src="js/anticipation.js"></script>
   <script src="js/data.js?v=20260922-international-squads-1"></script>
   <script src="js/gameplot.js?v=20260918-meter-reveal-1"></script>
-  <script src="js/app.js?v=20260922-international-squads-1"></script>
-  <script src="js/brand.js?v=20260921-startup-selector-1"></script>
+  <script src="js/app.js?v=20260924-international-clubs-1"></script>
+  <script src="js/brand.js?v=20260923-live-mlb-1"></script>
 </body>
 </html>

@@ -142,7 +142,11 @@ window.EPLData = (() => {
     games.forEach(game => {
       const item = highlights[`${game.leagueId}:${game.id}`];
       const trustedVideo = /^https:\/\/www\.youtube\.com\/watch\?v=/.test(item?.url || '') || /^https:\/\/www\.mlb\.com\/video\//.test(item?.url || '');
-      if (!game.completed || !item || !trustedVideo || scoreInHighlightTitle(item.title)) return;
+      const source = String(item?.source || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const officialChannels = game.leagueId === 'mlb' ? /^(mlb|mlbofficial|majorleaguebaseball)$/
+        : game.leagueId === 'nfl' ? /^(nfl|nflofficial|nflnetwork)$/
+        : /^(dazn.*|unext.*)$/;
+      if (!game.completed || !item || !trustedVideo || !officialChannels.test(source) || scoreInHighlightTitle(item.title)) return;
       game.highlight = item;
     });
     return games;

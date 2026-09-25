@@ -494,7 +494,7 @@ const formatHighlightDuration=seconds=>{
 const highlightMarkup=game=>{
   const highlight=game.highlight,duration=formatHighlightDuration(highlight?.durationSeconds);
   if(!game.completed)return '';
-  const youtube=/^https:\/\/www\.youtube\.com\/watch\?v=/.test(highlight?.url||''),officialSearch={mlb:'MLB',nfl:'NFL',epl:'DAZN U-NEXT',laliga:'DAZN U-NEXT',ucl:'DAZN U-NEXT',carabao:'DAZN U-NEXT'}[game.leagueId]||game.league;
+  const youtube=/^https:\/\/www\.youtube\.com\/watch\?v=/.test(highlight?.url||''),officialSearch={mlb:'MLB',nfl:'NFL',epl:'DAZN OR U-NEXT',laliga:'DAZN OR U-NEXT',ucl:'DAZN OR U-NEXT',carabao:'DAZN OR U-NEXT'}[game.leagueId]||game.league;
   const icon=youtube?`<svg viewBox="0 0 24 17" aria-hidden="true"><path d="M23.5 3.2A3 3 0 0 0 21.4 1C19.5.5 12 .5 12 .5S4.5.5 2.6 1A3 3 0 0 0 .5 3.2 31.4 31.4 0 0 0 0 8.5c0 1.8.2 3.6.5 5.3A3 3 0 0 0 2.6 16c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.2c.3-1.7.5-3.5.5-5.3s-.2-3.6-.5-5.3Z"/><path class="youtube-play" d="m9.7 12.1 6.2-3.6-6.2-3.6v7.2Z"/></svg>`:`<i class="highlight-provider" aria-hidden="true">${highlight?.source||'▶'}</i>`;
   if(highlight?.url)return `<a class="highlight-link" data-highlight href="${highlight.url}" target="_blank" rel="noopener noreferrer" aria-label="Watch official highlights${duration?`, ${duration}`:''}">${icon}<span>HIGHLIGHTS</span>${duration?`<small>${duration}</small>`:''}</a>`;
   const query=encodeURIComponent(`${officialSearch} ${game.away} vs ${game.home} highlights`);
@@ -573,7 +573,8 @@ rosterMarkup=function(game){
     const countryNames={ENG:'England',SCO:'Scotland',WAL:'Wales',NIR:'Northern Ireland',IRL:'Ireland',FRA:'France',ESP:'Spain',POR:'Portugal',BRA:'Brazil',ARG:'Argentina',BEL:'Belgium',NED:'Netherlands',GER:'Germany',ITA:'Italy',DEN:'Denmark',SWE:'Sweden',NOR:'Norway',USA:'United States',CAN:'Canada',AUS:'Australia',JPN:'Japan',KOR:'South Korea'};
     const countryName=countryNames[String(countryRaw).toUpperCase()]||countryRaw;
     const name=person.displayName||person.fullName||'Unknown player';
-    return `<div class="lineup-player ${role}" tabindex="0"><em>${number}</em>${flagFor(raw)}<span title="${name}">${name}</span><small>${position}</small><aside class="player-tooltip"><b>${name}</b><span>#${number} · ${position}</span><span>${role==='starter'?'Starting XI':role==='sub'?'Substitute':'Squad'} · ${countryName}</span></aside></div>`;
+    const label=role==='starter'?name.replace(/^[\p{L}]\.?\s+/u,''):name;
+    return `<div class="lineup-player ${role}" tabindex="0"><em>${number}</em>${flagFor(raw)}<span title="${name}">${label}</span><small>${position}</small><aside class="player-tooltip"><b>${name}</b><span>#${number} · ${position}</span><span>${role==='starter'?'Starting XI':role==='sub'?'Substitute':'Squad'} · ${countryName}</span></aside></div>`;
   };
   const groups=(game.rosters||[]).map(roster=>{const players=rosterEntries(roster),starters=(roster.starters||roster.startingXI||[]).filter(Boolean).length?(roster.starters||roster.startingXI||[]).filter(Boolean):players.filter(player=>player.starter===true||player.isStarter===true||player.status?.type==='starter'),subs=(roster.substitutes||roster.bench||[]).filter(Boolean).length?(roster.substitutes||roster.bench||[]).filter(Boolean):players.filter(player=>player.substitute===true||player.isSubstitute===true||player.status?.type==='substitute');return {name:roster.team?.abbreviation||roster.team?.displayName||'SQUAD',logo:roster.team?.logo||roster.team?.logos?.[0]?.href||'',players,starters,subs}}).filter(group=>group.players.length||group.starters.length||group.subs.length);
   if(!groups.length)return '<p class="lineup-empty">Official lineup data is not available for this match.</p>';
@@ -728,21 +729,6 @@ new MutationObserver(()=>listShell.querySelectorAll('[data-game] .lineup-player:
   const game=games.find(item=>item.id===row.closest('[data-game]')?.dataset.game),name=row.querySelector('span[title]')?.getAttribute('title')||row.querySelector('span')?.textContent;
   if(game?.__lineupSpoilers&&name&&!row.querySelector('.player-events'))row.querySelector('span[title]')?.insertAdjacentHTML('afterend',playerEventMarkup(game,name));
 })).observe(listShell,{childList:true,subtree:true});
-new MutationObserver(()=>listShell.querySelectorAll('[data-game].past').forEach(card=>{
-  const game=games.find(item=>item.id===card.dataset.game),lineups=card.querySelector('.lineups');
-  if(!game||!lineups||card.querySelector('.lineup-spoiler-control'))return;
-  const control=document.createElement('div');
-  control.className='lineup-spoiler-control';
-  control.innerHTML=`<span class="spoiler-label">SPOILER?</span><button data-lineup-spoilers role="switch" aria-checked="${!!game.__lineupSpoilers}"><i class="toggle-knob"></i><b>${game.__lineupSpoilers?'ON':'OFF'}</b></button>`;
-  const tabs=card.querySelector('.match-tabs');if(tabs)tabs.append(control);else lineups.before(control);
-})).observe(listShell,{childList:true,subtree:true});
-listShell.addEventListener('click',event=>{
-  const button=event.target.closest('[data-lineup-spoilers]'),card=event.target.closest('[data-game]');
-  if(!button||!card)return;
-  const game=games.find(item=>item.id===card.dataset.game);if(!game)return;
-  event.preventDefault();event.stopImmediatePropagation();
-  game.__lineupSpoilers=!game.__lineupSpoilers;renderList();
-},true);
 const rosterMarkupWithProviderBench=rosterMarkup;
 rosterMarkup=function(game){
   (game.rosters||[]).forEach(roster=>{
@@ -898,7 +884,7 @@ function soccerFormationMarkup(game){
   });
   const eventMode=Boolean(game.__lineupSpoilers);
   const playerMarkup=(entry,side,vertical,rowIndex,rowLength,teamColor)=>{
-    const person=entry?.athlete||entry||{},name=person.displayName||person.fullName||'Unknown player',shortName=person.shortName||name.split(' ').slice(-1)[0]||name,number=entry?.jersey||person.jersey||person.jerseyNumber||'—',portrait=soccerHeadshot(entry),initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join('').toUpperCase()||'?',countryValue=person.country||entry?.country||person.nationality||entry?.nationality||person.citizenship||entry?.citizenship||person.flag||entry?.flag||{},countryRaw=typeof countryValue==='string'?countryValue:countryValue.displayName||countryValue.name||countryValue.alt||countryValue.fullName||countryValue.abbreviation||countryValue.code||'',countryNames={ENG:'England',SCO:'Scotland',WAL:'Wales',NIR:'Northern Ireland',IRL:'Ireland',FRA:'France',ESP:'Spain',POR:'Portugal',BRA:'Brazil',ARG:'Argentina',BEL:'Belgium',NED:'Netherlands',GER:'Germany',ITA:'Italy',DEN:'Denmark',SWE:'Sweden',NOR:'Norway',USA:'United States',CAN:'Canada',AUS:'Australia',JPN:'Japan',KOR:'South Korea'},countryName=countryNames[String(countryRaw).toUpperCase()]||countryRaw,secondaryLabel=game.leagueId==='international'?internationalClub(entry):countryName;
+    const person=entry?.athlete||entry||{},name=person.displayName||person.fullName||'Unknown player',shortName=String(person.shortName||name).replace(/^[\p{L}]\.?\s+/u,'').trim(),number=entry?.jersey||person.jersey||person.jerseyNumber||'—',portrait=soccerHeadshot(entry),initials=name.split(/\s+/).filter(Boolean).slice(0,2).map(part=>part[0]).join('').toUpperCase()||'?',countryValue=person.country||entry?.country||person.nationality||entry?.nationality||person.citizenship||entry?.citizenship||person.flag||entry?.flag||{},countryRaw=typeof countryValue==='string'?countryValue:countryValue.displayName||countryValue.name||countryValue.alt||countryValue.fullName||countryValue.abbreviation||countryValue.code||'',countryNames={ENG:'England',SCO:'Scotland',WAL:'Wales',NIR:'Northern Ireland',IRL:'Ireland',FRA:'France',ESP:'Spain',POR:'Portugal',BRA:'Brazil',ARG:'Argentina',BEL:'Belgium',NED:'Netherlands',GER:'Germany',ITA:'Italy',DEN:'Denmark',SWE:'Sweden',NOR:'Norway',USA:'United States',CAN:'Canada',AUS:'Australia',JPN:'Japan',KOR:'South Korea'},countryName=countryNames[String(countryRaw).toUpperCase()]||countryRaw,secondaryLabel=game.leagueId==='international'?internationalClub(entry):countryName;
     // Every row uses the same visual column rhythm. A two-player pivot sits
     // on the two inner columns of a back four, rather than drifting apart.
     const formationColumns={1:[50],2:[36.667,63.333],3:[23.333,50,76.667],4:[10,36.667,63.333,90],5:[10,30,50,70,90]};
@@ -918,13 +904,13 @@ function soccerFormationMarkup(game){
       // rhythm. Three outfield rows (4-4-2) get four equal spaces; four rows
       // (4-2-3-1) get five slightly tighter spaces. That keeps labels clear
       // without creating dead zones near either goal or the centre line.
-      const step=total>=4?9:11,homeKeeper=6,awayKeeper=94;
+      const step=total>=4?9:11,homeKeeper=6,awayKeeper=89;
       const offset=step*(index+1);
       return side==='home'?homeKeeper+offset:awayKeeper-offset;
     };
     // Keep the home keeper in the goalmouth.  The outfield rows, rather than
     // the keeper, move upward to remove dead space below the keeper's label.
-    const goalkeeperY=side==='home'?6:94;
+    const goalkeeperY=side==='home'?6:89;
     const players=[
       ...(goalkeeper?[playerMarkup(goalkeeper,side,goalkeeperY,0,1,teamColor)]:[]),
       ...rows.flatMap((row,rowIndex)=>{const orderedRow=soccerLineOrder(row,side);return orderedRow.map((entry,index)=>playerMarkup(entry,side,rowPosition(rowIndex,rows.length),index,orderedRow.length,teamColor))})

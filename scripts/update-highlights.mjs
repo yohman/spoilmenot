@@ -73,10 +73,10 @@ const teamAppears = (title, name, abbreviation) => {
 const officialSourcePatterns = {
   mlb: [/^mlb(?:official)?$/, /^majorleaguebaseball$/],
   nfl: [/^nfl(?:official)?$/, /^nflnetwork$/],
-  epl: [/^premierleague$/, /^dazn/, /^unext/],
-  laliga: [/^laliga/, /^dazn/, /^unext/],
-  ucl: [/^uefa/, /^dazn/, /^unext/],
-  carabao: [/^carabao/, /^efl/, /^dazn/, /^unext/]
+  epl: [/^dazn/, /^unext/],
+  laliga: [/^dazn/, /^unext/],
+  ucl: [/^dazn/, /^unext/],
+  carabao: [/^dazn/, /^unext/]
 };
 const verifiedSourcePatterns = {
   mlb: [/^espn/, /^foxsports/, /^tbssports?$/, /^sportsnet/, /^sny$/],
@@ -90,14 +90,14 @@ const verifiedSourcePatterns = {
 // titles may include the score, so do not discard an otherwise exact official
 // match just because that title is a spoiler. Every other source remains
 // subject to the strict spoiler-title guard below.
-const scoreTitleApprovedSourcePatterns = [/^efl(?:official)?$/, /^mlb(?:official)?$/, /^majorleaguebaseball$/, /^nfl(?:official)?$/, /^nflnetwork$/, /^dazn/, /^unext/];
+const scoreTitleApprovedSourcePatterns = [/^mlb(?:official)?$/, /^majorleaguebaseball$/, /^nfl(?:official)?$/, /^nflnetwork$/, /^dazn/, /^unext/];
 const trustedSearchSources = {
   mlb: ['MLB'],
   nfl: ['NFL'],
-  epl: ['Premier League', 'DAZN', 'U-NEXT'],
-  laliga: ['LaLiga', 'DAZN', 'U-NEXT'],
-  ucl: ['UEFA', 'DAZN', 'U-NEXT'],
-  carabao: ['Carabao Cup', 'EFL', 'DAZN', 'U-NEXT']
+  epl: ['DAZN', 'U-NEXT'],
+  laliga: ['DAZN', 'U-NEXT'],
+  ucl: ['DAZN', 'U-NEXT'],
+  carabao: ['DAZN', 'U-NEXT']
 };
 const sourceName = entry => clean(entry.channel || entry.uploader || entry.uploader_id || entry.channel_id || '');
 const allowsScoreInTitle = entry => scoreTitleApprovedSourcePatterns.some(pattern => pattern.test(normal(sourceName(entry))));
@@ -112,7 +112,7 @@ const sourceTier = (game, entry) => {
   if (isOfficialTeamChannel(game, name) || (verifiedSourcePatterns[game.leagueId] || []).some(pattern => pattern.test(source))) return 'verified';
   return 'fallback';
 };
-const isApprovedTier = tier => tier === 'official' || tier === 'verified';
+const isApprovedTier = tier => tier === 'official';
 
 async function requestJson(url) {
   const response = await fetch(url, { headers: { 'user-agent': 'Spoil-Me-Not-highlights/1.0' } });

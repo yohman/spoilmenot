@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-09-24T21:13:21.209Z",
+  "generatedAt": "2026-09-26T06:58:30.997Z",
   "highlights": {
     "mlb:823658": {
       "url": "https://www.youtube.com/watch?v=0-U2-CELuxo",
@@ -177,6 +177,15 @@ window.SpoilHighlights = {
       "sourceTier": "verified",
       "publishedAt": "2026-09-20T00:00:00.000Z",
       "discoveredAt": "2026-09-24T21:13:21.209Z"
+    },
+    "nfl:401872941": {
+      "url": "https://www.youtube.com/watch?v=cyk5Vci3k-c",
+      "title": "Las Vegas Raiders vs Los Angeles Chargers Game Highlights | 2026 NFL Season Week 2",
+      "durationSeconds": 835,
+      "source": "NFL",
+      "sourceTier": "official",
+      "publishedAt": "2026-09-20T00:00:00.000Z",
+      "discoveredAt": "2026-09-26T06:58:30.997Z"
     }
   }
 };

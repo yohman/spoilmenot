@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-09-26T06:58:30.997Z",
+  "generatedAt": "2026-09-27T19:01:56.763Z",
   "highlights": {
     "mlb:823658": {
       "url": "https://www.youtube.com/watch?v=0-U2-CELuxo",
@@ -186,6 +186,15 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-09-20T00:00:00.000Z",
       "discoveredAt": "2026-09-26T06:58:30.997Z"
+    },
+    "nfl:401872934": {
+      "url": "https://www.youtube.com/watch?v=Bi13ofXC0xY",
+      "title": "Cincinnati Bengals vs Houston Texans Game Highlights | 2026 NFL Season Week 2",
+      "durationSeconds": 955,
+      "source": "NFL",
+      "sourceTier": "official",
+      "publishedAt": "2026-09-20T00:00:00.000Z",
+      "discoveredAt": "2026-09-27T19:01:56.763Z"
     }
   }
 };

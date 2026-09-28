@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-09-27T19:01:56.763Z",
+  "generatedAt": "2026-09-28T23:52:41.261Z",
   "highlights": {
     "mlb:823658": {
       "url": "https://www.youtube.com/watch?v=0-U2-CELuxo",
@@ -195,6 +195,15 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-09-20T00:00:00.000Z",
       "discoveredAt": "2026-09-27T19:01:56.763Z"
+    },
+    "mlb:822841": {
+      "url": "https://www.youtube.com/watch?v=4pD9u-ZDeIQ",
+      "title": "METS vs. RANGERS: Official Full Game Highlights (September 23) | 2026 MLB Season",
+      "durationSeconds": 691,
+      "source": "MLB",
+      "sourceTier": "official",
+      "publishedAt": "2026-09-24T00:00:00.000Z",
+      "discoveredAt": "2026-09-28T23:52:41.261Z"
     }
   }
 };

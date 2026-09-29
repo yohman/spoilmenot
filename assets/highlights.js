@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-09-28T23:52:41.261Z",
+  "generatedAt": "2026-09-29T09:06:42.646Z",
   "highlights": {
     "mlb:823658": {
       "url": "https://www.youtube.com/watch?v=0-U2-CELuxo",
@@ -204,6 +204,15 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-09-24T00:00:00.000Z",
       "discoveredAt": "2026-09-28T23:52:41.261Z"
+    },
+    "mlb:824703": {
+      "url": "https://www.youtube.com/watch?v=H2vECsppprA",
+      "title": "CUBS vs. RED SOX: Official Full Game 1 Highlights (September 25) | 2026 MLB Season",
+      "durationSeconds": 667,
+      "source": "MLB",
+      "sourceTier": "official",
+      "publishedAt": "2026-09-25T00:00:00.000Z",
+      "discoveredAt": "2026-09-29T09:06:42.646Z"
     }
   }
 };

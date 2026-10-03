@@ -16,7 +16,8 @@ const leagues = [
   { id: 'laliga', sport: 'soccer', slug: 'esp.1', name: 'La Liga' },
   { id: 'ucl', sport: 'soccer', slug: 'uefa.champions', name: 'UEFA Champions League' },
   { id: 'carabao', sport: 'soccer', slug: 'eng.league_cup', name: 'Carabao Cup' },
-  { id: 'nfl', sport: 'football', slug: 'nfl', name: 'NFL' }
+  { id: 'nfl', sport: 'football', slug: 'nfl', name: 'NFL' },
+  { id: 'nba', sport: 'basketball', slug: 'nba', name: 'NBA' }
 ];
 
 const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
@@ -73,6 +74,7 @@ const teamAppears = (title, name, abbreviation) => {
 const officialSourcePatterns = {
   mlb: [/^mlb(?:official)?$/, /^majorleaguebaseball$/],
   nfl: [/^nfl(?:official)?$/, /^nflnetwork$/],
+  nba: [/^nba(?:official)?$/],
   epl: [/^dazn/, /^unext/],
   laliga: [/^dazn/, /^unext/],
   ucl: [/^dazn/, /^unext/],
@@ -90,10 +92,11 @@ const verifiedSourcePatterns = {
 // titles may include the score, so do not discard an otherwise exact official
 // match just because that title is a spoiler. Every other source remains
 // subject to the strict spoiler-title guard below.
-const scoreTitleApprovedSourcePatterns = [/^mlb(?:official)?$/, /^majorleaguebaseball$/, /^nfl(?:official)?$/, /^nflnetwork$/, /^dazn/, /^unext/];
+const scoreTitleApprovedSourcePatterns = [/^mlb(?:official)?$/, /^majorleaguebaseball$/, /^nfl(?:official)?$/, /^nflnetwork$/, /^nba(?:official)?$/, /^dazn/, /^unext/];
 const trustedSearchSources = {
   mlb: ['MLB'],
   nfl: ['NFL'],
+  nba: ['NBA'],
   epl: ['DAZN', 'U-NEXT'],
   laliga: ['DAZN', 'U-NEXT'],
   ucl: ['DAZN', 'U-NEXT'],
@@ -158,7 +161,7 @@ async function soccerGames(league, start, end) {
 }
 
 async function mlbGames(start, end) {
-  const endpoint = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=${utcDate(start)}&endDate=${utcDate(end)}`;
+  const endpoint = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&gameTypes=R%2CF%2CD%2CL%2CW&startDate=${utcDate(start)}&endDate=${utcDate(end)}`;
   const payload = await requestJson(endpoint);
   return (payload.dates || []).flatMap(date => date.games || []).flatMap(game => {
     const home = game.teams?.home?.team, away = game.teams?.away?.team;

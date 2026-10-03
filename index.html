@@ -7,7 +7,7 @@
   <title>Spoil Me Not — Gameplot</title>
   <link rel="preconnect" href="https://site.api.espn.com">
   <link rel="icon" type="image/svg+xml" href="assets/spoil-me-not-icon.svg?v=20260919-full-frame-1">
-  <link rel="stylesheet" href="style.css?v=20260925-card-video-1">
+  <link rel="stylesheet" href="style.css?v=20261003-mlb-postseason-1">
 </head>
 <body>
   <main id="app">
@@ -66,6 +66,7 @@
       <img src="assets/leagues/ucl-official.png" alt="">
       <img src="assets/leagues/mlb-official.png" alt="">
       <img src="assets/leagues/nfl-official.png" alt="">
+      <img src="assets/leagues/nba.svg" alt="">
     </div>
     <b>LOADING SPOIL METER</b>
     <small>SYNCING LEAGUES &amp; FIXTURES</small>
@@ -85,6 +86,7 @@
         <button type="button" class="league-gallery-item" data-choose-league="international" aria-pressed="false"><i class="league-choice-badge league-choice-all" aria-hidden="true">INT</i><span>International</span><small>OPEN LEAGUE</small></button>
         <button type="button" class="league-gallery-item" data-choose-league="mlb" aria-pressed="false"><img class="league-choice-badge" src="assets/leagues/mlb-official.png" alt=""><span>Major League Baseball</span><small>OPEN LEAGUE</small></button>
         <button type="button" class="league-gallery-item" data-choose-league="nfl" aria-pressed="false"><img class="league-choice-badge" src="assets/leagues/nfl-official.png" alt=""><span>National Football League</span><small>OPEN LEAGUE</small></button>
+        <button type="button" class="league-gallery-item" data-choose-league="nba" aria-pressed="false"><img class="league-choice-badge" src="assets/leagues/nba.svg" alt=""><span>National Basketball Association</span><small>OPEN LEAGUE</small></button>
       </div>
     </div>
   </section>
@@ -100,7 +102,7 @@
         <div><b>25%</b><span>COMPETITIVENESS</span><p>How long the match remained close and contested.</p></div>
         <div><b>15%</b><span>CONTEXT</span><p>Table stakes and whether the result surprised expectations.</p></div>
       </div>
-      <p class="spoil-meter-guide-note">Quiet 0–0 matches stay low; a tense, high-pressure 0–0 can still earn its place. Baseball and NFL use the same idea with sport-specific events such as innings, lead changes, scoring drives, and overtime.</p>
+      <p class="spoil-meter-guide-note">Quiet 0–0 matches stay low; a tense, high-pressure 0–0 can still earn its place. Baseball, NFL, and NBA use sport-specific events such as innings, lead changes, scoring drives, close finishes, and overtime.</p>
       <div class="spoil-meter-categories" aria-label="Spoil Meter categories">
         <div data-band="4"><b>80–100</b><span>MUST WATCH</span></div>
         <div data-band="3"><b>65–79</b><span>WORTH IT</span></div>
@@ -115,9 +117,9 @@
   <script src="assets/highlights.js"></script>
   <script src="js/watchScore.js?v=20260921-derby-balance-1"></script>
   <script src="js/anticipation.js"></script>
-  <script src="js/data.js?v=20260926-lineup-video-1"></script>
+  <script src="js/data.js?v=20261003-mlb-postseason-1"></script>
   <script src="js/gameplot.js?v=20260918-meter-reveal-1"></script>
-  <script src="js/app.js?v=20260926-lineup-video-1"></script>
-  <script src="js/brand.js?v=20260923-live-mlb-1"></script>
+  <script src="js/app.js?v=20261003-mlb-postseason-1"></script>
+  <script src="js/brand.js?v=20261003-nba-1"></script>
 </body>
 </html>

@@ -7,7 +7,8 @@ window.EPLData = (() => {
     carabao: { id: 'carabao', sport: 'soccer', slug: 'eng.league_cup', name: 'Carabao Cup', shortName: 'CARABAO CUP', logo: 'assets/leagues/carabao-cup-official.png' },
     international: { id: 'international', sport: 'soccer', virtual: true, name: 'International', shortName: 'INTERNATIONAL', logo: leagueBadge('INT') },
     mlb: { id: 'mlb', sport: 'baseball', slug: 'mlb', name: 'Major League Baseball', shortName: 'MLB', logo: 'assets/leagues/mlb-official.png', pastCap: 54, futureCap: 110 },
-    nfl: { id: 'nfl', sport: 'football', slug: 'nfl', name: 'National Football League', shortName: 'NFL', logo: 'assets/leagues/nfl-official.png' }
+    nfl: { id: 'nfl', sport: 'football', slug: 'nfl', name: 'National Football League', shortName: 'NFL', logo: 'assets/leagues/nfl-official.png' },
+    nba: { id: 'nba', sport: 'basketball', slug: 'nba', name: 'National Basketball Association', shortName: 'NBA', logo: 'assets/leagues/nba.svg' }
   };
   // International is an app-level collection. Each game retains this actual
   // ESPN slug so match details, rosters, and standings never hit a fictional
@@ -77,6 +78,7 @@ window.EPLData = (() => {
   const fixtureWindow = () => ({ pastDays: 3, futureDays: 7 });
   const seasonStart = league => {
     const now = new Date(), year = now.getUTCFullYear() - (now.getUTCMonth() < 7 ? 1 : 0);
+    if (league.sport === 'basketball') return new Date(Date.UTC(now.getUTCMonth() < 9 ? now.getUTCFullYear() - 1 : now.getUTCFullYear(), 9, 1));
     // The supported soccer cups and the NFL season begin in August. This also
     // keeps qualifying/early cup rounds that belong to the active campaign.
     return new Date(Date.UTC(year, 7, 1));
@@ -145,6 +147,7 @@ window.EPLData = (() => {
       const source = String(item?.source || '').toLowerCase().replace(/[^a-z0-9]/g, '');
       const officialChannels = game.leagueId === 'mlb' ? /^(mlb|mlbofficial|majorleaguebaseball)$/
         : game.leagueId === 'nfl' ? /^(nfl|nflofficial|nflnetwork)$/
+        : game.leagueId === 'nba' ? /^(nba|nbaofficial)$/
         : /^(dazn.*|unext.*)$/;
       if (!game.completed || !item || !trustedVideo || !officialChannels.test(source) || scoreInHighlightTitle(item.title)) return;
       game.highlight = item;
@@ -163,7 +166,8 @@ window.EPLData = (() => {
     const home = game.teams?.home, away = game.teams?.away, status = game.status || {};
     if (!home?.team || !away?.team) return null;
     const completed = status.abstractGameState === 'Final', live = status.abstractGameState === 'Live', scored = completed || live;
-    return { id: String(game.gamePk), sport: 'baseball', leagueId: league.id, league: league.name, leagueLogo: league.logo, time: new Date(game.gameDate), home: clean(home.team.name), away: clean(away.team.name), homeId: String(home.team.id), awayId: String(away.team.id), homeAbbr: home.team.abbreviation, awayAbbr: away.team.abbreviation, homeLogo: mlbLogo(home.team.id), awayLogo: mlbLogo(away.team.id), homeMapLogo: mlbMapLogo(home.team.id, home.team.abbreviation), awayMapLogo: mlbMapLogo(away.team.id, away.team.abbreviation), homeColor: mlbTeamColor(home.team.id), awayColor: mlbTeamColor(away.team.id), homeScore: scored ? Number(home.score) : null, awayScore: scored ? Number(away.score) : null, completed, live, venue: clean(game.venue?.name), status: status.detailedState || status.abstractGameState || '', probableHomePitcher: home.probablePitcher || null, probableAwayPitcher: away.probablePitcher || null, gameNumber: game.gameNumber, doubleHeader: game.doubleHeader, events: [], raw: game };
+    const gameType=String(game.gameType?.id||game.gameType||'').toUpperCase(),postseason=['P','F','D','L','W'].includes(gameType)||Boolean(game.seriesDescription||game.seriesGameNumber),playoffRound=clean(game.seriesDescription||game.gameType?.description||({F:'Wild Card Series',D:'Division Series',L:'League Championship Series',W:'World Series'}[gameType]||''));
+    return { id: String(game.gamePk), sport: 'baseball', leagueId: league.id, league: league.name, leagueLogo: league.logo, time: new Date(game.gameDate), home: clean(home.team.name), away: clean(away.team.name), homeId: String(home.team.id), awayId: String(away.team.id), homeAbbr: home.team.abbreviation, awayAbbr: away.team.abbreviation, homeLogo: mlbLogo(home.team.id), awayLogo: mlbLogo(away.team.id), homeMapLogo: mlbMapLogo(home.team.id, home.team.abbreviation), awayMapLogo: mlbMapLogo(away.team.id, away.team.abbreviation), homeColor: mlbTeamColor(home.team.id), awayColor: mlbTeamColor(away.team.id), homeScore: scored ? Number(home.score) : null, awayScore: scored ? Number(away.score) : null, completed, live, venue: clean(game.venue?.name), status: status.detailedState || status.abstractGameState || '', probableHomePitcher: home.probablePitcher || null, probableAwayPitcher: away.probablePitcher || null, gameNumber: game.gameNumber, doubleHeader: game.doubleHeader, postseason, playoffRound, seriesGameNumber: game.seriesGameNumber, events: [], raw: game };
   }
 
   const addSoccerContext = (games, ranks) => games.forEach(game => {
@@ -240,13 +244,14 @@ window.EPLData = (() => {
   }
 
   async function loadMlb() {
-    const league = LEAGUES.mlb, { startDate, endDate } = mlbWindow();
-    const [scheduleResponse, standingsResponse] = await Promise.all([
+    const league = LEAGUES.mlb, { startDate, endDate } = mlbWindow(), season=new Date().getUTCFullYear(),postseasonStart=`${season}-09-20`,postseasonEnd=`${season}-11-15`;
+    const [scheduleResponse, postseasonResponse, standingsResponse] = await Promise.all([
       fetch(`${MLB_BASE}/schedule?sportId=1&gameType=R&startDate=${startDate}&endDate=${endDate}&hydrate=probablePitcher`),
-      fetch(`${MLB_BASE}/standings?leagueId=103,104&season=${new Date().getFullYear()}&standingsTypes=regularSeason`).catch(() => null)
+      fetch(`${MLB_BASE}/schedule?sportId=1&gameTypes=F%2CD%2CL%2CW&startDate=${postseasonStart}&endDate=${postseasonEnd}&hydrate=probablePitcher,seriesStatus`).catch(() => null),
+      fetch(`${MLB_BASE}/standings?leagueId=103,104&season=${season}&standingsTypes=regularSeason`).catch(() => null)
     ]);
     if (!scheduleResponse.ok) throw Error(`MLB fixtures are unavailable (${scheduleResponse.status}).`);
-    const schedule = await scheduleResponse.json(), games = (schedule.dates || []).flatMap(date => date.games || []).map(game => normalizeMlb(game, league)).filter(Boolean), now = Date.now(), futureHorizon = now + 7 * 864e5;
+    const [schedule,postseasonSchedule]=await Promise.all([scheduleResponse.json(),postseasonResponse?.ok?postseasonResponse.json():Promise.resolve(null)]),games=[...(schedule.dates||[]),...(postseasonSchedule?.dates||[])].flatMap(date=>date.games||[]).map(game=>normalizeMlb(game,league)).filter(Boolean),now=Date.now(),futureHorizon=now+7*864e5;
     // Status, rather than scheduled first-pitch time, keeps rain delays and live games
     // in the active/future section instead of accidentally treating them as history.
     const past = games.filter(game => game.completed).sort((a, b) => a.time - b.time);
@@ -286,6 +291,18 @@ window.EPLData = (() => {
     const exceptional = Math.min(100, (overtime ? 32 : 0) + (total >= 60 ? 32 : total >= 48 ? 17 : 0) + leadChanges * 9);
     const surpriseContext = Number.isFinite(game.contextScore) ? game.contextScore : 40;
     return { watchScore: Math.round(drama * .4 + action * .25 + exceptional * .2 + surpriseContext * .15), drama: Math.round(drama), action: Math.round(action), exceptional: Math.round(exceptional), surpriseContext: Math.round(surpriseContext), reasons: [margin <= 3 && 'One-score finish', overtime && 'Overtime', leadChanges && `${leadChanges} lead change${leadChanges === 1 ? '' : 's'}`, total >= 60 && 'High-scoring game'].filter(Boolean), nfl: true };
+  }
+
+  function nbaScore(game, summary) {
+    const plays=(summary.scoringPlays||summary.plays||[]).filter(play=>Number.isFinite(Number(play.homeScore))&&Number.isFinite(Number(play.awayScore)));
+    let leader=0,leadChanges=0,ties=0;
+    plays.forEach(play=>{const difference=Number(play.homeScore)-Number(play.awayScore),next=Math.sign(difference);if(next===0&&leader)ties++;if(next&&leader&&next!==leader)leadChanges++;if(next)leader=next});
+    const home=Number(game.homeScore||0),away=Number(game.awayScore||0),margin=Math.abs(home-away),total=home+away,overtime=/overtime|\bot\b/i.test(String(game.status||''))||plays.some(play=>Number(play.period?.number||play.period)>4);
+    const drama=Math.min(100,(margin<=3?42:margin<=8?28:margin<=14?16:5)+leadChanges*9+ties*4+(overtime?16:0));
+    const action=Math.min(100,total/2.4+plays.length*1.2);
+    const exceptional=Math.min(100,(overtime?24:0)+(total>=250?34:total>=230?22:total>=210?12:0)+leadChanges*4);
+    const context=Number.isFinite(game.contextScore)?game.contextScore:40;
+    return {watchScore:Math.round(drama*.4+action*.28+exceptional*.18+context*.14),drama:Math.round(drama),action:Math.round(action),exceptional:Math.round(exceptional),surpriseContext:Math.round(context),reasons:[margin<=3&&'One-possession finish',overtime&&'Overtime',leadChanges&&`${leadChanges} lead changes`,total>=230&&'High-scoring game'].filter(Boolean),nba:true};
   }
 
   function mlbScore(game, feed) {
@@ -453,7 +470,7 @@ window.EPLData = (() => {
         return { ...roster, roster: players, starters, substitutes };
       });
       game.events = plays.map(play => {
-        const text = clean(play.text || play.shortText || play.description), footballDetail=`${text} ${play.type?.text||''} ${play.scoringType?.name||''} ${play.scoringType?.displayName||''}`, soccerDetail=`${text} ${play.type?.text||''} ${play.type?.displayName||''}`, clock = String(play.clock?.displayValue || ''), participants = play.participants || [], minute = Number((clock || text).match(/\d+/)?.[0]), footballLabel = /touchdown/i.test(footballDetail) ? 'TOUCHDOWN' : /field.goal/i.test(footballDetail) ? 'FIELD GOAL' : /extra point|two.point/i.test(footballDetail) ? 'EXTRA POINT' : /safety/i.test(footballDetail) ? 'SAFETY' : 'SCORE', type = game.sport === 'football' ? 'score' : /goal/i.test(text) ? 'goal' : /red card/i.test(text) ? 'red' : /yellow card/i.test(text) ? 'yellow' : /penalty/i.test(text) ? 'penalty' : /substitution|replaces/i.test(text) ? 'sub' : /injur/i.test(text) ? 'injury' : 'other', isPenalty = game.sport === 'soccer' && /\bpenalty\b|\bpen\b|from the spot|spot kick/i.test(soccerDetail);
+        const text = clean(play.text || play.shortText || play.description), footballDetail=`${text} ${play.type?.text||''} ${play.scoringType?.name||''} ${play.scoringType?.displayName||''}`, soccerDetail=`${text} ${play.type?.text||''} ${play.type?.displayName||''}`, clock = String(play.clock?.displayValue || ''), participants = play.participants || [], minute = Number((clock || text).match(/\d+/)?.[0]), footballLabel = /touchdown/i.test(footballDetail) ? 'TOUCHDOWN' : /field.goal/i.test(footballDetail) ? 'FIELD GOAL' : /extra point|two.point/i.test(footballDetail) ? 'EXTRA POINT' : /safety/i.test(footballDetail) ? 'SAFETY' : game.sport==='basketball'?'BASKET':'SCORE', type = ['football','basketball'].includes(game.sport) ? 'score' : /goal/i.test(text) ? 'goal' : /red card/i.test(text) ? 'red' : /yellow card/i.test(text) ? 'yellow' : /penalty/i.test(text) ? 'penalty' : /substitution|replaces/i.test(text) ? 'sub' : /injur/i.test(text) ? 'injury' : 'other', isPenalty = game.sport === 'soccer' && /\bpenalty\b|\bpen\b|from the spot|spot kick/i.test(soccerDetail);
         const participantName = participant => clean(participant?.athlete?.displayName || participant?.displayName);
         const participantRole = participant => String(participant?.role || participant?.type?.text || participant?.type?.displayName || participant?.type || '').toLowerCase();
         const canonical = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -466,9 +483,10 @@ window.EPLData = (() => {
           ? participants.find(participant => /scor|goal/.test(participantRole(participant)) && !isAssistant(participant)) || participants.find(participant => !isAssistant(participant)) || null
           : participants[0] || null;
         const scorer = participantName(scorerParticipant);
-        return { type, scoreLabel: game.sport === 'football' ? footballLabel : '', minute: Number.isFinite(minute) ? minute : null, clock, period: play.period?.number || play.period, stoppage: /(?:45|90)\+\d+/.test(clock) || /(?:45|90)\+\d+/.test(text), text, teamId: String(play.team?.id || scorerParticipant?.team?.id || participants[0]?.team?.id || ''), players: type === 'goal' ? (scorer ? [scorer] : []) : participants.map(participantName).filter(Boolean), scorer, assist: announcedAssist, homeScore: Number.isFinite(Number(play.homeScore)) ? Number(play.homeScore) : null, awayScore: Number.isFinite(Number(play.awayScore)) ? Number(play.awayScore) : null, ownGoal: /own goal/i.test(text), isPenalty };
+        return { type, scoreLabel: ['football','basketball'].includes(game.sport) ? footballLabel : '', minute: Number.isFinite(minute) ? minute : null, clock, period: play.period?.number || play.period, stoppage: /(?:45|90)\+\d+/.test(clock) || /(?:45|90)\+\d+/.test(text), text, teamId: String(play.team?.id || scorerParticipant?.team?.id || participants[0]?.team?.id || ''), players: type === 'goal' ? (scorer ? [scorer] : []) : participants.map(participantName).filter(Boolean), scorer, assist: announcedAssist, homeScore: Number.isFinite(Number(play.homeScore)) ? Number(play.homeScore) : null, awayScore: Number.isFinite(Number(play.awayScore)) ? Number(play.awayScore) : null, ownGoal: /own goal/i.test(text), isPenalty };
       });
       if (game.sport === 'football' && game.completed) game.scoreResult = nflScore(game, summary);
+      if (game.sport === 'basketball' && game.completed) game.scoreResult = nbaScore(game, summary);
       game._enriched = true;
     } catch (error) { console.warn('Could not enrich match', error); }
     return game;

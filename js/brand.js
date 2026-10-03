@@ -54,7 +54,7 @@
   };
   const refresh = (root = document.body) => { rebrandText(root); applySpoilMeter(root); promoteResultDetails(root); };
   const modal = document.getElementById('spoil-meter-modal'), modalVersionKey = 'league-choice-introduced-v2';
-  const leagueIds = ['epl','laliga','ucl','carabao','international','mlb','nfl'];
+  const leagueIds = ['epl','laliga','ucl','carabao','international','mlb','nfl','nba'];
   const storedLeagues = () => { try { const value = JSON.parse(localStorage.getItem('spoil-me-not-visible-leagues') || '[]'); return Array.isArray(value) ? value.filter(id => leagueIds.includes(id)) : []; } catch (_) { return []; } };
   const selection = new Set(storedLeagues().length ? storedLeagues() : [localStorage.getItem('spoil-me-not-last-league') || 'epl'].filter(id => leagueIds.includes(id)));
   const paintStartupChoices = () => modal?.querySelectorAll('[data-choose-league]').forEach(button => {

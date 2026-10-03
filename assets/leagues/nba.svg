@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="NBA">
+  <rect width="64" height="64" rx="14" fill="#171b2b"/>
+  <path d="M32 8a24 24 0 1 0 0 48 24 24 0 0 0 0-48Z" fill="#f4f3ee"/>
+  <path d="M32 8a24 24 0 0 0-21 12h21V8Zm0 48a24 24 0 0 0 21-12H32v12Z" fill="#c93446"/>
+  <path d="M32 8a24 24 0 0 1 21 12H32V8Zm0 48a24 24 0 0 1-21-12h21v12Z" fill="#3978b8"/>
+  <text x="32" y="36" fill="#171b2b" font-family="Arial,sans-serif" font-size="15" font-weight="800" text-anchor="middle">NBA</text>
+  <text x="32" y="45" fill="#f4f3ee" font-family="Arial,sans-serif" font-size="5" font-weight="700" letter-spacing="1" text-anchor="middle">BASKETBALL</text>
+</svg>

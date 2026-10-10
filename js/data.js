@@ -401,7 +401,7 @@ window.EPLData = (() => {
     game.lineupAvailable = entries.length === 2 && entries.every(([, team]) => (team.battingOrder || []).length === 9);
   }
   async function enrichMlb(game, { refresh = false, lineup = false } = {}) {
-    if (game._enriched && !refresh) {
+    if (game._enriched && !refresh && !(lineup && game.lineupAvailable !== true)) {
       if (lineup) await hydrateMlbRosterCountries(game);
       return game;
     }
@@ -451,8 +451,9 @@ window.EPLData = (() => {
     return game;
   }
 
-  async function enrichSoccer(game, { refresh = false } = {}) {
-    if (game._enriched && !refresh) return game;
+  async function enrichSoccer(game, { refresh = false, lineup = false } = {}) {
+    const hasRoster = (game.rosters || []).some(roster => (roster.roster || roster.athletes || roster.entries || roster.players || roster.starters || []).length);
+    if (game._enriched && !refresh && !(lineup && !hasRoster)) return game;
     try {
       const league = LEAGUES[game.leagueId || activeLeague], provider = game.espnLeague ? { ...league, slug: game.espnLeague } : league, response = await fetch(`${espnBase(provider)}/summary?event=${game.id}`); if (!response.ok) return game;
       const summary = await response.json(), plays = summary.scoringPlays || summary.keyEvents || summary.plays || [], competition = summary.header?.competitions?.[0], status = competition?.status || summary.header?.status;

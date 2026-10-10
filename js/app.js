@@ -829,8 +829,8 @@ const soccerLineOrder=(players,side)=>{
     // faces down the pitch, so its right-sided roles appear first; the away
     // XI is reversed below. Handle midfield and forward variants exactly as
     // the back line, including CM-R/CM-L and AM-R/AM-L.
-    if(/(?:RCB|CDR|DCR|RCDM|RDM|RCM|CMR|RAM|AMR|RIGHTCENT|RIGHTMID|RIGHTATT)/.test(code))return 1;
-    if(/(?:LCB|CDL|DCL|LCDM|LDM|LCM|CML|LAM|AML|LEFTCENT|LEFTMID|LEFTATT)/.test(code))return 3;
+    if(/(?:RCB|CDR|DCR|RCDM|RDM|RCM|CMR|RAM|AMR|CFR|RCF|STR|RST|RIGHTCENT|RIGHTMID|RIGHTATT)/.test(code))return 1;
+    if(/(?:LCB|CDL|DCL|LCDM|LDM|LCM|CML|LAM|AML|CFL|LCF|STL|LST|LEFTCENT|LEFTMID|LEFTATT)/.test(code))return 3;
     if(/(?:RB|RWB|DR|RIGHTBACK|RIGHTWINGBACK|RW|RM|RF|RS|RIGHTWING|RIGHTFORWARD)/.test(code))return 0;
     if(/(?:LB|LWB|DL|LEFTBACK|LEFTWINGBACK|LW|LM|LF|LS|LEFTWING|LEFTFORWARD)/.test(code))return 4;
     return 2;
@@ -885,6 +885,9 @@ const soccerFormationLineup=(roster,index)=>{
       const preferredRow=player=>{
         const code=soccerPositionDetail(player),role=soccerPosition(player);
         if(role==='def')return 0;
+        // CF-R/CF-L are the supporting forwards when the formation ends
+        // in a lone striker (3-4-2-1, 4-2-3-1). Unsided F/ST/CF stays ahead.
+        if(/^(?:CF[LR]|[LR]CF|ST[LR]|[LR]ST)$/.test(code))return slots.length>=4&&explicitLines[last]===1?last-1:last;
         if(/(?:ST|CF|FW|FORWARD|STRIKER)/.test(code))return last;
         if(/(?:LW|RW|LF|RF|WING)/.test(code))return slots.length>=4&&explicitLines[last]===1?Math.max(1,last-1):last;
         if(/(?:AM|CAM|ATTACKINGMID)/.test(code))return Math.max(1,last-1);

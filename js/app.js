@@ -215,6 +215,14 @@ new MutationObserver(()=>listShell.querySelectorAll('[data-game].past .tab-final
 const rosterFlagCache=JSON.parse(localStorage.getItem('must-watch-player-flags')||'{}'),rosterPortraitCache={...JSON.parse(localStorage.getItem('must-watch-player-portraits')||'{}'),...JSON.parse(localStorage.getItem('must-watch-player-portraits-v2')||'{}')},rosterClubCache=JSON.parse(localStorage.getItem('must-watch-player-clubs')||'{}'),countryCode={'The Netherlands':'nl',Netherlands:'nl',England:'gb',Scotland:'gb',Wales:'gb','Northern Ireland':'gb',Ireland:'ie',France:'fr',Spain:'es',Portugal:'pt',Brazil:'br',Argentina:'ar',Belgium:'be',Germany:'de',Italy:'it',Denmark:'dk',Sweden:'se',Norway:'no',Finland:'fi',Poland:'pl',Croatia:'hr',Serbia:'rs',Ukraine:'ua','Czech Republic':'cz',Slovakia:'sk',Hungary:'hu',Austria:'at',Switzerland:'ch',Turkey:'tr',Greece:'gr',Romania:'ro',Bulgaria:'bg',Slovenia:'si',Albania:'al',Morocco:'ma',Algeria:'dz',Tunisia:'tn',Egypt:'eg',Senegal:'sn',Ghana:'gh',Nigeria:'ng','Ivory Coast':'ci',Cameroon:'cm',Mali:'ml','South Africa':'za',Japan:'jp','South Korea':'kr',China:'cn',Uruguay:'uy',Colombia:'co',Chile:'cl',Ecuador:'ec',Paraguay:'py',Peru:'pe',Mexico:'mx',Jamaica:'jm','Canada':'ca','United States':'us',Australia:'au','New Zealand':'nz'};
 const fifaFlagCode={ENG:'gb',SCO:'gb',WAL:'gb',NIR:'gb',IRL:'ie',FRA:'fr',ESP:'es',POR:'pt',BRA:'br',ARG:'ar',BEL:'be',NED:'nl',GER:'de',ITA:'it',DEN:'dk',SWE:'se',NOR:'no',FIN:'fi',POL:'pl',CRO:'hr',SRB:'rs',UKR:'ua',CZE:'cz',SVK:'sk',HUN:'hu',AUT:'at',SUI:'ch',TUR:'tr',GRE:'gr',MAR:'ma',ALG:'dz',EGY:'eg',SEN:'sn',GHA:'gh',NGA:'ng',CIV:'ci',CMR:'cm',JPN:'jp',KOR:'kr',USA:'us',CAN:'ca',AUS:'au',NZL:'nz',URU:'uy',COL:'co',CHI:'cl',ECU:'ec',MEX:'mx'};
 const rosterEntries=roster=>[...new Map([roster.roster,roster.athletes,roster.entries,roster.players,roster.starters,roster.startingXI,roster.substitutes,roster.bench].filter(Array.isArray).flat().filter(Boolean).map((entry,index)=>{const player=entry.athlete||entry;return [String(player.id||player.uid||player.displayName||player.fullName||`unknown-${index}`),entry]})).values()];
+function refreshLineupDetails(g){
+ if(g._detailsFrame)return;
+ g._detailsFrame=requestAnimationFrame(()=>{
+  g._detailsFrame=null;
+  if(g.__showLineup)paintScheduleLineupAtGame(g,{refreshContent:true});
+  if(!matchPage.hidden&&String(new URLSearchParams(location.search).get('match'))===String(g.id))renderMatchPage(g);
+ });
+}
 function hydrateRosterFlags(g){
  if(g.sport!=='soccer')return Promise.resolve();
  if(g._flagsLoading)return g._flagsPromise||Promise.resolve();
@@ -223,19 +231,22 @@ function hydrateRosterFlags(g){
  if(!players.length){g._flagsLoading=false;return Promise.resolve()}
  const tasks=players.map(async raw=>{
   const p=raw.athlete||raw,id=p.id||p.uid||p.displayName,name=p.displayName||p.fullName;
-  if(!name||p.flag?.href||raw.flag?.href)return;
+  if(!name)return;
+  const existing=p.flag||raw.flag;
+  if(existing?.href){rosterFlagCache[id]={href:existing.href,label:existing.alt||''};return}
   const nationality=p.country||raw.country||p.nationality||raw.nationality||p.citizenship||raw.citizenship||p.birthCountry||raw.birthCountry||'',label=typeof nationality==='string'?nationality:nationality.displayName||nationality.name||nationality.fullName||nationality.abbreviation||nationality.code||'',shortCode=typeof nationality==='string'?'':String(nationality.abbreviation||nationality.code||nationality.isoCode||'').toUpperCase(),directCode=countryCode[label]||fifaFlagCode[String(label).toUpperCase()]||fifaFlagCode[shortCode]||(/^[A-Z]{2}$/.test(shortCode)?shortCode.toLowerCase():'');
   if(directCode){p.flag={href:`https://flagcdn.com/24x18/${directCode}.png`,alt:label};rosterFlagCache[id]={code:directCode,label};return}
   const saved=rosterFlagCache[id],savedCode=typeof saved==='string'?saved:saved?.code,savedLabel=typeof saved==='object'?saved?.label:'';
+  if(saved?.href){p.flag={href:saved.href,alt:savedLabel||''};return}
   if(savedCode){const countryByCode={gb:'England',ie:'Ireland',fr:'France',es:'Spain',pt:'Portugal',br:'Brazil',ar:'Argentina',be:'Belgium',nl:'Netherlands',de:'Germany',it:'Italy',dk:'Denmark',se:'Sweden',no:'Norway',fi:'Finland',pl:'Poland',hr:'Croatia',rs:'Serbia',ua:'Ukraine',cz:'Czech Republic',sk:'Slovakia',hu:'Hungary',at:'Austria',ch:'Switzerland',tr:'Turkey',gr:'Greece',ro:'Romania',bg:'Bulgaria',si:'Slovenia',al:'Albania',ma:'Morocco',dz:'Algeria',tn:'Tunisia',eg:'Egypt',sn:'Senegal',gh:'Ghana',ng:'Nigeria',ci:'Ivory Coast',cm:'Cameroon',ml:'Mali',za:'South Africa',jp:'Japan',kr:'South Korea',cn:'China',uy:'Uruguay',co:'Colombia',cl:'Chile',ec:'Ecuador',py:'Paraguay',pe:'Peru',mx:'Mexico',jm:'Jamaica',ca:'Canada',us:'United States',au:'Australia',nz:'New Zealand'};p.flag={href:`https://flagcdn.com/24x18/${savedCode}.png`,alt:savedLabel||countryByCode[savedCode]||savedCode.toUpperCase()};return}
   try{
-   const response=await fetch(`https://site.web.api.espn.com/apis/common/v3/sports/soccer/${EPLData.leagues[g.leagueId||activeLeague]?.slug||'eng.1'}/athletes/${encodeURIComponent(p.id)}`);
-   if(response.ok){const athlete=(await response.json()).athlete;if(athlete?.flag?.href){p.flag=athlete.flag;return}const code=countryCode[athlete?.citizenship]||fifaFlagCode[String(athlete?.citizenship||'').toUpperCase()];if(code){rosterFlagCache[id]={code,label:athlete.citizenship};p.flag={href:`https://flagcdn.com/24x18/${code}.png`,alt:athlete.citizenship};return}}
-   const fallback=await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${encodeURIComponent(name)}`);
+   const response=await fetch(`https://site.web.api.espn.com/apis/common/v3/sports/soccer/${EPLData.leagues[g.leagueId||activeLeague]?.slug||'eng.1'}/athletes/${encodeURIComponent(p.id)}`,{signal:AbortSignal.timeout(6000)});
+   if(response.ok){const athlete=(await response.json()).athlete;if(athlete?.flag?.href){p.flag=athlete.flag;rosterFlagCache[id]={href:athlete.flag.href,label:athlete.flag.alt||athlete.citizenship||''};return}const code=countryCode[athlete?.citizenship]||fifaFlagCode[String(athlete?.citizenship||'').toUpperCase()];if(code){rosterFlagCache[id]={code,label:athlete.citizenship};p.flag={href:`https://flagcdn.com/24x18/${code}.png`,alt:athlete.citizenship};return}}
+   const fallback=await fetch(`https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=${encodeURIComponent(name)}`,{signal:AbortSignal.timeout(6000)});
    if(!fallback.ok)return;
    const result=await fallback.json(),candidate=(result?.player||[]).find(x=>String(x.strPlayer||'').toLowerCase()===String(name).toLowerCase()),code=candidate&&countryCode[candidate.strNationality];
    if(code){rosterFlagCache[id]={code,label:candidate.strNationality};p.flag={href:`https://flagcdn.com/24x18/${code}.png`,alt:candidate.strNationality}}
-  }catch(error){}
+  }catch(error){}finally{if(p.flag?.href)refreshLineupDetails(g)}
  });
  g._flagsPromise=Promise.all(tasks).finally(()=>{g._flagsReady=true;g._flagsLoading=false;g._flagsPromise=null;localStorage.setItem('must-watch-player-flags',JSON.stringify(rosterFlagCache));});
  return g._flagsPromise;
@@ -799,7 +810,7 @@ const soccerPosition=entry=>{
     .find(Boolean)||'';
   const position=String(value).toUpperCase();
   if(/^(?:GK|G)$|GOAL/.test(position))return 'gk';
-  if(/^(?:D)$|CB|LB|RB|WB|DEF|BACK/.test(position))return 'def';
+  if(/^(?:D|CD|DC)(?:[- ]?[LRC])?$|CB|LB|RB|WB|DEF|BACK/.test(position))return 'def';
   if(/^(?:M)$|DM|CM|AM|MF|MID/.test(position))return 'mid';
   if(/^(?:F)$|ST|CF|FW|ATT|WING|FORWARD/.test(position))return 'att';
   return '';
@@ -881,16 +892,24 @@ const soccerFormationLineup=(roster,index)=>{
         if(/(?:CM|MF|MID)/.test(code))return Math.min(1,last);
         return role==='att'?last:Math.min(1,last);
       };
-      const players=fieldPlayers.slice().sort((left,right)=>{
-        const leftCode=soccerPositionDetail(left),rightCode=soccerPositionDetail(right);
-        const certainty=code=>/^(?:GK|G|CB|LB|RB|LWB|RWB|DM|CDM|CM|AM|CAM|LM|RM|LW|RW|LF|RF|ST|CF|FW)$/.test(code)?1:0;
-        return certainty(rightCode)-certainty(leftCode);
-      });
-      players.forEach(player=>{
-        const preferred=preferredRow(player),candidates=[preferred,preferred-1,preferred+1,0,last].filter((row,index,array)=>row>=0&&row<=last&&array.indexOf(row)===index);
-        const row=candidates.find(index=>slots[index].length<explicitLines[index])??slots.findIndex((line,index)=>line.length<explicitLines[index]);
-        if(row>=0)slots[row].push(player);
-      });
+      // Assign the entire XI together: greedy filling lets a midfielder take
+      // a defender's place before a CD-R/CD-L later in the feed is considered.
+      const memo=new Map(),assign=(index,counts)=>{
+        if(index===fieldPlayers.length)return {cost:0,rows:[]};
+        const key=`${index}:${counts.join(',')}`;
+        if(memo.has(key))return memo.get(key);
+        const player=fieldPlayers[index],role=soccerPosition(player),preferred=preferredRow(player);
+        let best={cost:Infinity,rows:[]};
+        counts.forEach((count,row)=>{
+          if(count>=explicitLines[row])return;
+          const next=counts.slice();next[row]++;
+          const tail=assign(index+1,next);
+          const cost=tail.cost+Math.abs(row-preferred)*10+(role==='def'&&row!==0?1000:role&&role!=='def'&&row===0?1000:0);
+          if(cost<best.cost)best={cost,rows:[row,...tail.rows]};
+        });
+        memo.set(key,best);return best;
+      };
+      assign(0,slots.map(()=>0)).rows.forEach((row,index)=>slots[row].push(fieldPlayers[index]));
       return slots;
     })()
     : ['def','mid','att'].map(role=>rows[role]).filter(row=>row.length);
@@ -1566,7 +1585,7 @@ const hydrateMatchLineup=game=>{
   if(game.sport!=='soccer')return Promise.resolve(game);
   if(game._matchLineupHydration)return game._matchLineupHydration;
   const request=EPLData.enrich(game,{refresh:true,lineup:true})
-    .then(()=>Promise.all([hydrateRosterFlags(game),hydrateRosterPortraits(game)]))
+    .then(()=>{refreshLineupDetails(game);return Promise.all([hydrateRosterFlags(game),hydrateRosterPortraits(game)])})
     .then(()=>game)
     .catch(()=>game)
     .finally(()=>{if(game._matchLineupHydration===request)game._matchLineupHydration=null});
@@ -1778,7 +1797,7 @@ function paintScheduleLineupAtGame(game,{deferContent=false,refreshContent=false
   if(!section){section=document.createElement('section');section.className='schedule-lineup-shell';section.hidden=true;section.setAttribute('aria-label','Spoiler-free lineup');section.innerHTML='<p class="lineup-loading">LOADING OFFICIAL LINEUP…</p>';current.querySelector('.list-content')?.append(section)}
   section.classList.toggle('schedule-lineup',!!game.__showLineup);
   section.hidden=!game.__showLineup;
-  if(deferContent)return;
+  if(deferContent||!game.__showLineup)return;
   if(hasSpoilerFreeLineup(game)){
     if(refreshContent||section.dataset.lineupReady!=='true'){section.innerHTML=rosterMarkup(game);section.dataset.lineupReady='true'}
   }else if(section.dataset.lineupReady!=='true'&&!section.querySelector('.lineup-loading'))section.innerHTML='<p class="lineup-loading">LOADING OFFICIAL LINEUP…</p>';

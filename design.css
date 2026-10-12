@@ -1,0 +1,175 @@
+/* Shared visual finish. Layout, spoiler behaviour, pitch markings and team
+   colours remain owned by the functional styles in style.css. */
+:root {
+  --ui-canvas: #111312;
+  --ui-surface: #1c201e;
+  --ui-raised: #272d29;
+  --ui-hover: #323a34;
+  --ui-text: #f0f2ec;
+  --ui-muted: #a5afa6;
+  --ui-accent: #d9e8b9;
+  --ui-ink: #172016;
+  --ui-rule: rgba(226,239,222,.07);
+}
+body, #app { background: var(--ui-canvas) !important; color: var(--ui-text); }
+button, a, [role="button"] { -webkit-tap-highlight-color: transparent; }
+/* Focus is intentional and highly visible; decorative outlines are not. */
+body :is(button,a,input,[tabindex="0"]):focus-visible {
+  outline: 2px solid var(--ui-accent) !important;
+  outline-offset: 4px !important;
+}
+.masthead {
+  background: var(--ui-canvas) !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+}
+.team-ribbon { background: var(--ui-canvas) !important; border: 0 !important; }
+.team-band-summary { border: 0 !important; background: transparent !important; box-shadow: none !important; }
+.league-band-divider { background: transparent !important; }
+.league-band-current, .team-band-summary>[data-edit-teams], .team-toggle {
+  border: 0 !important; border-radius: 999px !important;
+  background: var(--ui-raised) !important; color: var(--ui-text) !important;
+  box-shadow: none !important;
+}
+.team-band-count { color: var(--ui-muted) !important; }
+.masthead-actions button>span { border-color: transparent !important; background: var(--ui-raised) !important; box-shadow: none !important; }
+.view-toggle { padding: 4px !important; border: 0 !important; border-radius: 999px !important; background: var(--ui-raised) !important; box-shadow: 0 6px 20px #0003 !important; }
+.view-toggle button { border: 0 !important; border-radius: 999px !important; background: transparent !important; color: var(--ui-muted) !important; }
+.view-toggle button.active { background: var(--ui-accent) !important; color: var(--ui-ink) !important; }
+
+/* Match cards separate by tone and rhythm, not frames. Keep the stamp and
+   half-second unlock overlay untouched so the protection stays apparent. */
+body .list-shell .list-game {
+  border: 0 !important; border-radius: 20px !important;
+  background: var(--ui-surface) !important;
+  box-shadow: none !important;
+  margin-bottom: 18px !important;
+}
+.list-shell>h2 { color: var(--ui-muted) !important; border: 0 !important; letter-spacing: -.02em !important; }
+.card-kickoff time, .card-kickoff small { color: var(--ui-muted) !important; }
+.list-game .card-kickoff :is(button,.form-spoiler-toggle),
+.list-game .card-video-link {
+  border: 0 !important; border-radius: 999px !important;
+  background: var(--ui-raised) !important; color: var(--ui-text) !important;
+  box-shadow: none !important;
+  min-height: 30px !important; padding: 7px 10px !important;
+  font-size: 9px !important; letter-spacing: .04em !important;
+}
+.card-kickoff .card-highlight-link { border: 0 !important; border-radius: 999px !important; background: var(--ui-raised) !important; }
+.list-game .card-kickoff button[aria-expanded="true"],
+.list-game .card-kickoff button[aria-pressed="true"] {
+  background: var(--ui-accent) !important; color: var(--ui-ink) !important;
+}
+.list-game.recent-past .card-kickoff>b { border: 0 !important; background: #b58b4420 !important; color: #f0d5a8 !important; }
+.mlb-postseason-tag { border: 0 !important; background: #b58b441a !important; }
+.schedule-lineup, .live-baseball-moments { border: 0 !important; border-radius: 14px !important; background: var(--ui-canvas) !important; }
+
+/* One selector language for startup and subsequent editing. Selection uses
+   a filled surface plus the existing status text and indicator. */
+.spoil-meter-dialog, .team-selector, .league-selector, .team-picker,
+.spoil-meter-guide-card, .details {
+  border: 0 !important; border-radius: 24px !important;
+  background: var(--ui-surface) !important;
+  box-shadow: 0 24px 80px #0006 !important;
+}
+.team-selector-head { border: 0 !important; background: var(--ui-surface) !important; padding-bottom: 18px !important; }
+.team-selector-head button {
+  min-height: 36px; border: 0 !important; border-radius: 999px !important;
+  background: var(--ui-raised) !important; color: var(--ui-text) !important;
+  box-shadow: none !important;
+}
+.team-selector-head :is([data-close-selector],[data-close-leagues],[data-dismiss-spoil-meter]) {
+  background: var(--ui-accent) !important; color: var(--ui-ink) !important;
+}
+.opening-league-copy, .selector-heading small { color: var(--ui-muted) !important; }
+.selector-heading>b { font-size: 16px !important; letter-spacing: .03em !important; }
+.opening-league-copy { font: 13px/1.5 Inter,Arial,sans-serif !important; }
+.league-gallery { grid-template-columns: repeat(4,minmax(0,1fr)) !important; gap: 12px !important; }
+body .league-gallery-item span { font-size: 11px !important; line-height: 1.35 !important; }
+body .league-gallery-item small { font-size: 8px !important; line-height: 1.35 !important; letter-spacing: .04em !important; }
+body :is(#league-selector,.opening-league-selector) .league-gallery-item,
+body #team-selector .team-gallery-item {
+  border: 0 !important; border-radius: 16px !important;
+  background: var(--ui-raised) !important;
+  box-shadow: none !important;
+  color: var(--ui-text) !important;
+}
+body :is(#league-selector,.opening-league-selector) .league-gallery-item:is(.active,[aria-pressed="true"],[aria-checked="true"]),
+body #team-selector .team-gallery-item:is(.active,[aria-pressed="true"],[aria-checked="true"]) {
+  background: #354132 !important;
+  box-shadow: inset 0 -3px 0 var(--ui-accent) !important;
+}
+body .league-gallery-item::after, body .team-gallery-item::after { box-shadow: none !important; }
+body .league-gallery-item.active::after, body .team-gallery-item.active::after { background: var(--ui-accent) !important; }
+.team-search, #team-search { border: 0 !important; border-radius: 12px !important; background: var(--ui-raised) !important; color: var(--ui-text) !important; }
+
+/* Match page: flat navigation and one quiet content surface. */
+.match-page-card { border: 0 !important; background: transparent !important; box-shadow: none !important; }
+.match-page-top { border: 0 !important; background: var(--ui-canvas) !important; box-shadow: 0 8px 16px #11131270 !important; }
+.match-page-top [data-match-back] { border: 0 !important; border-radius: 999px !important; background: var(--ui-raised) !important; color: var(--ui-text) !important; padding: 10px 14px !important; }
+.match-page-hero { border: 0 !important; }
+.match-page-actions a { border: 0 !important; border-radius: 999px !important; background: var(--ui-raised) !important; color: var(--ui-text) !important; }
+.spoiler-workspace { border: 0 !important; background: transparent !important; }
+.spoiler-tabs { gap: 4px !important; padding: 5px !important; border: 0 !important; border-radius: 16px !important; background: var(--ui-surface) !important; }
+.spoiler-tabs button { border: 0 !important; border-radius: 11px !important; background: transparent !important; color: var(--ui-muted) !important; box-shadow: none !important; }
+.spoiler-tabs button:is(.active,[aria-selected="true"]) { background: var(--ui-accent) !important; color: var(--ui-ink) !important; }
+.spoiler-panel { border: 0 !important; background: transparent !important; }
+body .spoiler-panel .box-score, body .spoiler-panel .soccer-box-score,
+body .spoiler-panel .match-summary, body .spoiler-panel .league-table,
+body .spoiler-panel .team-form, body .spoiler-workspace .sport-scorecard {
+  border: 0 !important; border-radius: 18px !important;
+  background: var(--ui-surface) !important; box-shadow: none !important;
+}
+body .soccer-box-score .soccer-stat-row, body .soccer-box-score>header, .sport-scorecard>header,
+.league-table th, .league-table td, .team-form header {
+  border-color: var(--ui-rule) !important;
+}
+.soccer-stat-row>span { color: var(--ui-muted) !important; }
+.incident-list { border: 0 !important; }
+.incident {
+  border-top: 0 !important; border-right: 0 !important; border-bottom: 0 !important;
+  border-radius: 0 12px 12px 0 !important;
+  background: var(--ui-surface) !important; box-shadow: none !important;
+  margin-bottom: 8px !important;
+}
+.incident-player-photo { border: 0 !important; background: var(--ui-raised) !important; }
+.lineups, .lineups section, .lineups h4 { border-color: var(--ui-rule) !important; }
+.soccer-pitch { border-color: var(--ui-rule) !important; border-radius: 14px !important; background: #171c19 !important; }
+.lineup-player:not(.soccer-pitch-player):hover { background: #ffffff06 !important; border-radius: 8px; }
+
+/* Player cards: larger blocks of information instead of a boxed spreadsheet. */
+.player-card-dialog { border: 0 !important; border-radius: 24px !important; background: var(--ui-surface) !important; }
+.player-card-face, .player-card-season { background: var(--ui-surface) !important; }
+.player-card-close, .player-card-deck button { border: 0 !important; background: var(--ui-raised) !important; }
+.player-card-season>header, .player-card-deck, .player-card-hero { border-color: var(--ui-rule) !important; }
+.player-card-tabs { gap: 4px !important; padding: 4px !important; border-radius: 12px !important; background: var(--ui-canvas) !important; }
+.player-card-tabs button { border-radius: 8px !important; background: transparent !important; }
+.player-card-tabs button.active { background: var(--ui-accent) !important; color: var(--ui-ink) !important; }
+.player-card-stats { gap: 6px !important; background: transparent !important; margin-top: 12px !important; }
+.player-card-stats div { border: 0 !important; border-radius: 10px !important; background: var(--ui-raised) !important; }
+.player-card-stats span { color: var(--ui-muted) !important; letter-spacing: .04em !important; }
+.player-card-formation { border-color: var(--ui-rule) !important; border-radius: 10px !important; }
+.baseball-lineup-stats>nav button { border: 0 !important; border-radius: 999px !important; background: var(--ui-raised) !important; }
+.baseball-lineup-stats>nav button.active { background: var(--ui-accent) !important; color: var(--ui-ink) !important; }
+
+@media (hover:hover) {
+  .list-game:hover { background: #222823 !important; }
+  body :is(#league-selector,.opening-league-selector) .league-gallery-item:hover,
+  body #team-selector .team-gallery-item:hover { background: var(--ui-hover) !important; }
+  .team-selector-head button:hover, .league-band-current:hover,
+  .team-band-summary>[data-edit-teams]:hover { filter: brightness(1.12); }
+}
+@media (max-width:600px) {
+  .league-gallery { grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 10px !important; }
+  .list-game { border-radius: 16px !important; margin-bottom: 14px !important; }
+  .spoil-meter-dialog, .team-selector, .league-selector { border-radius: 20px !important; }
+  .spoiler-tabs { gap: 2px !important; padding: 4px !important; }
+  .spoiler-tabs button { padding-inline: 4px !important; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .list-game, .league-gallery-item, .team-gallery-item { transition: none !important; }
+}
+@media (forced-colors:active) {
+  button, .list-game, .league-gallery-item, .team-gallery-item { border: 1px solid ButtonText !important; }
+  [aria-selected="true"], [aria-pressed="true"] { outline: 2px solid Highlight !important; }
+}

@@ -807,7 +807,7 @@ const lineupEscape=value=>String(value??'').replace(/[&<>'"]/g,character=>({ '&'
 // fetched when a person is tapped.  This keeps the spoiler-free roster quick.
 const playerCardEntries=new Map(),playerCardRequests=new Map();
 const playerCardId=entry=>{const player=entry?.athlete||entry||{},raw=String(player.id||player.uid||entry?.id||'');return raw.match(/(?:^|[~:])a:(\d+)/)?.[1]||raw.match(/(\d+)$/)?.[1]||raw||String(player.displayName||player.fullName||'unknown').toLowerCase()};
-const playerCardPhoto=entry=>{const player=entry?.athlete||entry||{},image=player.headshot||entry?.headshot||player.photo||entry?.photo||player.image||entry?.image||'';return typeof image==='string'?image:(image?.href||player._portraitUrl||'')};
+const playerCardPhoto=entry=>{const player=entry?.athlete||entry||{},image=player.headshot||entry?.headshot||player.photo||entry?.photo||player.image||entry?.image||'';return confirmedSoccerPortraits.get(playerCardId(entry))||(typeof image==='string'?image:(image?.href||player._portraitUrl||''))};
 const registerPlayerCard=(game,entry,teamColour='',formation=null)=>{
   const player=entry?.athlete||entry||{},id=playerCardId(entry),key=`${game.id}:${id}`;
   const roster=(game.rosters||[]).find(group=>rosterEntries(group).some(candidate=>playerCardId(candidate)===id));
@@ -815,19 +815,44 @@ const registerPlayerCard=(game,entry,teamColour='',formation=null)=>{
   playerCardEntries.set(key,{game,entry,player,teamColour,teamName,formation});
   return key;
 };
-const soccerHeadshot=entry=>{
+const confirmedSoccerPortraits=new Map(),failedSoccerPortraits=new Set();
+const soccerPortraitSources=entry=>{
   const player=entry?.athlete||entry||{},image=player.headshot||entry?.headshot||player.photo||entry?.photo||player.image||entry?.image||'';
-  if(typeof image==='string'&&image)return image;
-  if(image?.href)return image.href;
-  if(player._portraitUrl)return player._portraitUrl;
   // ESPN's roster player IDs map to this stable portrait endpoint.  The image
   // still has an initials fallback when a player does not have a portrait.
   // Some lineup feeds use a compound UID such as `s:600~a:12345`; its final
   // athlete segment, rather than the full UID, is what the image service uses.
   const rawId=String(player.id||player.uid||entry?.id||'');
   const id=rawId.match(/(?:^|[~:])a:(\d+)/)?.[1]||rawId.match(/(\d+)$/)?.[1]||'';
-  return id?`https://a.espncdn.com/i/headshots/soccer/players/full/${encodeURIComponent(id)}.png`:'';
+  return [...new Set([confirmedSoccerPortraits.get(playerCardId(entry)),typeof image==='string'?image:image?.href||image?.url,player._portraitUrl,rosterPortraitCache[playerCardId(entry)],id?`https://a.espncdn.com/i/headshots/soccer/players/full/${encodeURIComponent(id)}.png`:''].filter(url=>url&&!failedSoccerPortraits.has(url)))];
 };
+const soccerHeadshot=entry=>soccerPortraitSources(entry)[0]||'';
+const soccerPortraitAttributes=entry=>`data-soccer-portrait="${lineupEscape(playerCardId(entry))}" data-portrait-sources="${lineupEscape(JSON.stringify(soccerPortraitSources(entry)))}"`;
+const identifySoccerPortrait=img=>{
+ if(!(img instanceof HTMLImageElement))return false;
+ if(img.dataset.soccerPortrait)return true;
+ if(!img.matches('.international-player-photo>img,.incident-player-photo>img'))return false;
+ const item=playerCardEntries.get(img.closest('[data-player-card]')?.dataset.playerCard);
+ if(item?.game.sport!=='soccer')return false;
+ img.dataset.soccerPortrait=playerCardId(item.entry);
+ img.dataset.portraitSources=JSON.stringify(soccerPortraitSources(item.entry));
+ return true;
+};
+document.addEventListener('load',event=>{
+ const img=event.target;
+ if(identifySoccerPortrait(img)&&img.naturalWidth>0){
+  confirmedSoccerPortraits.set(img.dataset.soccerPortrait,img.getAttribute('src'));
+  img.parentElement?.classList.remove('no-photo');
+ }
+},true);
+document.addEventListener('error',event=>{
+ const img=event.target;
+ if(!identifySoccerPortrait(img))return;
+ const failed=img.getAttribute('src');failedSoccerPortraits.add(failed);
+ if(confirmedSoccerPortraits.get(img.dataset.soccerPortrait)===failed)confirmedSoccerPortraits.delete(img.dataset.soccerPortrait);
+ const sources=JSON.parse(img.dataset.portraitSources||'[]'),next=sources.find(url=>!failedSoccerPortraits.has(url));
+ if(next){event.stopImmediatePropagation();img.src=next;}
+},true);
 const soccerPosition=entry=>{
   const player=entry?.athlete||entry||{};
   const value=[entry?.position,player.position,entry?.primaryPosition,player.primaryPosition,entry?.positionAbbreviation,player.positionAbbreviation]
@@ -964,7 +989,7 @@ function soccerFormationMarkup(game){
     const age=internationalAge(entry),biography=[secondaryLabel,age!==''?`Age ${age}`:''].filter(Boolean).join(' · ');
     const edgeClass=x<=12?' edge-left':x>=88?' edge-right':'';
     return `<div class="soccer-pitch-player lineup-player starter ${side}${edgeClass}" role="button" tabindex="0" data-player-card="${lineupEscape(registerPlayerCard(game,entry,teamColor,{x,y:vertical,side}))}" style="--x:${x.toFixed(2)}%;--y:${vertical}%;--team-colour:${lineupEscape(teamColor)};--team-ink:${soccerTeamInk(teamColor)}">`+
-      `<div class="soccer-player-photo${portrait?'':' no-photo'}">${portrait?`<img class="soccer-player-headshot" src="${lineupEscape(portrait)}" alt="" decoding="async" onerror="const p=this.parentElement;this.remove();p?.classList.add('no-photo')">`:''}<i aria-hidden="true">${lineupEscape(initials)}</i>${soccerFlagStamp(entry)}</div>`+
+      `<div class="soccer-player-photo${portrait?'':' no-photo'}">${portrait?`<img class="soccer-player-headshot" src="${lineupEscape(portrait)}" ${soccerPortraitAttributes(entry)} alt="" decoding="async" onerror="const p=this.parentElement;this.remove();p?.classList.add('no-photo')">`:''}<i aria-hidden="true">${lineupEscape(initials)}</i>${soccerFlagStamp(entry)}</div>`+
       `<span title="${lineupEscape(name)}">${number!=='—'?`<b class="soccer-player-number">${lineupEscape(number)}</b> `:''}${lineupEscape(shortName)}${biography?`<i class="soccer-player-country">${lineupEscape(biography)}</i>`:''}</span>${events}</div>`;
   };
   const sideMarkup=(group,side)=>{

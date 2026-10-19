@@ -138,6 +138,21 @@ body .soccer-box-score .soccer-stat-row, body .soccer-box-score>header, .sport-s
 .lineup-player:not(.soccer-pitch-player):hover { background: #ffffff06 !important; border-radius: 8px; }
 
 /* Player cards: larger blocks of information instead of a boxed spreadsheet. */
+/* Reserve age space; only the origin may truncate on a narrow pitch column. */
+.soccer-pitch-player>span[title] { width: 100% !important; }
+.soccer-pitch-player>span[title] .soccer-player-country {
+  display: flex !important; align-items: baseline !important; justify-content: center !important;
+  gap: 4px !important; width: 100% !important; max-width: 100% !important;
+  overflow: visible !important; text-overflow: clip !important;
+}
+.soccer-pitch-player>span[title] .soccer-player-origin {
+  flex: 0 1 auto !important; min-width: 0 !important;
+  overflow: hidden !important; text-overflow: ellipsis !important;
+}
+.soccer-pitch-player>span[title] .soccer-player-age {
+  flex: 0 0 auto !important; font: inherit !important; color: #cbd3c9 !important;
+  white-space: nowrap !important;
+}
 .player-card-dialog { border: 0 !important; border-radius: 24px !important; background: var(--ui-surface) !important; }
 .player-card-face, .player-card-season { background: var(--ui-surface) !important; }
 .player-card-close, .player-card-deck button { border: 0 !important; background: var(--ui-raised) !important; }

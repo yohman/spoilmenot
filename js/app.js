@@ -986,11 +986,11 @@ function soccerFormationMarkup(game){
     const formationColumns={1:[50],2:[36.667,63.333],3:[23.333,50,76.667],4:[10,36.667,63.333,90],5:[10,30,50,70,90]};
     const x=formationColumns[rowLength]?.[rowIndex]??(10+(rowIndex/Math.max(1,rowLength-1))*80);
     const events=eventMode?playerEventMarkup(game,name):'';
-    const age=internationalAge(entry),biography=[secondaryLabel,age!==''?`Age ${age}`:''].filter(Boolean).join(' · ');
+    const age=internationalAge(entry),biography=[secondaryLabel?`<span class="soccer-player-origin" title="${lineupEscape(secondaryLabel)}">${lineupEscape(secondaryLabel)}</span>`:'',age!==''?`<b class="soccer-player-age" aria-label="Age ${lineupEscape(age)}">${lineupEscape(age)}y</b>`:''].filter(Boolean).join('');
     const edgeClass=x<=12?' edge-left':x>=88?' edge-right':'';
     return `<div class="soccer-pitch-player lineup-player starter ${side}${edgeClass}" role="button" tabindex="0" data-player-card="${lineupEscape(registerPlayerCard(game,entry,teamColor,{x,y:vertical,side}))}" style="--x:${x.toFixed(2)}%;--y:${vertical}%;--team-colour:${lineupEscape(teamColor)};--team-ink:${soccerTeamInk(teamColor)}">`+
       `<div class="soccer-player-photo${portrait?'':' no-photo'}">${portrait?`<img class="soccer-player-headshot" src="${lineupEscape(portrait)}" ${soccerPortraitAttributes(entry)} alt="" decoding="async" onerror="const p=this.parentElement;this.remove();p?.classList.add('no-photo')">`:''}<i aria-hidden="true">${lineupEscape(initials)}</i>${soccerFlagStamp(entry)}</div>`+
-      `<span title="${lineupEscape(name)}">${number!=='—'?`<b class="soccer-player-number">${lineupEscape(number)}</b> `:''}${lineupEscape(shortName)}${biography?`<i class="soccer-player-country">${lineupEscape(biography)}</i>`:''}</span>${events}</div>`;
+      `<span title="${lineupEscape(name)}">${number!=='—'?`<b class="soccer-player-number">${lineupEscape(number)}</b> `:''}${lineupEscape(shortName)}${biography?`<i class="soccer-player-country">${biography}</i>`:''}</span>${events}</div>`;
   };
   const sideMarkup=(group,side)=>{
     const teamColor=soccerTeamColor(group,game,side);

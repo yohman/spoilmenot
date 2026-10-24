@@ -14,6 +14,17 @@
 .basketball-scorecard .football-linescore{min-width:0!important;width:100%!important}
 .basketball-scorecard .football-linescore th:first-child{width:40px!important}
 .nba-lead-chart>p{margin:0;font-size:9px}
+.spoiler-panel>.nba-lead-chart{margin-top:18px!important;margin-bottom:16px!important}
+.nba-team-stats{padding:18px;border-radius:18px;background:var(--ui-surface,#1c201e);color:var(--ui-text,#f0f2ec)}
+.nba-team-stats>header,.nba-team-stat{display:grid;grid-template-columns:minmax(50px,1fr) minmax(130px,1.5fr) minmax(50px,1fr);align-items:center;gap:12px;width:100%;max-width:640px;margin-inline:auto;text-align:center}
+.nba-team-stats>header{padding-bottom:14px;margin-bottom:4px;border-bottom:1px solid var(--ui-rule,rgba(240,242,236,.07))}
+.nba-team-stats h3{margin:0;color:var(--ui-muted,#a5afa6);font:500 10px/1.4 'DM Mono',monospace;letter-spacing:.08em}
+.nba-stat-team{display:flex;justify-content:center;align-items:center;gap:7px;font:600 11px/1.4 Inter,Arial,sans-serif}
+.nba-stat-team img{width:24px;height:24px;object-fit:contain}.nba-stat-team>b{padding-bottom:3px;border-bottom:2px solid var(--nba-side)}
+.nba-team-stat{min-height:48px;border-bottom:1px solid var(--ui-rule,rgba(240,242,236,.07))}.nba-team-stat:last-child{border-bottom:0}
+.nba-team-stat>b{justify-self:center;font:600 16px/1.3 Inter,Arial,sans-serif;font-variant-numeric:tabular-nums}
+.nba-team-stat>span{color:var(--ui-muted,#a5afa6);font:500 9px/1.4 'DM Mono',monospace;letter-spacing:.03em}
+@media(max-width:600px){.nba-team-stats{padding:14px;border-radius:14px}.nba-team-stats>header,.nba-team-stat{gap:6px;grid-template-columns:minmax(42px,1fr) minmax(128px,1.7fr) minmax(42px,1fr)}.nba-team-stat>b{font-size:14px}.nba-team-stat>span{font-size:8px}}
 .nba-moments-intro{margin:0 0 14px;color:var(--ui-text,#f0f2ec);font:600 11px/1.6 Inter,Arial,sans-serif}
 .nba-moments-intro small{color:var(--ui-muted,#a5afa6);font:400 11px/1.6 Inter,Arial,sans-serif}
 .nba-player-boxscore>header{justify-content:flex-start}.nba-player-boxscore>header img{width:26px;height:26px;object-fit:contain}.nba-player-boxscore>header small{margin-left:auto;font-size:8px}

@@ -31,5 +31,16 @@ window.NBAView=(()=>{
       }).join('')}</section>`;
     }).join('')}<p class="nba-box-key">FG / 3PT / FT: made–attempted · TO: turnovers · PF: fouls · +/−: scoring margin while on court. Swipe the table for all shooting and defensive stats.</p></div>`;
   }
-  return {leadChart,boxScore};
+  function teamStats(game,colours){
+    const teams=game.summary?.boxscore?.teams||[];
+    const side=which=>teams.find(team=>String(team.team?.id)===String(game[`${which}Id`]));
+    const home=side('home'),away=side('away');
+    if(!home&&!away)return '';
+    const value=(team,key)=>{const item=(team?.statistics||[]).find(stat=>stat.name===key);return item?.displayValue??item?.value??''};
+    const metrics=[['FIELD GOALS','fieldGoalsMade-fieldGoalsAttempted'],['FG %','fieldGoalPct'],['3-POINTERS','threePointFieldGoalsMade-threePointFieldGoalsAttempted'],['3PT %','threePointFieldGoalPct'],['FREE THROWS','freeThrowsMade-freeThrowsAttempted'],['FT %','freeThrowPct'],['REBOUNDS','totalRebounds'],['OFFENSIVE REBOUNDS','offensiveRebounds'],['DEFENSIVE REBOUNDS','defensiveRebounds'],['ASSISTS','assists'],['STEALS','steals'],['BLOCKS','blocks'],['TURNOVERS','totalTurnovers'],['FOULS','fouls'],['FAST BREAK POINTS','fastBreakPoints'],['POINTS IN THE PAINT','pointsInPaint']];
+    const identity=which=>`<span class="nba-stat-team" style="--nba-side:${safe(colours[which])}">${game[`${which}Logo`]?`<img src="${safe(game[`${which}Logo`])}" alt="">`:''}<b>${safe(game[`${which}Abbr`]||game[which])}</b></span>`;
+    const rows=metrics.map(([label,key])=>({label,home:value(home,key),away:value(away,key)})).filter(row=>row.home!==''||row.away!=='');
+    return `<section class="nba-team-stats" aria-label="NBA team statistics"><header>${identity('home')}<h3>TEAM STATS</h3>${identity('away')}</header>${rows.map(row=>`<div class="nba-team-stat"><b>${safe(row.home===''?'—':row.home)}</b><span>${row.label}</span><b>${safe(row.away===''?'—':row.away)}</b></div>`).join('')}</section>`;
+  }
+  return {leadChart,boxScore,teamStats};
 })();

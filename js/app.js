@@ -1171,7 +1171,8 @@ const STAT_SECONDARY_COLOURS={'Ipswich Town':'#d71920'};
 const statHex=value=>{const hex=String(value||'').replace('#','');return /^[0-9a-f]{6}$/i.test(hex)?`#${hex}`:''};
 const statColourDistance=(left,right)=>{const a=statHex(left),b=statHex(right);if(!a||!b)return 255;const channels=value=>[1,3,5].map(index=>parseInt(value.slice(index,index+2),16));const [ar,ag,ab]=channels(a),[br,bg,bb]=channels(b);return Math.hypot(ar-br,ag-bg,ab-bb)};
 const statColoursFor=game=>{
-  const home=statHex(game.homeColor)||'#c7c7c1',away=statHex(game.awayColor)||'#666662';
+  const nbaColour=side=>game.sport==='basketball'?({'13':'#fdb927','12':'#1d428a'}[String(game[`${side}Id`])]||({'Los Angeles Lakers':'#fdb927','LA Clippers':'#1d428a','Los Angeles Clippers':'#1d428a'}[game[side]])):'';
+  const home=nbaColour('home')||statHex(game.homeColor)||'#c7c7c1',away=nbaColour('away')||statHex(game.awayColor)||'#666662';
   if(statColourDistance(home,away)>=82)return {home,away};
   const brandedChoices=[
     {side:'home',color:statHex(STAT_SECONDARY_COLOURS[game.home])},
@@ -1186,6 +1187,7 @@ const statColoursFor=game=>{
   return best.side==='home'?{home:best.color,away}:{home,away:best.color};
 };
 boxScoreMarkup=function(game){
+  if(game.sport==='basketball')return window.NBAView.teamStats(game,statColoursFor(game));
   const teams=game.summary?.boxscore?.teams||game.summary?.boxscore?.teamStats||[];
   const home=teams.find(team=>String(team.team?.id||team.id||'')===String(game.homeId))||teams.find(team=>team.homeAway==='home'||team.team?.homeAway==='home')||teams[0];
   const away=teams.find(team=>String(team.team?.id||team.id||'')===String(game.awayId))||teams.find(team=>team.homeAway==='away'||team.team?.homeAway==='away')||teams[1];

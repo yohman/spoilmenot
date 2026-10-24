@@ -21,4 +21,10 @@ const box=view.boxScore({summary:{boxscore:{players:[{team:{displayName:'Test'},
 for(const word of ['STARTERS','BENCH','DID NOT PLAY','FG%','TEAM TOTAL','25'])assert(box.includes(word));
 const ids=Array.from({length:30},(_,i)=>i+1);for(const id of ids)assert.notEqual(nba.division(id).division,'Other');
 assert.equal(new Set(ids.map(id=>nba.division(id).division)).size,6);
+const app=fs.readFileSync(path.join(root,'js/app.js'),'utf8'),colourStart=app.indexOf('const STAT_SECONDARY_COLOURS=');
+vm.runInContext(app.slice(colourStart,app.indexOf('boxScoreMarkup=function(game){',colourStart))+';this.testColours=statColoursFor;',context);
+const branded=context.testColours({sport:'basketball',homeId:'13',awayId:'12',homeColor:'#222222',awayColor:'#222222'});
+assert.equal(branded.home,'#fdb927');assert.equal(branded.away,'#1d428a');
+const comparison=view.teamStats({homeId:'13',awayId:'12',homeAbbr:'LAL',awayAbbr:'LAC',summary:{boxscore:{teams:[{team:{id:'13'},statistics:[{name:'assists',displayValue:'24'},{name:'steals',displayValue:'0'}]},{team:{id:'12'},statistics:[{name:'assists',displayValue:'18'},{name:'steals',displayValue:'4'}]}]}}},branded);
+assert(comparison.includes('nba-team-stat'));assert(comparison.includes('ASSISTS'));assert(comparison.includes('>0</b>'),'zero stats remain visible');
 console.log(`PASS: Villa ${villa.watchScore}, Spurs–Rockets ${spurs.watchScore}, Lakers–Clippers ${lakers.watchScore}; bounded moments, lead chart, full box score and six divisions`);

@@ -294,15 +294,7 @@ window.EPLData = (() => {
   }
 
   function nbaScore(game, summary) {
-    const plays=(summary.scoringPlays||summary.plays||[]).filter(play=>Number.isFinite(Number(play.homeScore))&&Number.isFinite(Number(play.awayScore)));
-    let leader=0,leadChanges=0,ties=0;
-    plays.forEach(play=>{const difference=Number(play.homeScore)-Number(play.awayScore),next=Math.sign(difference);if(next===0&&leader)ties++;if(next&&leader&&next!==leader)leadChanges++;if(next)leader=next});
-    const home=Number(game.homeScore||0),away=Number(game.awayScore||0),margin=Math.abs(home-away),total=home+away,overtime=/overtime|\bot\b/i.test(String(game.status||''))||plays.some(play=>Number(play.period?.number||play.period)>4);
-    const drama=Math.min(100,(margin<=3?42:margin<=8?28:margin<=14?16:5)+leadChanges*9+ties*4+(overtime?16:0));
-    const action=Math.min(100,total/2.4+plays.length*1.2);
-    const exceptional=Math.min(100,(overtime?24:0)+(total>=250?34:total>=230?22:total>=210?12:0)+leadChanges*4);
-    const context=Number.isFinite(game.contextScore)?game.contextScore:40;
-    return {watchScore:Math.round(drama*.4+action*.28+exceptional*.18+context*.14),drama:Math.round(drama),action:Math.round(action),exceptional:Math.round(exceptional),surpriseContext:Math.round(context),reasons:[margin<=3&&'One-possession finish',overtime&&'Overtime',leadChanges&&`${leadChanges} lead changes`,total>=230&&'High-scoring game'].filter(Boolean),nba:true};
+    return window.NBAInsights.score(game,summary);
   }
 
   function mlbScore(game, feed) {
@@ -470,9 +462,11 @@ window.EPLData = (() => {
         if (!substitutes.length && starters.length) { const starterIds = new Set(starters.map(entry => { const player = entry.athlete || entry; return String(player.id || player.uid || player.displayName || player.fullName); })); substitutes = players.filter(entry => { const player = entry.athlete || entry; return !starterIds.has(String(player.id || player.uid || player.displayName || player.fullName)); }); }
         return { ...roster, roster: players, starters, substitutes };
       });
-      game.events = plays.map(play => {
+      const eventPlays=game.sport==='basketball'?window.NBAInsights.timeline(summary).scores.map(item=>item.play):plays;
+      const participantNames=new Map(game.rosters.flatMap(roster=>roster.roster||[]).map(entry=>{const athlete=entry.athlete||entry;return [String(athlete.id),athlete.displayName||athlete.fullName||'']}));
+      game.events = eventPlays.map(play => {
         const text = clean(play.text || play.shortText || play.description), footballDetail=`${text} ${play.type?.text||''} ${play.scoringType?.name||''} ${play.scoringType?.displayName||''}`, soccerDetail=`${text} ${play.type?.text||''} ${play.type?.displayName||''}`, clock = String(play.clock?.displayValue || ''), participants = play.participants || [], minute = Number((clock || text).match(/\d+/)?.[0]), footballLabel = /touchdown/i.test(footballDetail) ? 'TOUCHDOWN' : /field.goal/i.test(footballDetail) ? 'FIELD GOAL' : /extra point|two.point/i.test(footballDetail) ? 'EXTRA POINT' : /safety/i.test(footballDetail) ? 'SAFETY' : game.sport==='basketball'?'BASKET':'SCORE', type = ['football','basketball'].includes(game.sport) ? 'score' : /goal/i.test(text) ? 'goal' : /red card/i.test(text) ? 'red' : /yellow card/i.test(text) ? 'yellow' : /penalty/i.test(text) ? 'penalty' : /substitution|replaces/i.test(text) ? 'sub' : /injur/i.test(text) ? 'injury' : 'other', isPenalty = game.sport === 'soccer' && /\bpenalty\b|\bpen\b|from the spot|spot kick/i.test(soccerDetail);
-        const participantName = participant => clean(participant?.athlete?.displayName || participant?.displayName);
+        const participantName = participant => clean(participant?.athlete?.displayName || participant?.displayName || participantNames.get(String(participant?.athlete?.id)));
         const participantRole = participant => String(participant?.role || participant?.type?.text || participant?.type?.displayName || participant?.type || '').toLowerCase();
         const canonical = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         const announcedAssist = clean(play.assist?.athlete?.displayName || play.assist?.displayName || (text.match(/assisted by\s+([^,.()]+?)(?:[,.]|$)/i) || [])[1]);

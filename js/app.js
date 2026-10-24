@@ -70,7 +70,7 @@ const standingEntries=payload=>{const collect=node=>[...(node?.standings?.entrie
 const standingRows=(payload,leagueId)=>standingEntries(payload).map(entry=>{
   const value=names=>standingStat(entry,names),rank=value(['leaguerank','rank','playoffseed','divisionrank']),wins=value(['wins']),draws=value(['ties','draws']),losses=value(['losses']);
   const gp=value(['gamesplayed','games','matchesplayed'])||((standingNumber(wins)??0)+(standingNumber(draws)??0)+(standingNumber(losses)??0));
-  return {id:String(entry.team?.id||''),name:entry.team?.displayName||entry.team?.name||'',abbr:entry.team?.abbreviation||entry.team?.shortDisplayName||entry.team?.displayName||'',logo:entry.team?.logos?.[0]?.href||entry.team?.logo||'',rank:standingNumber(rank),gp,wins,draws,losses,for:value(['pointsfor','goalsfor','goals']),against:value(['pointsagainst','goalsagainst','goalsconceded']),gd:value(['pointdifferential','goaldifference','differential']),points:value(['points','leaguepoints']),pct:value(['winpercent','winpercentage','winningpercentage','winpct','percentage']),gamesBack:value(['gamesbehind','gamesback','gb']),leagueId};
+  return {id:String(entry.team?.id||''),name:entry.team?.displayName||entry.team?.name||'',abbr:entry.team?.abbreviation||entry.team?.shortDisplayName||entry.team?.displayName||'',logo:entry.team?.logos?.[0]?.href||entry.team?.logo||'',rank:standingNumber(rank),gp,wins,draws,losses,for:value(['pointsfor','goalsfor','goals']),against:value(['pointsagainst','goalsagainst','goalsconceded']),gd:value(['pointdifferential','goaldifference','differential']),points:value(['points','leaguepoints']),pct:value(['winpercent','winpercentage','winningpercentage','winpct','percentage']),gamesBack:value(['gamesbehind','gamesback','gb']),leagueId,...(leagueId==='nba'?window.NBAInsights.division(entry.team?.id):{})};
 }).filter(row=>row.name).sort((left,right)=>(left.rank??999)-(right.rank??999)||(standingNumber(right.wins)??0)-(standingNumber(left.wins)??0));
 const mlbStandingRows=(payload,leagueId)=>{
   const seen=new Set();
@@ -755,13 +755,16 @@ incidentTimeline=function(game){
     const match=String(value||'').match(/^(\d+):(\d{2})$/);
     return match?Number(match[1])*60+Number(match[2]):-1;
   };
-  const events=(game.events||[]).filter(event=>['goal','score','red','yellow','penalty','sub','injury'].includes(event.type)).slice().sort((a,b)=>{
+  let events=(game.events||[]).filter(event=>['goal','score','red','yellow','penalty','sub','injury'].includes(event.type)).slice().sort((a,b)=>{
     if(!['football','basketball'].includes(game.sport))return (a.minute??999)-(b.minute??999);
     // NFL clocks count down within each quarter: Q1 15:00 comes before Q1 0:01.
     const period=(Number(a.period)||99)-(Number(b.period)||99);
     return period||footballClockSeconds(b.clock)-footballClockSeconds(a.clock);
   });
-  return events.map(event=>{
+  const nba=game.sport==='basketball';
+  if(nba)events=window.NBAInsights.moments(events);
+  const intro=nba?`<p class="nba-moments-intro">KEY MOMENTS · ${events.length} plays<br><small>Lead changes, late ties, close-game baskets and quarter finishes—not every possession.</small></p>`:'';
+  return intro+events.map(event=>{
     const isScore=event.type==='goal'||event.type==='score';
     if(isScore){
       if(Number.isFinite(event.homeScore)&&Number.isFinite(event.awayScore)){home=event.homeScore;away=event.awayScore}
@@ -1039,6 +1042,7 @@ function soccerFormationMarkup(game){
   return `<div class="soccer-lineup-view"><div class="soccer-pitch${eventMode?' soccer-pitch-events':''}" role="group" aria-label="Starting formations">${sideMarkup(ordered[0],'home')}<div class="soccer-halfway-line" aria-hidden="true"></div><div class="soccer-centre-circle" aria-hidden="true"></div>${sideMarkup(ordered[1],'away')}</div>${benches?.outerHTML||''}</div>`;
 }
 rosterMarkup=function(game,{spoiler=false}={}){
+  if(game.sport==='basketball'&&spoiler)return window.NBAView.boxScore(game,entry=>registerPlayerCard(game,entry));
   if(game.sport==='soccer')return soccerFormationMarkup(game);
   if(game.sport!=='baseball')return rosterMarkupWithSportTerms(game);
   const key=entry=>{const player=entry?.athlete||entry||{};return String(player.id||player.uid||player.displayName||player.fullName||'')};
@@ -1397,7 +1401,7 @@ const basketballScorecard=game=>{
   }
   if(!length)return '';
   const value=line=>line?.displayValue??line?.value??line?.score??'—',period=i=>i<4?'Q'+(i+1):i===4?'OT':(i-3)+'OT';
-  const row=(team,lines,name,total)=>'<tr><th scope="row" aria-label="'+safe(name)+'"><span class="sport-scorecard-identity">'+(team?.team?.logo?'<img src="'+safe(team.team.logo)+'" alt="">':'')+'</span></th>'+Array.from({length},(_,i)=>'<td>'+value(lines[i])+'</td>').join('')+'<td class="football-total">'+(total??'—')+'</td></tr>';
+  const row=(team,lines,name,total)=>{const logo=team?.team?.logo||team?.team?.logos?.[0]?.href||(name===game.home?game.homeLogo:game.awayLogo);return '<tr><th scope="row" aria-label="'+safe(name)+'"><span class="sport-scorecard-identity">'+(logo?'<img src="'+safe(logo)+'" alt="'+safe(name)+'">':'')+'</span></th>'+Array.from({length},(_,i)=>'<td>'+value(lines[i])+'</td>').join('')+'<td class="football-total">'+(total??'—')+'</td></tr>';};
   return '<section class="football-scorecard sport-scorecard basketball-scorecard" aria-label="Basketball score by period"><header><b>SCORING BY QUARTER</b><small>FINAL LINE</small></header><div class="sport-scorecard-scroll"><table class="football-linescore"><thead><tr><th scope="col">TEAM</th>'+Array.from({length},(_,i)=>'<th scope="col">'+period(i)+'</th>').join('')+'<th scope="col">T</th></tr></thead><tbody>'+row(away,awayLines,game.away,game.awayScore)+row(home,homeLines,game.home,game.homeScore)+'</tbody></table></div></section>';
 };
 const applyStatBadgeContrast=root=>root.querySelectorAll('.stat-lead:not([data-contrast])').forEach(badge=>{const hex=badge.style.getPropertyValue('--team').replace('#','');if(!/^[0-9a-f]{6}$/i.test(hex))return;const [r,g,b]=[0,2,4].map(index=>parseInt(hex.slice(index,index+2),16));const luminance=(.2126*r+.7152*g+.0722*b)/255;badge.style.setProperty('--team-ink',luminance>.6?'#11110f':'#f3efe5');badge.dataset.contrast='true'});
@@ -1582,6 +1586,11 @@ const leagueTableMarkup=game=>{
   const table=entries=>`<div class="league-table-scroll"><table><thead><tr><th>#</th><th>TEAM</th>${columns.map(([label])=>`<th>${label}</th>`).join('')}</tr></thead><tbody>${entries.map(row=>{const side=String(row.id)===String(game.homeId)||row.name===game.home?'home':String(row.id)===String(game.awayId)||row.name===game.away?'away':'';const colour=side==='home'?game.homeColor:game.awayColor;return `<tr class="${side?`is-${side}`:''}" ${side?`style="--table-team:${safe(colour)}"`:''}><td>${cell(row.rank)}</td><th scope="row">${row.logo?`<img src="${safe(row.logo)}" alt="">`:''}<span title="${safe(row.name)}">${safe(row.abbr)}</span></th>${columns.map(([,key])=>`<td>${key===finalColumn?`<b>${cell(row[key])}</b>`:cell(row[key])}</td>`).join('')}</tr>`}).join('')}</tbody></table></div>`;
   const divisional=['baseball','football','basketball'].includes(game.sport),teamDivisions=new Set(rows.filter(row=>String(row.id)===String(game.homeId)||String(row.id)===String(game.awayId)).map(row=>row.division).filter(Boolean));
   const groups=divisional?[...teamDivisions].map(division=>[division,rows.filter(row=>row.division===division)]).filter(([,entries])=>entries.length):[];
+  if(game.sport==='basketball'){
+    const nbaRows=rows.map(row=>({...row,...window.NBAInsights.division(row.id)}));
+    const ordered=entries=>{const sorted=entries.slice().sort((a,b)=>(standingNumber(b.pct)??0)-(standingNumber(a.pct)??0)||(standingNumber(b.wins)??0)-(standingNumber(a.wins)??0)),leader=sorted[0];return sorted.map((row,index)=>{const gb=((standingNumber(leader.wins)||0)-(standingNumber(row.wins)||0)+(standingNumber(row.losses)||0)-(standingNumber(leader.losses)||0))/2;return {...row,rank:index+1,gamesBack:gb===0?'—':gb};});};
+    return `<section class="league-table basketball-league-table"><header><b>NBA STANDINGS</b><small>MATCH TEAMS HIGHLIGHTED</small></header>${['Eastern Conference','Western Conference'].map(conference=>{const entries=nbaRows.filter(row=>row.conference===conference);if(!entries.length)return '';return `<section class="nba-conference"><h3>${safe(conference)}</h3><details class="nba-conference-overall"><summary>Conference table</summary>${table(ordered(entries))}</details>${[...new Set(entries.map(row=>row.division))].map(division=>`<section class="division-table"><b>${safe(division)} Division</b>${table(ordered(entries.filter(row=>row.division===division)))}</section>`).join('')}</section>`;}).join('')}</section>`;
+  }
   const body=groups.length?groups.map(([division,entries])=>`<section class="division-table"><b>${safe(division)}</b>${table(entries)}</section>`).join(''):table(rows);
   return `<section class="league-table ${safe(game.sport)}-league-table" aria-label="${safe(tableLeagueLabel(game))} league table"><header><b>${safe(tableLeagueLabel(game))} ${divisional?'DIVISION STANDINGS':'TABLE'}</b><small>THE TWO TEAMS ARE HIGHLIGHTED</small></header>${body}</section>`;
 };
@@ -1596,7 +1605,7 @@ const resultWorkspaceMarkup=(game,{includeScorecard=true}={})=>{
   const tab=tabs.includes(game.__resultTab)?game.__resultTab:'lineup';
   if(tab==='lineup')game.__lineupSpoilers=true;
   const scorecard=includeScorecard?(game.sport==='baseball'?baseballScorecard(game):game.sport==='football'?footballScorecard(game):game.sport==='basketball'?basketballScorecard(game):game.sport==='soccer'?soccerResultCard(game):''):'';
-  const stats=boxScoreMarkup(game)||'<p class="spoiler-empty">Official match statistics are not available for this game.</p>';
+  const stats=(game.sport==='basketball'?window.NBAView.leadChart(game,statColoursFor(game)):'')+(boxScoreMarkup(game)||'<p class="spoiler-empty">Official match statistics are not available for this game.</p>');
   const content=tab==='stats'?stats:tab==='moments'?`<div class="incident-list list-incidents">${incidentTimeline(game)}</div>`:tab==='summary'?matchSummaryMarkup(game):tab==='table'?leagueTableMarkup(game):tab==='form'?formMarkup(game):`<section class="spoiler-lineup spoiler-lineup-events" aria-label="Lineups with match events">${rosterMarkup(game,{spoiler:true})}</section>`;
   const button=name=>`<button type="button" role="tab" data-result-tab="${name}" aria-selected="${tab===name}" class="${tab===name?'active':''}">${name.toUpperCase()}</button>`;
   return `<section class="spoiler-workspace" aria-label="Spoiler match details">${scorecard}<div class="spoiler-tabs" style="--spoiler-tab-count:${tabs.length}" role="tablist" aria-label="Spoiler details">${tabs.map(button).join('')}</div><div class="spoiler-panel" role="tabpanel">${content}</div></section>`;

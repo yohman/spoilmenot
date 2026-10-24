@@ -1,0 +1,24 @@
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const root=path.join(__dirname,'..'),context={window:{}};vm.createContext(context);
+for(const file of ['nbaInsights','nbaView','watchScore'])vm.runInContext(fs.readFileSync(path.join(root,'js',file+'.js'),'utf8'),context);
+const {NBAInsights:nba,NBAView:view,WatchScore:watch}=context.window;
+// Retained official score snapshots: Oct 23 NBA and Oct 24 Villa–City.
+const fixtures=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/nba-upsets.json'),'utf8'));
+const summary=f=>({plays:f.scores.map(([homeScore,awayScore,q,clock],i)=>({homeScore,awayScore,period:{number:q},clock:{displayValue:clock},sequenceNumber:i}))});
+const game=f=>({homeScore:Number(f.teams.find(t=>t[1]==='home')[2]),awayScore:Number(f.teams.find(t=>t[1]==='away')[2])});
+const spurs=nba.score(game(fixtures.spurs),summary(fixtures.spurs)),lakers=nba.score(game(fixtures.lakers),summary(fixtures.lakers));
+assert(spurs.watchScore>=85&&spurs.watchScore<=92);assert(lakers.watchScore>=70&&lakers.watchScore<=78);assert(spurs.watchScore>lakers.watchScore);
+assert.equal(spurs.diagnostics.leadChanges,14);assert.equal(spurs.diagnostics.lateChanges,4);assert.equal(lakers.diagnostics.lateChanges,0);
+const dup=summary(fixtures.spurs);dup.plays=dup.plays.flatMap(p=>[p,{...p,sequenceNumber:p.sequenceNumber+.1}]);assert.equal(nba.score(game(fixtures.spurs),dup).watchScore,spurs.watchScore,'extra non-scoring events cannot boost the score');
+const events=spurs.diagnostics.scores.map(p=>({type:'score',homeScore:p.home,awayScore:p.away,period:p.play.period.number,clock:p.play.clock.displayValue}));
+assert(nba.moments(events).length<=18);assert.equal(nba.moments(events).at(-1).homeScore,110);
+const villa=watch.score({sport:'soccer',completed:true,homeId:'362',awayId:'382',homeScore:2,awayScore:1,events:[],summary:fixtures.villa});
+assert.equal(villa.watchScore,90);assert.equal(villa.diagnostics.upset.winnerRank,11);
+const chart=view.leadChart({id:'123',home:'Spurs',away:'Rockets',summary:summary(fixtures.spurs)},{home:'#123456',away:'#abcdef'});
+assert(chart.includes('clipPath'));assert(chart.includes('#b9c5cc'),'dark team colours use readable silver on the chart');assert(chart.includes('#abcdef'));assert(!chart.includes('NaN'));
+const labels=['MIN','PTS','REB','AST','FG','3PT','FT','TO','STL','BLK','OREB','DREB','PF','+/-'];
+const box=view.boxScore({summary:{boxscore:{players:[{team:{displayName:'Test'},statistics:[{labels,totals:labels.map(()=>0),athletes:[{athlete:{id:'1',displayName:'Starter'},starter:true,stats:['32','25','7','8','9-18']},{athlete:{id:'2',displayName:'Reserve'},stats:['10','6','2','1','2-3']},{athlete:{displayName:'Inactive'},didNotPlay:true}]}]}]}}},p=>p.athlete.id);
+for(const word of ['STARTERS','BENCH','DID NOT PLAY','FG%','TEAM TOTAL','25'])assert(box.includes(word));
+const ids=Array.from({length:30},(_,i)=>i+1);for(const id of ids)assert.notEqual(nba.division(id).division,'Other');
+assert.equal(new Set(ids.map(id=>nba.division(id).division)).size,6);
+console.log(`PASS: Villa ${villa.watchScore}, Spurs–Rockets ${spurs.watchScore}, Lakers–Clippers ${lakers.watchScore}; bounded moments, lead chart, full box score and six divisions`);

@@ -224,7 +224,9 @@ window.WatchScore = (() => {
   }
 
   function contextScore(game) {
-    const homeRank = Number(game.homeRank), awayRank = Number(game.awayRank);
+    const table=(game.summary?.standings?.groups||[]).flatMap(group=>group.standings?.entries||[]);
+    const tableRank=side=>{const index=table.findIndex(entry=>String(entry.id||entry.team?.id)===String(game[`${side}Id`]));return index>=0?index+1:NaN};
+    const homeRank = Number(game.homeRank)||tableRank('home'), awayRank = Number(game.awayRank)||tableRank('away');
     let value = null;
     if (Number.isFinite(homeRank) && Number.isFinite(awayRank)) {
       const winner = Number(game.homeScore) === Number(game.awayScore) ? null : Number(game.homeScore) > Number(game.awayScore) ? 'home' : 'away';
@@ -245,7 +247,16 @@ window.WatchScore = (() => {
   // supplies the surprise; the winning margin shows whether it was a narrow
   // accident or a genuinely memorable upset.
   function upsetScore(game) {
-    const homeRank = Number(game.homeRank), awayRank = Number(game.awayRank);
+    const table=(game.summary?.standings?.groups||[]).flatMap(group=>group.standings?.entries||[]);
+    const stat=(entry,name)=>Number(entry.stats?.find(item=>item.name===name)?.value);
+    const competitors=game.summary?.header?.competitions?.[0]?.competitors||[];
+    const recordFor=side=>String((competitors.find(team=>team.homeAway===side)?.record||[]).find(row=>row.type==='total')?.summary||'').split('-').map(Number);
+    // Undo this match in its retained table snapshot: an upset itself lifts
+    // the underdog's post-match rank, hiding how surprising the win was.
+    const snapshotIncludesResult=['home','away'].every(side=>{const entry=table.find(row=>String(row.id||row.team?.id)===String(game[`${side}Id`])),record=recordFor(side);return entry&&record.length===3&&record.every(Number.isFinite)&&stat(entry,'gamesPlayed')===record.reduce((a,b)=>a+b,0)});
+    const preTable=table.map(entry=>{const side=String(entry.id||entry.team?.id)===String(game.homeId)?'home':String(entry.id||entry.team?.id)===String(game.awayId)?'away':'';const diff=side==='home'?Number(game.homeScore)-Number(game.awayScore):Number(game.awayScore)-Number(game.homeScore);return {entry,points:stat(entry,'points')-(snapshotIncludesResult&&side?(diff>0?3:diff===0?1:0):0),gd:stat(entry,'pointDifferential')-(snapshotIncludesResult&&side?diff:0)};}).sort((a,b)=>b.points-a.points||b.gd-a.gd);
+    const rank=side=>{const index=preTable.findIndex(({entry})=>String(entry.id||entry.team?.id)===String(game[`${side}Id`]));return index>=0?index+1:Number(game[`${side}Rank`])};
+    const homeRank=rank('home'),awayRank=rank('away');
     const homeScore = Number(game.homeScore), awayScore = Number(game.awayScore);
     if (![homeScore, awayScore].every(Number.isFinite) || homeScore === awayScore) return null;
     const winner = homeScore > awayScore ? 'home' : 'away', winnerRank = winner === 'home' ? homeRank : awayRank;
@@ -258,9 +269,17 @@ window.WatchScore = (() => {
       const gulf = saturate(rankGap, 7) * 0.18;
       tableScore = 58 + eliteFavourite + gulf + decisive;
     }
+    const loserSide=winner==='home'?'away':'home';
+    const loser=(game.summary?.header?.competitions?.[0]?.competitors||[]).find(team=>team.homeAway===loserSide);
+    const record=(loser?.record||loser?.records||[]).find(row=>row.type==='total')?.summary;
+    const recordParts=String(record||'').split('-').map(Number);
+    // The match-summary record includes this result: remove this loss only
+    // from that match-specific snapshot, never from today's live standings.
+    const previouslyUnbeaten=recordParts.length===3&&recordParts.every(Number.isFinite)&&recordParts[2]===1&&recordParts.reduce((a,b)=>a+b,0)>=6;
+    if(loserRank===1&&winnerRank>=11&&rankGap>=8)tableScore=Math.max(tableScore||0,87+(previouslyUnbeaten?3:0)+Math.min(3,decisive));
     // Post-match tables can erase the pre-match gulf. ESPN's retained opening
     // odds tell us which side was actually expected to win at kickoff.
-    const market = game.summary?.pickcenter?.[0], winnerOdds = market?.[`${winner}TeamOdds`], loserSide = winner === 'home' ? 'away' : 'home', loserOdds = market?.[`${loserSide}TeamOdds`];
+    const market = game.summary?.pickcenter?.[0], winnerOdds = market?.[`${winner}TeamOdds`], loserOdds = market?.[`${loserSide}TeamOdds`];
     let marketScore = null;
     if (winnerOdds?.underdog === true && loserOdds?.favorite === true) {
       const line = Math.abs(Number(loserOdds.moneyLine));
@@ -268,7 +287,7 @@ window.WatchScore = (() => {
       marketScore = 72 + decisive + favouriteStrength;
     }
     const score = Math.max(tableScore || 0, marketScore || 0);
-    return score ? { score: clamp(score, 0, 88), winner, winnerRank, loserRank, rankGap, margin, marketUpset: marketScore !== null } : null;
+    return score ? { score: clamp(score, 0, 94), winner, winnerRank, loserRank, rankGap, margin, previouslyUnbeaten, marketUpset: marketScore !== null } : null;
   }
 
   // Some fixtures carry their own stakes before a ball is kicked. Keep this

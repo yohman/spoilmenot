@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-10-23T19:17:28.008Z",
+  "generatedAt": "2026-10-24T00:47:29.780Z",
   "highlights": {
     "mlb:824785": {
       "url": "https://www.youtube.com/watch?v=fhR5bTBWZw0",
@@ -82,6 +82,15 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-10-23T00:00:00.000Z",
       "discoveredAt": "2026-10-23T19:17:28.008Z"
+    },
+    "nfl:401873008": {
+      "url": "https://www.youtube.com/watch?v=EM4Bq_uqLQ0",
+      "title": "Washington Commanders vs San Francisco 49ers Game Highlights | 2026 NFL Season Week 6",
+      "durationSeconds": 1095,
+      "source": "NFL",
+      "sourceTier": "official",
+      "publishedAt": "2026-10-20T00:00:00.000Z",
+      "discoveredAt": "2026-10-24T00:47:29.780Z"
     }
   }
 };

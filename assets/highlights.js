@@ -1,43 +1,7 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-10-24T00:47:29.780Z",
+  "generatedAt": "2026-10-25T18:54:22.199Z",
   "highlights": {
-    "mlb:824785": {
-      "url": "https://www.youtube.com/watch?v=fhR5bTBWZw0",
-      "title": "BLUE JAYS vs. ORIOLES: Official Full Game 1 Highlights (September 23) | 2026 MLB Season",
-      "durationSeconds": 773,
-      "source": "MLB",
-      "sourceTier": "official",
-      "publishedAt": "2026-09-23T00:00:00.000Z",
-      "discoveredAt": "2026-09-24T03:16:51.750Z"
-    },
-    "mlb:824383": {
-      "url": "https://www.youtube.com/watch?v=WwZksX__bJA",
-      "title": "ATHLETICS vs. GUARDIANS: Official Full Game Highlights (September 18) | 2026 MLB Season",
-      "durationSeconds": 687,
-      "source": "MLB",
-      "sourceTier": "official",
-      "publishedAt": "2026-09-19T00:00:00.000Z",
-      "discoveredAt": "2026-09-24T03:16:51.750Z"
-    },
-    "mlb:822845": {
-      "url": "https://www.youtube.com/watch?v=edIhI4EIC1M",
-      "title": "RED SOX vs. RANGERS: Official Full Game Highlights (September 17) | 2026 MLB Season",
-      "durationSeconds": 707,
-      "source": "MLB",
-      "sourceTier": "official",
-      "publishedAt": "2026-09-18T00:00:00.000Z",
-      "discoveredAt": "2026-09-24T13:44:34.328Z"
-    },
-    "mlb:824304": {
-      "url": "https://www.youtube.com/watch?v=1YzG2hf3WbI",
-      "title": "Mariners vs. Rockies Full Game Highlights (9/20/26)",
-      "durationSeconds": 683,
-      "source": "Seattle Mariners",
-      "sourceTier": "verified",
-      "publishedAt": "2026-09-20T00:00:00.000Z",
-      "discoveredAt": "2026-09-24T21:13:21.209Z"
-    },
     "nfl:401872941": {
       "url": "https://www.youtube.com/watch?v=cyk5Vci3k-c",
       "title": "Las Vegas Raiders vs Los Angeles Chargers Game Highlights | 2026 NFL Season Week 2",
@@ -91,6 +55,15 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-10-20T00:00:00.000Z",
       "discoveredAt": "2026-10-24T00:47:29.780Z"
+    },
+    "nfl:401873004": {
+      "url": "https://www.youtube.com/watch?v=kXX4xq2el10",
+      "title": "Arizona Cardinals vs. Los Angeles Rams Game Highlights | NFL 2026 Season Week 6",
+      "durationSeconds": 1010,
+      "source": "NFL",
+      "sourceTier": "official",
+      "publishedAt": "2026-10-18T00:00:00.000Z",
+      "discoveredAt": "2026-10-25T18:54:22.199Z"
     }
   }
 };

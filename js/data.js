@@ -110,7 +110,10 @@ window.EPLData = (() => {
     end.setDate(now.getDate() + 7);
     return { startDate: formatMlbDate(start), endDate: formatMlbDate(end) };
   };
-  const isLiveStatus = status => { const type = status?.type || status || {}, name = String(type.name || status?.name || ''); return type.state === 'in' || status?.state === 'in' || /^STATUS_(?:FIRST|SECOND|HALF|EXTRA|IN_PROGRESS)/.test(name); };
+  const isCompletedStatus=status=>{const type=status?.type||status||{};return type.completed===true||(type.state==='post'&&!/POSTPON|CANCEL|ABANDON|SUSPEND/i.test(String(type.name||'')))};
+  const isLiveStatus = status => { const type = status?.type || status || {}, name = String(type.name || status?.name || ''); if(isCompletedStatus(status)||/^STATUS_(?:CANCELED|CANCELLED|POSTPONED)/.test(name))return false;return type.state === 'in' || status?.state === 'in' || /^STATUS_(?:FIRST|SECOND|HALF|EXTRA|IN_PROGRESS)/.test(name); };
+  const statusPriority=status=>isCompletedStatus(status)?2:isLiveStatus(status)?1:0;
+  const mergeFixtureEvents=events=>{const result=new Map();events.forEach(event=>{const prior=result.get(String(event.id)),status=event.competitions?.[0]?.status||event.status,previous=prior?.competitions?.[0]?.status||prior?.status;if(!prior||statusPriority(status)>=statusPriority(previous))result.set(String(event.id),event)});return [...result.values()]};
   const fixtureDay = value => { const date = new Date(value); return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()); };
   const eplRoundLookup = fixtures => {
     const ordered = fixtures.slice().sort((left, right) => new Date(left.date) - new Date(right.date)), opener = ordered[0] ? fixtureDay(ordered[0].date) : null, lookup = new Map();
@@ -158,7 +161,8 @@ window.EPLData = (() => {
   function normalize(event, league = LEAGUES[activeLeague], source = null) {
     const competition = event.competitions?.[0], teams = competition?.competitors || [], home = teams.find(team => team.homeAway === 'home'), away = teams.find(team => team.homeAway === 'away');
     if (!home || !away) return null;
-    const completed = event.status?.type?.completed === true, live = isLiveStatus(event.status), scored = completed || live;
+    const status=competition.status||event.status;
+    const completed = isCompletedStatus(status), live = !completed&&isLiveStatus(status), scored = completed || live;
     return { id: event.id, sport: league.sport, leagueId: league.id, league: league.name, leagueLogo: league.logo, espnLeague: source?.slug || league.slug, feedGroup: source ? 'international' : league.id, competition: source?.competition || '', competitionLabel: source?.label || '', time: new Date(event.date), home: clean(home.team.displayName), away: clean(away.team.displayName), homeId: String(home.team.id || ''), awayId: String(away.team.id || ''), homeAbbr: home.team.abbreviation, awayAbbr: away.team.abbreviation, homeLogo: home.team.logo || home.team.logos?.[0]?.href || '', awayLogo: away.team.logo || away.team.logos?.[0]?.href || '', homeColor: color(home.team), awayColor: color(away.team), homeAlternateColor: color(home.team, true), awayAlternateColor: color(away.team, true), homeScore: scored ? Number(home.score) : null, awayScore: scored ? Number(away.score) : null, completed, live, venue: clean(competition.venue?.fullName), status: event.status?.type?.detail || '', events: [], raw: event };
   }
 
@@ -200,7 +204,7 @@ window.EPLData = (() => {
       try { payloads.push(await request.value.json()); } catch (_) {}
     }
     if (!payloads.length) throw Error(`${league.name} fixtures are unavailable (${statuses[0] || 'network'}).`);
-    const events = [...new Map(payloads.flatMap(payload => payload.events || []).map(event => [String(event.id), event])).values()];
+    const events = mergeFixtureEvents(payloads.flatMap(payload => payload.events || []));
     return { events, payloads };
   }
 
@@ -209,7 +213,7 @@ window.EPLData = (() => {
       fetchSoccerFixtures(league, soccerSeasonMonths(league)),
       fetchSoccerFixtures(league, soccerFixtureDates(league))
     ]);
-    const events = [...new Map([...history.events, ...nearby.events].map(event => [String(event.id), event])).values()];
+    const events = mergeFixtureEvents([...history.events, ...nearby.events]);
     return { events, payloads: [...history.payloads, ...nearby.payloads] };
   }
 
@@ -449,7 +453,7 @@ window.EPLData = (() => {
     try {
       const league = LEAGUES[game.leagueId || activeLeague], provider = game.espnLeague ? { ...league, slug: game.espnLeague } : league, response = await fetch(`${espnBase(provider)}/summary?event=${game.id}`); if (!response.ok) return game;
       const summary = await response.json(), plays = summary.scoringPlays || summary.keyEvents || summary.plays || [], competition = summary.header?.competitions?.[0], status = competition?.status || summary.header?.status;
-      if (status) { game.status = status.type?.detail || status.displayClock || game.status; game.completed = status.type?.completed === true; game.live = isLiveStatus(status); }
+      if (status&&statusPriority(status)>=(game.completed?2:game.live?1:0)) { game.status = status.type?.detail || status.displayClock || game.status; game.completed = isCompletedStatus(status); game.live = !game.completed&&isLiveStatus(status); }
       (competition?.competitors || []).forEach(team => { if (team.homeAway === 'home' && team.score != null) game.homeScore = Number(team.score); if (team.homeAway === 'away' && team.score != null) game.awayScore = Number(team.score); });
       game.summary = summary; game.injuries = summary.injuries || [];
       const providerRosters = summary.rosters?.length ? summary.rosters : (summary.boxscore?.players || []);

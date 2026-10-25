@@ -1408,14 +1408,23 @@ const basketballScorecard=game=>{
 };
 const applyStatBadgeContrast=root=>root.querySelectorAll('.stat-lead:not([data-contrast])').forEach(badge=>{const hex=badge.style.getPropertyValue('--team').replace('#','');if(!/^[0-9a-f]{6}$/i.test(hex))return;const [r,g,b]=[0,2,4].map(index=>parseInt(hex.slice(index,index+2),16));const luminance=(.2126*r+.7152*g+.0722*b)/255;badge.style.setProperty('--team-ink',luminance>.6?'#11110f':'#f3efe5');badge.dataset.contrast='true'});
 new MutationObserver(()=>{applyStatBadgeContrast(listShell);applyStatBadgeContrast(info)}).observe(document.body,{childList:true,subtree:true});
-const stampCountdown=game=>{const minutes=Math.max(0,Math.round((game.time-Date.now())/60000));if(minutes<60)return `${Math.max(1,minutes)}m`;if(minutes<1440)return `${Math.ceil(minutes/60)}h`;return `${Math.ceil(minutes/1440)}d`};
-const updateRecentPastIndicators=()=>listShell.querySelectorAll('[data-game]').forEach(card=>{const game=games.find(item=>item.id===card.dataset.game),age=game?Date.now()-game.time:Infinity;card.classList.toggle('recent-past',!!game?.completed&&age>=0&&age<24*60*60*1000)});
+const fixtureState=(game,now=Date.now())=>game.completed?'past':game.live?'live':Number(game.time)<=now?'pending':'future';
+const pendingStatus=game=>/postpon|cancel|delay|suspend|abandon/i.test(String(game.status||''))?String(game.status).toUpperCase():'AWAITING UPDATE';
+const stampCountdown=game=>{const minutes=Math.ceil((game.time-Date.now())/60000);if(minutes<=0)return '';if(minutes<60)return `${minutes}m`;if(minutes<1440)return `${Math.ceil(minutes/60)}h`;return `${Math.ceil(minutes/1440)}d`};
+const updateRecentPastIndicators=()=>listShell.querySelectorAll('[data-game]').forEach(card=>{const game=games.find(item=>item.id===card.dataset.game),age=game?Date.now()-game.time:Infinity;card.classList.toggle('recent-past',!!game?.completed&&!game.live&&age>=0&&age<24*60*60*1000)});
 updateRecentPastIndicators();
 new MutationObserver(updateRecentPastIndicators).observe(listShell,{childList:true,subtree:true});
-new MutationObserver(()=>listShell.querySelectorAll('[data-game]').forEach(card=>{const game=games.find(item=>item.id===card.dataset.game),stamp=card.querySelector(':scope > strong');if(!game||!stamp)return;card.tabIndex=0;stamp.classList.add('match-stamp');const league=stamp.querySelector('.stamp-league')?.outerHTML||'';if(game.live){stamp.classList.add('live');stamp.dataset.label='';const label=`<span class="live-stamp-label">LIVE</span>${league}`;if(stamp.innerHTML!==label)stamp.innerHTML=label}else if(game.completed){stamp.classList.add('past');stamp.dataset.label='';const meta=card.querySelector('.list-meta small'),markup=cardDateMarkup(game.time);if(meta&&meta.innerHTML!==markup)meta.innerHTML=markup}else{stamp.classList.add('future');stamp.dataset.label='';const label=`<i>IN</i><b>${stampCountdown(game)}</b>${league}`;if(stamp.innerHTML!==label)stamp.innerHTML=label;const meta=card.querySelector('.list-meta small'),markup=cardDateMarkup(game.time);if(meta&&meta.innerHTML!==markup)meta.innerHTML=markup}})).observe(listShell,{childList:true,subtree:true});
+new MutationObserver(()=>listShell.querySelectorAll('[data-game]').forEach(card=>{const game=games.find(item=>item.id===card.dataset.game),stamp=card.querySelector(':scope > strong');if(!game||!stamp)return;card.tabIndex=0;stamp.classList.add('match-stamp');const state=fixtureState(game),league=stamp.querySelector('.stamp-league')?.outerHTML||'';['live','past','future','pending'].forEach(name=>stamp.classList.toggle(name,name===state));stamp.dataset.label='';if(state==='live'||state==='pending'){const label=state==='live'?`<span class="live-stamp-label">LIVE</span>${league}`:`<span class="pending-stamp-label">STATUS<br>PENDING</span>${league}`;if(stamp.innerHTML!==label)stamp.innerHTML=label}else if(state==='future'){const label=`<i>IN</i><b>${stampCountdown(game)}</b>${league}`;if(stamp.innerHTML!==label)stamp.innerHTML=label}const meta=card.querySelector('.list-meta small'),markup=cardDateMarkup(game.time);if(meta&&meta.innerHTML!==markup)meta.innerHTML=markup})).observe(listShell,{childList:true,subtree:true});
+const syncFixtureGroups=()=>{
+ const cards=[...listShell.querySelectorAll('[data-game]')];
+ if(!cards.some(card=>{const game=games.find(item=>String(item.id)===String(card.dataset.game));return game&&card.dataset.fixtureState!==fixtureState(game)}))return;
+ const anchor=cardAnchor(cards.find(card=>card.getBoundingClientRect().bottom>150));
+ renderAtCardAnchor(anchor);
+};
 const refreshTimeUI=async()=>{
   if(plot){plot.now=new Date();plot.render()}
   await EPLData.refresh(games);
+  syncFixtureGroups();
   const refreshable=lineupCandidates(games);
   let lineupCursor=0;
   await Promise.all(Array.from({length:Math.min(3,refreshable.length)},async()=>{while(lineupCursor<refreshable.length){const game=refreshable[lineupCursor++];await EPLData.enrich(game,{refresh:true,lineup:true});decorateCards();if(game.__showLineup)paintScheduleLineupAtGame(game,{refreshContent:true})}}));
@@ -1423,6 +1432,7 @@ const refreshTimeUI=async()=>{
   decorateCards();
   listShell.querySelectorAll('[data-game]').forEach(card=>{const game=games.find(item=>item.id===card.dataset.game),relative=card.querySelector('.list-meta>b');if(game&&relative)relative.textContent=game.live?'IN PROGRESS':timeAway(game)});
   updateRecentPastIndicators();
+  syncFixtureGroups();
   plot?.render();
 };
 window.setInterval(()=>{if(!matchRouteId)refreshTimeUI()},60*1000);
@@ -1430,7 +1440,7 @@ const INITIAL_LIST_SIDE_LIMIT=30,LIST_PAGE_SIZE=40;
 let listPastLimit=INITIAL_LIST_SIDE_LIMIT,listFutureLimit=INITIAL_LIST_SIDE_LIMIT;
 renderList=function(){
   if(!games.length)return;
-  const visible=games.filter(game=>gameIsSelected(game)&&(activeLeague!=='international'||internationalCompetition==='all'||game.competition===internationalCompetition)).sort((a,b)=>a.time-b.time),now=Date.now(),allPast=visible.filter(game=>!game.live&&game.time<now),live=visible.filter(game=>game.live),allFuture=visible.filter(game=>!game.live&&game.time>=now),past=allPast.slice(-listPastLimit),future=allFuture.slice(0,listFutureLimit);
+  const visible=games.filter(game=>gameIsSelected(game)&&(activeLeague!=='international'||internationalCompetition==='all'||game.competition===internationalCompetition)).sort((a,b)=>a.time-b.time),now=Date.now(),allPast=visible.filter(game=>fixtureState(game,now)==='past'),live=visible.filter(game=>['live','pending'].includes(fixtureState(game,now))),allFuture=visible.filter(game=>fixtureState(game,now)==='future'),past=allPast.slice(-listPastLimit),future=allFuture.slice(0,listFutureLimit);
   const dateRows=items=>{let last='';return items.map(game=>{const day=game.time.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}),heading=day===last?'':`<h2 class="list-date">${day}</h2>`;last=day;return heading+listRow(game)}).join('')};
   const pastMarker='<div class="list-now live-divider-past" id="list-now"><span>PAST MATCHES <b>↑</b></span></div>',futureMarker='<div class="list-now live-divider-future"><span><b>↓</b> UPCOMING MATCHES</span></div>';
   const hasHiddenFuture=!future.length&&games.some(game=>!game.live&&game.time>=now);
@@ -1495,7 +1505,7 @@ listRow=function(game){
   const revealed=game.completed&&game.__mwRevealed&&Number.isFinite(meterScore);
   const calculating=game.completed&&game.__watchCalculating;
   const stamp=game.live?'<span class="live-stamp-label">LIVE</span>':game.completed?(revealed?String(Math.round(meterScore)):calculating?'<span class="score-pending" role="status" aria-label="Calculating Spoil Meter"><i class="score-spinner" aria-hidden="true"></i><em>···</em></span>':'?'):'';
-  const state=game.live?'live':game.completed?'past':'future';
+  const state=fixtureState(game);
   const scoreMessage='';
   const team=(side,name,logo)=>`<span class="${side}-team"><img src="${logo||''}" alt=""><b class="team-name" title="${name}">${name}</b></span>`;
   const anticipation=game.anticipationBreakdown||{};
@@ -1709,7 +1719,7 @@ listRow=function(game){
   const revealed=game.completed&&game.__mwRevealed&&Number.isFinite(meterScore);
   const calculating=game.completed&&game.__watchCalculating;
   const stamp=game.live?'<span class="live-stamp-label">LIVE</span>':game.completed?(revealed?String(Math.round(meterScore)):calculating?'<span class="score-pending" role="status" aria-label="Calculating Spoil Meter"><i class="score-spinner" aria-hidden="true"></i><em>···</em></span>':'?'):'';
-  const state=game.live?'live':game.completed?'past':'future';
+  const state=fixtureState(game);
   const scoreMessage='';
   const team=(side,name,logo)=>`<span class="${side}-team"><img src="${logo||''}" alt=""><b class="team-name" title="${name}">${name}</b></span>`;
   const anticipation=game.anticipationBreakdown||{};
@@ -1721,12 +1731,12 @@ listRow=function(game){
   const round=eplMatchday(game);
   const matchday=game.leagueId==='epl'&&Number.isFinite(round)?`<small class="card-matchday">MATCHDAY ${round}</small>`:game.competitionLabel?`<small class="card-matchday competition-label">${game.competitionLabel}</small>`:'';
   const formShown=!!game.__showForm||futureFormSpoilers.has(String(game.id));
-  const formToggle=!game.completed&&!game.live&&game.competition!=='friendly'?`<button class="form-spoiler-toggle" type="button" data-form-spoilers aria-pressed="${formShown}" aria-label="Show standings">SHOW STANDINGS</button>`:'';
+  const formToggle=state==='future'&&game.competition!=='friendly'?`<button class="form-spoiler-toggle" type="button" data-form-spoilers aria-pressed="${formShown}" aria-label="Show standings">SHOW STANDINGS</button>`:'';
   const liveInfoAction=game.live?`<button class="schedule-card-info" type="button" data-live-info aria-expanded="${!!game.__showLiveInfo}">MATCH INFO</button>`:'';
   const highlightsAction=game.completed?highlightMarkup(game):'';
   const actions=[formToggle,liveInfoAction,lineupAction,squadAction,highlightsAction].filter(Boolean).join('');
-  const kickoff=`<div class="card-kickoff"><b>${game.live?'IN PROGRESS':timeAway(game)}</b><small class="match-datetime">${cardDateMarkup(game.time)}</small>${matchday}${actions?`<div class="card-kickoff-actions">${actions}</div>`:''}</div>`;
-  return `<article class="list-game ${state} ${game.completed?'match-page-link':''} ${game.sport==='football'?'football-game':''} ${formShown?'form-spoilers':''} ${calculating?'score-calculating':''}" data-game="${game.id}"><strong aria-hidden="${game.completed?'false':'true'}">${stamp}${leagueStamp}</strong><div class="list-content"><div class="list-teams">${team('home',game.home,game.homeLogo)}${kickoff}${team('away',game.away,game.awayLogo)}</div>${preview}${details}</div><div class="list-meta"></div></article>`;
+  const kickoff=`<div class="card-kickoff"><b>${state==='pending'?pendingStatus(game):state==='live'?'IN PROGRESS':timeAway(game)}</b><small class="match-datetime">${cardDateMarkup(game.time)}</small>${matchday}${actions?`<div class="card-kickoff-actions">${actions}</div>`:''}</div>`;
+  return `<article class="list-game ${state} ${game.completed?'match-page-link':''} ${game.sport==='football'?'football-game':''} ${formShown&&state==='future'?'form-spoilers':''} ${calculating?'score-calculating':''}" data-game="${game.id}" data-fixture-state="${state}"><strong aria-hidden="${game.completed?'false':'true'}">${stamp}${leagueStamp}</strong><div class="list-content"><div class="list-teams">${team('home',game.home,game.homeLogo)}${kickoff}${team('away',game.away,game.awayLogo)}</div>${preview}${details}</div><div class="list-meta"></div></article>`;
 };
 const hasSpoilerFreeLineup=game=>Array.isArray(game?.rosters)&&game.rosters.some(roster=>rosterEntries(roster).length);
 const hasInternationalSquads=game=>Array.isArray(game?._internationalSquads)&&game._internationalSquads.some(roster=>rosterEntries(roster).length);

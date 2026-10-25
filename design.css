@@ -11,6 +11,10 @@
   --ui-ink: #172016;
   --ui-rule: rgba(226,239,222,.07);
 }
+.pending-stamp-label { display:block!important; font:600 8px/1.4 'DM Mono',monospace!important; letter-spacing:.04em!important; color:var(--ui-muted)!important; }
+.list-game.pending>.match-stamp { background:var(--ui-raised)!important; }
+.list-game.pending .card-kickoff>b { color:var(--ui-muted)!important; }
+.list-game:is(.live,.pending) .card-kickoff>b::after { content:none!important; }
 body, #app { background: var(--ui-canvas) !important; color: var(--ui-text); }
 button, a, [role="button"] { -webkit-tap-highlight-color: transparent; }
 /* Focus is intentional and highly visible; decorative outlines are not. */

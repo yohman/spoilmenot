@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-10-28T07:31:47.160Z",
+  "generatedAt": "2026-10-28T14:23:44.191Z",
   "highlights": {
     "mlb:822841": {
       "url": "https://www.youtube.com/watch?v=4pD9u-ZDeIQ",
@@ -55,6 +55,24 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-10-25T00:00:00.000Z",
       "discoveredAt": "2026-10-28T07:31:47.160Z"
+    },
+    "nfl:401873009": {
+      "url": "https://www.youtube.com/watch?v=6Hdk00wyWZk",
+      "title": "Dallas Cowboys vs Philadelphia Eagles Game Highlights | 2026 NFL Season Week 7",
+      "durationSeconds": 851,
+      "source": "NFL",
+      "sourceTier": "official",
+      "publishedAt": "2026-10-27T00:00:00.000Z",
+      "discoveredAt": "2026-10-28T14:23:44.191Z"
+    },
+    "nfl:401873020": {
+      "url": "https://www.youtube.com/watch?v=r3NBIs-ABLA",
+      "title": "Green Bay Packers vs Detroit Lions Game Highlights | 2026 NFL Season Week 7",
+      "durationSeconds": 913,
+      "source": "NFL",
+      "sourceTier": "official",
+      "publishedAt": "2026-10-25T00:00:00.000Z",
+      "discoveredAt": "2026-10-28T14:23:44.191Z"
     }
   }
 };

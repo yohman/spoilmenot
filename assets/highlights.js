@@ -1,25 +1,7 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-10-25T18:54:22.199Z",
+  "generatedAt": "2026-10-28T07:31:47.160Z",
   "highlights": {
-    "nfl:401872941": {
-      "url": "https://www.youtube.com/watch?v=cyk5Vci3k-c",
-      "title": "Las Vegas Raiders vs Los Angeles Chargers Game Highlights | 2026 NFL Season Week 2",
-      "durationSeconds": 835,
-      "source": "NFL",
-      "sourceTier": "official",
-      "publishedAt": "2026-09-20T00:00:00.000Z",
-      "discoveredAt": "2026-09-26T06:58:30.997Z"
-    },
-    "nfl:401872934": {
-      "url": "https://www.youtube.com/watch?v=Bi13ofXC0xY",
-      "title": "Cincinnati Bengals vs Houston Texans Game Highlights | 2026 NFL Season Week 2",
-      "durationSeconds": 955,
-      "source": "NFL",
-      "sourceTier": "official",
-      "publishedAt": "2026-09-20T00:00:00.000Z",
-      "discoveredAt": "2026-09-27T19:01:56.763Z"
-    },
     "mlb:822841": {
       "url": "https://www.youtube.com/watch?v=4pD9u-ZDeIQ",
       "title": "METS vs. RANGERS: Official Full Game Highlights (September 23) | 2026 MLB Season",
@@ -64,6 +46,15 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-10-18T00:00:00.000Z",
       "discoveredAt": "2026-10-25T18:54:22.199Z"
+    },
+    "mlb:849802": {
+      "url": "https://www.youtube.com/watch?v=UmfmgsZBw2w",
+      "title": "RAYS vs. BREWERS: World Series Full Game 2 Highlights (October 24) | 2026 MLB Postseason",
+      "durationSeconds": 1603,
+      "source": "MLB",
+      "sourceTier": "official",
+      "publishedAt": "2026-10-25T00:00:00.000Z",
+      "discoveredAt": "2026-10-28T07:31:47.160Z"
     }
   }
 };

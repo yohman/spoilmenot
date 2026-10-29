@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-10-29T15:50:07.579Z",
+  "generatedAt": "2026-10-29T20:41:10.276Z",
   "highlights": {
     "nfl:401873001": {
       "url": "https://www.youtube.com/watch?v=Urfce838vEc",
@@ -64,6 +64,15 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-10-24T00:00:00.000Z",
       "discoveredAt": "2026-10-29T15:50:07.579Z"
+    },
+    "nba:401909882": {
+      "url": "https://www.youtube.com/watch?v=xWJfcKNc3AE",
+      "title": "WIZARDS at CAVALIERS | FULL GAME HIGHLIGHTS | October 28, 2026",
+      "durationSeconds": 1008,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-10-29T00:00:00.000Z",
+      "discoveredAt": "2026-10-29T20:41:10.276Z"
     }
   }
 };

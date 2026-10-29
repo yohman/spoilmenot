@@ -1,25 +1,7 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-10-28T14:23:44.191Z",
+  "generatedAt": "2026-10-29T15:50:07.579Z",
   "highlights": {
-    "mlb:822841": {
-      "url": "https://www.youtube.com/watch?v=4pD9u-ZDeIQ",
-      "title": "METS vs. RANGERS: Official Full Game Highlights (September 23) | 2026 MLB Season",
-      "durationSeconds": 691,
-      "source": "MLB",
-      "sourceTier": "official",
-      "publishedAt": "2026-09-24T00:00:00.000Z",
-      "discoveredAt": "2026-09-28T23:52:41.261Z"
-    },
-    "mlb:824703": {
-      "url": "https://www.youtube.com/watch?v=H2vECsppprA",
-      "title": "CUBS vs. RED SOX: Official Full Game 1 Highlights (September 25) | 2026 MLB Season",
-      "durationSeconds": 667,
-      "source": "MLB",
-      "sourceTier": "official",
-      "publishedAt": "2026-09-25T00:00:00.000Z",
-      "discoveredAt": "2026-09-29T09:06:42.646Z"
-    },
     "nfl:401873001": {
       "url": "https://www.youtube.com/watch?v=Urfce838vEc",
       "title": "New England Patriots vs Chicago Bears Game Highlights | 2026 NFL Season Week 7",
@@ -73,6 +55,15 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-10-25T00:00:00.000Z",
       "discoveredAt": "2026-10-28T14:23:44.191Z"
+    },
+    "nba:401909095": {
+      "url": "https://www.youtube.com/watch?v=9n0WtH6pzGc",
+      "title": "KNICKS at CELTICS | FULL GAME HIGHLIGHTS | October 23, 2026",
+      "durationSeconds": 936,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-10-24T00:00:00.000Z",
+      "discoveredAt": "2026-10-29T15:50:07.579Z"
     }
   }
 };

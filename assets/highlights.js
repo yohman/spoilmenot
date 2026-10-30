@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-10-29T20:41:10.276Z",
+  "generatedAt": "2026-10-30T12:42:38.684Z",
   "highlights": {
     "nfl:401873001": {
       "url": "https://www.youtube.com/watch?v=Urfce838vEc",
@@ -73,6 +73,15 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-10-29T00:00:00.000Z",
       "discoveredAt": "2026-10-29T20:41:10.276Z"
+    },
+    "nba:401909885": {
+      "url": "https://www.youtube.com/watch?v=wkvPTR2m7Is",
+      "title": "MAGIC at RAPTORS | FULL GAME HIGHLIGHTS | October 28, 2026",
+      "durationSeconds": 913,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-10-29T00:00:00.000Z",
+      "discoveredAt": "2026-10-30T12:42:38.684Z"
     }
   }
 };

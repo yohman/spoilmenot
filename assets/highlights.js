@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-10-30T12:42:38.684Z",
+  "generatedAt": "2026-11-01T00:02:25.635Z",
   "highlights": {
     "nfl:401873001": {
       "url": "https://www.youtube.com/watch?v=Urfce838vEc",
@@ -82,6 +82,15 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-10-29T00:00:00.000Z",
       "discoveredAt": "2026-10-30T12:42:38.684Z"
+    },
+    "nba:401909884": {
+      "url": "https://www.youtube.com/watch?v=67g10QAeRCM",
+      "title": "76ERS at PACERS | FULL GAME HIGHLIGHTS | October 28, 2026",
+      "durationSeconds": 941,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-10-29T00:00:00.000Z",
+      "discoveredAt": "2026-11-01T00:02:25.635Z"
     }
   }
 };

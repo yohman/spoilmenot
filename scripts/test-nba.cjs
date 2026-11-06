@@ -2,6 +2,21 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),asse
 const root=path.join(__dirname,'..'),context={window:{}};vm.createContext(context);
 for(const file of ['nbaInsights','nbaView','watchScore'])vm.runInContext(fs.readFileSync(path.join(root,'js',file+'.js'),'utf8'),context);
 const {NBAInsights:nba,NBAView:view,WatchScore:watch}=context.window;
+// Official Nov 4 Spurs–Mavericks scoring timeline and Wembanyama box-score row.
+const historic=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/nba-historic.json'),'utf8'));
+const ordinary=nba.score(historic.game,{...historic.summary,boxscore:null});
+const landmark=nba.score(historic.game,historic.summary);
+assert.equal(ordinary.watchScore,81);
+assert.equal(landmark.watchScore,95);
+assert(landmark.reasons.some(reason=>reason.includes('Victor Wembanyama')));
+const duplicated=JSON.parse(JSON.stringify(historic.summary));
+duplicated.boxscore.players.push(...duplicated.boxscore.players);
+assert.equal(nba.score(historic.game,duplicated).watchScore,95,'duplicate player rows do not stack boosts');
+const routine=JSON.parse(JSON.stringify(historic.summary));
+routine.boxscore.players[1].statistics[0].athletes[0].stats=['34','25','10-20','1-4','4-5','8','2','1','2','2','2','6','2','+3'];
+assert.equal(nba.score(historic.game,routine).watchScore,81,'ordinary stat lines do not inflate scores');
+assert(nba.score({homeScore:130,awayScore:100},historic.summary).watchScore<90,'historic performance does not erase blowout discount');
+console.log(`PASS: Spurs–Mavericks ${ordinary.watchScore} -> ${landmark.watchScore}; historic bonus bounded, duplicate-safe, no ordinary-game inflation`);
 // Retained official score snapshots: Oct 23 NBA and Oct 24 Villa–City.
 const fixtures=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/nba-upsets.json'),'utf8'));
 const summary=f=>({plays:f.scores.map(([homeScore,awayScore,q,clock],i)=>({homeScore,awayScore,period:{number:q},clock:{displayValue:clock},sequenceNumber:i}))});

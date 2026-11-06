@@ -27,14 +27,39 @@ window.NBAInsights = (() => {
     if(points.at(-1).time<end)points.push({...points.at(-1),time:end});
     return {points,scores,end,leadChanges:changes,ties,lateChanges,closeShare:closeSeconds/end,lateCloseShare:lateCloseSeconds/Math.max(720,end-2160)};
   }
+  function individualPerformance(summary){
+    let best={bonus:0,floor:0,reason:null};
+    for(const team of summary.boxscore?.players||[])for(const group of team.statistics||[]){
+      const keys=(group.labels||group.names||[]).map(key=>String(key).toUpperCase());
+      for(const player of group.athletes||[]){
+        if(player.didNotPlay)continue;
+        const stat=key=>Number(player.stats?.[keys.indexOf(key)])||0;
+        const pts=stat('PTS'),reb=stat('REB'),ast=stat('AST'),blk=stat('BLK'),stl=stat('STL');
+        const doubles=[pts,reb,ast,blk,stl].filter(n=>n>=10).length;
+        let bonus=0,floor=0,milestone='';
+        // Statistical milestones, not unverified claims that a league record was broken.
+        if(pts>=50&&reb>=20&&(blk>=5||ast>=10)){bonus=14;floor=94;milestone='Historic all-around performance';}
+        else if(pts>=70||doubles>=4){bonus=14;floor=94;milestone=pts>=70?'70-point performance':'Quadruple-double';}
+        else if(pts>=60||(pts>=50&&reb>=20)||(pts>=40&&doubles>=3)){bonus=12;floor=90;milestone='Exceptional individual performance';}
+        else if(pts>=50||doubles>=3||blk>=10||stl>=10){bonus=6;milestone=pts>=50?'50-point performance':doubles>=3?'Triple-double':'Double-digit defensive performance';}
+        if(bonus>best.bonus)best={bonus,floor,reason:`${player.athlete?.displayName||'Player'}: ${milestone} (${pts} PTS, ${reb} REB, ${ast} AST, ${blk} BLK, ${stl} STL)`};
+      }
+    }
+    return best;
+  }
   function score(game,summary){
     const t=timeline(summary),margin=Math.abs(Number(game.homeScore)-Number(game.awayScore)),total=Number(game.homeScore)+Number(game.awayScore),overtime=t.end>2880;
     const finish=margin<=3?21:margin<=5?18:margin<=8?12:margin<=12?6:margin<=18?0:-10;
     // Bounded contributions: an ordinary 120-point night is not exceptional.
     let value=46+finish+t.closeShare*8+Math.min(10,t.leadChanges*.7)+Math.min(6,t.lateChanges*1.5)+t.lateCloseShare*3+(overtime?7:0)+clamp((total-210)/18,0,3);
     if(margin>=15)value=Math.min(value,72);if(margin>=25)value=Math.min(value,55);
+    const performance=individualPerformance(summary);
+    // One standout performance per game; retain blowout discounts. Truly rare
+    // lines in a close finish deserve must-watch status even with sparse PBP.
+    value+=performance.bonus*(margin>=15?.65:1);
+    if(margin<=5&&performance.floor)value=Math.max(value,performance.floor);
     const watchScore=Math.round(clamp(value));
-    return {watchScore,nba:true,drama:Math.round(clamp(finish*2+t.lateChanges*8+t.leadChanges*2)),action:Math.round(clamp(45+(total-190)*.4)),exceptional:Math.round(t.closeShare*100),surpriseContext:Number.isFinite(game.contextScore)?game.contextScore:40,reasons:[margin<=3&&'One-possession finish',overtime&&'Overtime',t.leadChanges&&`${t.leadChanges} lead changes`,t.lateChanges&&`${t.lateChanges} fourth-quarter / OT swings`].filter(Boolean),diagnostics:t};
+    return {watchScore,nba:true,drama:Math.round(clamp(finish*2+t.lateChanges*8+t.leadChanges*2)),action:Math.round(clamp(45+(total-190)*.4)),exceptional:Math.round(Math.max(t.closeShare*100,performance.bonus/14*100)),surpriseContext:Number.isFinite(game.contextScore)?game.contextScore:40,reasons:[margin<=3&&'One-possession finish',overtime&&'Overtime',t.leadChanges&&`${t.leadChanges} lead changes`,t.lateChanges&&`${t.lateChanges} fourth-quarter / OT swings`,performance.reason].filter(Boolean),diagnostics:{...t,individualPerformance:performance}};
   }
   function moments(events,limit=18){
     const scores=events.filter(e=>e.type==='score'&&e.homeScore!=null&&e.awayScore!=null),ranked=[];

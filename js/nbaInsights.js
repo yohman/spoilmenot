@@ -41,7 +41,18 @@ window.NBAInsights = (() => {
         if(pts>=50&&reb>=20&&(blk>=5||ast>=10)){bonus=14;floor=94;milestone='Historic all-around performance';}
         else if(pts>=70||doubles>=4){bonus=14;floor=94;milestone=pts>=70?'70-point performance':'Quadruple-double';}
         else if(pts>=60||(pts>=50&&reb>=20)||(pts>=40&&doubles>=3)){bonus=12;floor=90;milestone='Exceptional individual performance';}
-        else if(pts>=50||doubles>=3||blk>=10||stl>=10){bonus=6;milestone=pts>=50?'50-point performance':doubles>=3?'Triple-double':'Double-digit defensive performance';}
+        else {
+          // A single-category outlier matters even without a rare combined line.
+          const outliers=[
+            [pts>=50?8:0,'50-point performance'],
+            [reb>=25?8:reb>=20?5:0,`${reb}-rebound performance`],
+            [ast>=20?8:ast>=15?5:0,`${ast}-assist performance`],
+            [blk>=10?10:blk>=7?6:0,`${blk}-block performance`],
+            [stl>=10?10:stl>=7?6:0,`${stl}-steal performance`],
+            [doubles>=3?6:0,'Triple-double']
+          ];
+          [bonus,milestone]=outliers.reduce((best,item)=>item[0]>best[0]?item:best,[0,'']);
+        }
         if(bonus>best.bonus)best={bonus,floor,reason:`${player.athlete?.displayName||'Player'}: ${milestone} (${pts} PTS, ${reb} REB, ${ast} AST, ${blk} BLK, ${stl} STL)`};
       }
     }

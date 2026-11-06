@@ -15,6 +15,19 @@ assert.equal(nba.score(historic.game,duplicated).watchScore,95,'duplicate player
 const routine=JSON.parse(JSON.stringify(historic.summary));
 routine.boxscore.players[1].statistics[0].athletes[0].stats=['34','25','10-20','1-4','4-5','8','2','1','2','2','2','6','2','+3'];
 assert.equal(nba.score(historic.game,routine).watchScore,81,'ordinary stat lines do not inflate scores');
+for(const [key,value,bonus] of [['PTS',50,8],['REB',20,5],['REB',25,8],['AST',20,8],['BLK',7,6],['STL',7,6]]){
+  const isolated=JSON.parse(JSON.stringify(routine));
+  const group=isolated.boxscore.players[1].statistics[0];
+  group.athletes[0].stats[group.labels.indexOf(key)]=String(value);
+  const result=nba.score(historic.game,isolated);
+  assert.equal(result.diagnostics.individualPerformance.bonus,bonus,`${value} ${key} counts independently`);
+  assert.equal(result.watchScore,81+bonus);
+}
+const below=JSON.parse(JSON.stringify(routine));
+const belowGroup=below.boxscore.players[1].statistics[0];
+belowGroup.athletes[0].stats[belowGroup.labels.indexOf('PTS')]='49';
+belowGroup.athletes[0].stats[belowGroup.labels.indexOf('REB')]='19';
+assert.equal(nba.score(historic.game,below).watchScore,81,'below-threshold single categories get no outlier bonus');
 assert(nba.score({homeScore:130,awayScore:100},historic.summary).watchScore<90,'historic performance does not erase blowout discount');
 console.log(`PASS: Spurs–Mavericks ${ordinary.watchScore} -> ${landmark.watchScore}; historic bonus bounded, duplicate-safe, no ordinary-game inflation`);
 // Retained official score snapshots: Oct 23 NBA and Oct 24 Villa–City.

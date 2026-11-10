@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-11-10T17:16:37.559Z",
+  "generatedAt": "2026-11-10T22:24:47.938Z",
   "highlights": {
     "nfl:401873001": {
       "url": "https://www.youtube.com/watch?v=Urfce838vEc",
@@ -145,6 +145,69 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-11-10T00:00:00.000Z",
       "discoveredAt": "2026-11-10T17:16:37.559Z"
+    },
+    "nba:401909956": {
+      "url": "https://www.youtube.com/watch?v=RAPmPkOUf20",
+      "title": "PACERS at MAVERICKS | FULL GAME HIGHLIGHTS | November 9, 2026",
+      "durationSeconds": 1042,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-10T00:00:00.000Z",
+      "discoveredAt": "2026-11-10T22:24:47.938Z"
+    },
+    "nba:401909954": {
+      "url": "https://www.youtube.com/watch?v=ZKUHnwGRazM",
+      "title": "WIZARDS at PISTONS | FULL GAME HIGHLIGHTS | November 9, 2026",
+      "durationSeconds": 868,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-10T00:00:00.000Z",
+      "discoveredAt": "2026-11-10T22:24:47.938Z"
+    },
+    "nba:401909946": {
+      "url": "https://www.youtube.com/watch?v=shKl4TLb28Y",
+      "title": "LAKERS at PISTONS | FULL GAME HIGHLIGHTS | November 8, 2026",
+      "durationSeconds": 973,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-09T00:00:00.000Z",
+      "discoveredAt": "2026-11-10T22:24:47.938Z"
+    },
+    "nfl:401873047": {
+      "url": "https://www.youtube.com/watch?v=sNQJenFh30k",
+      "title": "Las Vegas Raiders vs. San Francisco 49ers Game Highlights | 2026 NFL Season Week 9",
+      "durationSeconds": 914,
+      "source": "NFL",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-09T00:00:00.000Z",
+      "discoveredAt": "2026-11-10T22:24:47.938Z"
+    },
+    "nfl:401873048": {
+      "url": "https://www.youtube.com/watch?v=de07dP1hlt8",
+      "title": "Arizona Cardinals vs. Seattle Seahawks Game Highlights | 2026 NFL Season Week 9",
+      "durationSeconds": 790,
+      "source": "NFL",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-09T00:00:00.000Z",
+      "discoveredAt": "2026-11-10T22:24:47.938Z"
+    },
+    "nfl:401873043": {
+      "url": "https://www.youtube.com/watch?v=N9qwPsA9FI0",
+      "title": "Los Angeles Rams vs. Washington Commanders Game Highlights | NFL 2026 Season Week 9",
+      "durationSeconds": 764,
+      "source": "NFL",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-08T00:00:00.000Z",
+      "discoveredAt": "2026-11-10T22:24:47.938Z"
+    },
+    "nfl:401873041": {
+      "url": "https://www.youtube.com/watch?v=owBZ7u9L6B8",
+      "title": "Denver Broncos vs. Carolina Panthers Game Highlights | 2026 NFL Season Week 9",
+      "durationSeconds": 1092,
+      "source": "NFL",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-08T00:00:00.000Z",
+      "discoveredAt": "2026-11-10T22:24:47.938Z"
     }
   }
 };

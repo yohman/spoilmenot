@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-11-10T02:04:47.369Z",
+  "generatedAt": "2026-11-10T17:16:37.559Z",
   "highlights": {
     "nfl:401873001": {
       "url": "https://www.youtube.com/watch?v=Urfce838vEc",
@@ -136,6 +136,15 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-11-05T00:00:00.000Z",
       "discoveredAt": "2026-11-10T02:04:47.369Z"
+    },
+    "nba:401909958": {
+      "url": "https://www.youtube.com/watch?v=fZRq0ZJQa2I",
+      "title": "SPURS at SUNS | FULL GAME HIGHLIGHTS | November 9, 2026",
+      "durationSeconds": 983,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-10T00:00:00.000Z",
+      "discoveredAt": "2026-11-10T17:16:37.559Z"
     }
   }
 };

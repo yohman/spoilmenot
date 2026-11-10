@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-11-01T00:02:25.635Z",
+  "generatedAt": "2026-11-10T02:04:47.369Z",
   "highlights": {
     "nfl:401873001": {
       "url": "https://www.youtube.com/watch?v=Urfce838vEc",
@@ -91,6 +91,51 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-10-29T00:00:00.000Z",
       "discoveredAt": "2026-11-01T00:02:25.635Z"
+    },
+    "nba:401909933": {
+      "url": "https://www.youtube.com/watch?v=CGMqqffvAZw",
+      "title": "MAVERICKS at SPURS | FULL GAME HIGHLIGHTS | November 4, 2026",
+      "durationSeconds": 994,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-05T00:00:00.000Z",
+      "discoveredAt": "2026-11-10T02:04:47.369Z"
+    },
+    "nba:401909932": {
+      "url": "https://www.youtube.com/watch?v=ZBsa_Sh3VhQ",
+      "title": "TRAIL BLAZERS at SUNS | FULL GAME HIGHLIGHTS | November 4, 2026",
+      "durationSeconds": 1025,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-05T00:00:00.000Z",
+      "discoveredAt": "2026-11-10T02:04:47.369Z"
+    },
+    "nba:401909927": {
+      "url": "https://www.youtube.com/watch?v=A6t5iL19Fyg",
+      "title": "PACERS at GRIZZLIES | FULL GAME HIGHLIGHTS | November 4, 2026",
+      "durationSeconds": 949,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-05T00:00:00.000Z",
+      "discoveredAt": "2026-11-10T02:04:47.369Z"
+    },
+    "nba:401909928": {
+      "url": "https://www.youtube.com/watch?v=6B2jlUvJ2rQ",
+      "title": "JAZZ at PELICANS | FULL GAME HIGHLIGHTS | November 4, 2026",
+      "durationSeconds": 1071,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-05T00:00:00.000Z",
+      "discoveredAt": "2026-11-10T02:04:47.369Z"
+    },
+    "nba:401909926": {
+      "url": "https://www.youtube.com/watch?v=Wsl2gAb6Elk",
+      "title": "BULLS at KNICKS | FULL GAME HIGHLIGHTS | November 4, 2026",
+      "durationSeconds": 940,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-05T00:00:00.000Z",
+      "discoveredAt": "2026-11-10T02:04:47.369Z"
     }
   }
 };

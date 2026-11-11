@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-11-10T22:24:47.938Z",
+  "generatedAt": "2026-11-11T02:01:45.646Z",
   "highlights": {
     "nfl:401873001": {
       "url": "https://www.youtube.com/watch?v=Urfce838vEc",
@@ -208,6 +208,51 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-11-08T00:00:00.000Z",
       "discoveredAt": "2026-11-10T22:24:47.938Z"
+    },
+    "nba:401909924": {
+      "url": "https://www.youtube.com/watch?v=ie77OeeANhg",
+      "title": "BUCKS at CELTICS | FULL GAME HIGHLIGHTS | November 4, 2026",
+      "durationSeconds": 905,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-05T00:00:00.000Z",
+      "discoveredAt": "2026-11-11T02:01:45.646Z"
+    },
+    "nba:401909923": {
+      "url": "https://www.youtube.com/watch?v=_dSuXlz6BiI",
+      "title": "HAWKS at WIZARDS | FULL GAME HIGHLIGHTS | November 4, 2026",
+      "durationSeconds": 912,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-05T00:00:00.000Z",
+      "discoveredAt": "2026-11-11T02:01:45.646Z"
+    },
+    "nfl:401873051": {
+      "url": "https://www.youtube.com/watch?v=2_ruHrqYSI4",
+      "title": "Buffalo Bills vs Minnesota Vikings Highlights | 2026 NFL Season Week 9",
+      "durationSeconds": 997,
+      "source": "NFL",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-10T00:00:00.000Z",
+      "discoveredAt": "2026-11-11T02:01:45.646Z"
+    },
+    "nba:401909952": {
+      "url": "https://www.youtube.com/watch?v=FkybKoRhdPs",
+      "title": "LAKERS at HAWKS | FULL GAME HIGHLIGHTS | November 9, 2026",
+      "durationSeconds": 976,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-10T00:00:00.000Z",
+      "discoveredAt": "2026-11-11T02:01:45.646Z"
+    },
+    "nfl:401873046": {
+      "url": "https://www.youtube.com/watch?v=04k2ARJ05UU",
+      "title": "Houston Texans vs. Los Angeles Chargers Game Highlights | NFL 2026 Season Week 9",
+      "durationSeconds": 1012,
+      "source": "NFL",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-09T00:00:00.000Z",
+      "discoveredAt": "2026-11-11T02:01:45.646Z"
     }
   }
 };

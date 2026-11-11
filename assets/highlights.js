@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-11-11T02:01:45.646Z",
+  "generatedAt": "2026-11-11T17:08:03.258Z",
   "highlights": {
     "nfl:401873001": {
       "url": "https://www.youtube.com/watch?v=Urfce838vEc",
@@ -253,6 +253,33 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-11-09T00:00:00.000Z",
       "discoveredAt": "2026-11-11T02:01:45.646Z"
+    },
+    "nba:401909934": {
+      "url": "https://www.youtube.com/watch?v=YtP-cXT3A70",
+      "title": "LAKERS at KINGS | FULL GAME HIGHLIGHTS | November 4, 2026",
+      "durationSeconds": 910,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-05T00:00:00.000Z",
+      "discoveredAt": "2026-11-11T17:08:03.258Z"
+    },
+    "nba:401909925": {
+      "url": "https://www.youtube.com/watch?v=oi8rrI8Yuj4",
+      "title": "HORNETS at NETS | FULL GAME HIGHLIGHTS | November 4, 2026",
+      "durationSeconds": 956,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-05T00:00:00.000Z",
+      "discoveredAt": "2026-11-11T17:08:03.258Z"
+    },
+    "nba:401909951": {
+      "url": "https://www.youtube.com/watch?v=dY-RkRu3MpA",
+      "title": "HEAT at KINGS | FULL GAME HIGHLIGHTS | November 8, 2026",
+      "durationSeconds": 918,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-09T00:00:00.000Z",
+      "discoveredAt": "2026-11-11T17:08:03.258Z"
     }
   }
 };

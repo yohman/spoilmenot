@@ -1,6 +1,6 @@
 window.SpoilHighlights = {
   "version": 1,
-  "generatedAt": "2026-11-11T17:08:03.258Z",
+  "generatedAt": "2026-11-12T04:00:00.361Z",
   "highlights": {
     "nfl:401873001": {
       "url": "https://www.youtube.com/watch?v=Urfce838vEc",
@@ -280,6 +280,24 @@ window.SpoilHighlights = {
       "sourceTier": "official",
       "publishedAt": "2026-11-09T00:00:00.000Z",
       "discoveredAt": "2026-11-11T17:08:03.258Z"
+    },
+    "nfl:401873049": {
+      "url": "https://www.youtube.com/watch?v=O1fZ6Zkabgc",
+      "title": "Tampa Bay Buccaneers vs Chicago Bears Game Highlights | 2026 NFL Season Week 9",
+      "durationSeconds": 1106,
+      "source": "NFL",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-09T00:00:00.000Z",
+      "discoveredAt": "2026-11-12T04:00:00.361Z"
+    },
+    "nba:401909945": {
+      "url": "https://www.youtube.com/watch?v=5n83r-MESag",
+      "title": "76ERS at BULLS | FULL GAME HIGHLIGHTS | November 8, 2026",
+      "durationSeconds": 1007,
+      "source": "NBA",
+      "sourceTier": "official",
+      "publishedAt": "2026-11-08T00:00:00.000Z",
+      "discoveredAt": "2026-11-12T04:00:00.361Z"
     }
   }
 };
